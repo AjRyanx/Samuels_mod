@@ -1,0 +1,1 @@
+Generated .ftex kit files go here after the generator's ftex step is unlocked (see README).

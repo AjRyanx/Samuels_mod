@@ -1,0 +1,16 @@
+# Normalise line endings in the repo; keep binaries untouched.
+* text=auto
+
+*.lua   text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.csv   text eol=lf
+*.ini   text eol=lf
+
+*.png   binary
+*.ftex  binary
+*.dds   binary
+*.dll   binary
+*.exe   binary
+*.cpk   binary

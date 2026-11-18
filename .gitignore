@@ -1,0 +1,34 @@
+# ---- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---- Generated build output ----------------------------------------------
+# The kit generator writes previews / atlases / mock-ups here at run time.
+content/KitGenerator/staging/*
+!content/KitGenerator/staging/.gitkeep
+
+# Generated logo contact sheet (recreate with: python generator/logomaker.py)
+content/KitGenerator/logos_sheet.png
+
+# ---- Live runtime state (created inside the game, not source) -------------
+content/KitGenerator/club.txt
+content/KitGenerator/active_deal.txt
+content/KitGenerator/paid.txt
+content/KitGenerator/signed.txt
+content/KitGenerator/ledger.txt
+content/KitGenerator/watcher_state.txt
+content/KitGenerator/kit_request.txt
+content/KitGenerator/game.pid
+content/KitGenerator/watcher.cmd
+content/KitGenerator/watcher.log
+kgprobe.log
+
+# ---- Local backups / scratch ---------------------------------------------
+backups/
+*.bak
+*.bak-*
+*.bak_*
+*.orig
