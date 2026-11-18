@@ -33,11 +33,13 @@ Nothing is copied from a real club kit: the flat-colour template only tells us
 *where* the islands are, never *what* they look like.
 """
 from pathlib import Path
+import re
 
 from PIL import Image, ImageDraw, ImageFont
 
 import kit_gen
 import kit_regions
+import kit_dna
 
 ATLAS = 2048
 TILE = 1024                      # shirt-local tile resolution (u, v)
@@ -56,6 +58,7 @@ DEFAULT_DESIGN = {
     "width_step": 0,              # stripe width step (0..7)
     "gradient": 0,                # 0..3 vertical shading strength
     "sleeve": None,               # None = same as body
+    "cuff": None,                 # None = same as sleeve
     "shorts": None,               # None = same as body
     "socks": None,                # None = same as body
     "collar": None,               # None = same as body
@@ -150,23 +153,38 @@ def render_kit(design, out_png, masks=None):
         atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), colour + (255,)),
                     (0, 0), _mask_img(masks[region]))
 
+    # Contrast sleeve cuff bands (y=640..679 on short sleeve hem)
+    cuff = d.get("cuff")
+    if cuff:
+        import numpy as np
+        cuff_col = tuple(cuff) + (255,)
+        sleeve_mask = masks["sleeve"]
+        cuff_mask = np.zeros_like(sleeve_mask)
+        cuff_mask[640:680, :] = sleeve_mask[640:680, :]
+        if np.any(cuff_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col),
+                        (0, 0), _mask_img(cuff_mask))
+
     # logos
     if d.get("sponsor"):
         _stamp_area(atlas, d["sponsor"], *kit_regions.CHEST_SPONSOR,
                     white=d.get("sponsor_white"),
-                    plate=body if d.get("sponsor_plate") else None)
+                    plate=body if d.get("sponsor_plate") else None,
+                    max_w=580, max_h=190)
     if d.get("badge"):
         _stamp_area(atlas, d["badge"], *kit_regions.CLUB_BADGE,
-                    white=d.get("badge_white"))
+                    white=d.get("badge_white"),
+                    max_w=155, max_h=155)
     if d.get("supplier"):
         _stamp_area(atlas, d["supplier"], *kit_regions.KIT_SUPPLIER,
-                    white=d.get("supplier_white"))
+                    white=d.get("supplier_white"),
+                    max_w=145, max_h=95)
 
     atlas.save(out_png)
     return out_png
 
 
-def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None):
+def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None, max_w=None, max_h=None):
     """Place a logo centred on (cx, cy) scaled so w*h ~= area (like the tool).
 
     `plate` optionally paints a flat rectangle of that colour behind the logo
@@ -174,11 +192,24 @@ def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None):
     overlays never run through the logo).
     """
     logo = Image.open(logo_path).convert("RGBA")
+    bbox = logo.getbbox()
+    if bbox:
+        logo = logo.crop(bbox)
     if white:
         logo = _flatten_white(logo)
     w, h = logo.size
     scale = (float(area) / max(1, w * h)) ** 0.5
     nw, nh = max(1, int(round(w * scale))), max(1, int(round(h * scale)))
+
+    if max_w and nw > max_w:
+        s = max_w / float(nw)
+        nw = max_w
+        nh = max(1, int(round(nh * s)))
+    if max_h and nh > max_h:
+        s = max_h / float(nh)
+        nh = max_h
+        nw = max(1, int(round(nw * s)))
+
     logo = logo.resize((nw, nh), Image.LANCZOS)
     x, y = int(cx - nw / 2), int(cy - nh / 2)
 
@@ -222,67 +253,15 @@ _SLOT_ROLES = {
 # Pool entries are either a legacy named pattern or a kit_patterns catalog code
 # ("127", "127-B", ...) - see generator/kit_patterns.py.
 #
-# The three pools are deliberately drawn from DIFFERENT visual families so the
-# home, away and third kits never look like each other:
-#   home  = linear (stripes, pinstripes, sashes, bands, hoops)
-#   away  = angular (shards, polygons, chevrons, diamonds, hex, bricks)
-#   third = organic / cultural (marble, fluid, waves, tiles, knotwork)
-KIT_STYLE = {
-    102: {  # Chelsea
-        # home: mainly blue with a touch of white and a tiny red
-        1: {
-            "body": (0, 76, 165), "second": (245, 245, 245), "third": (200, 32, 48),
-            "patterns": [
-                "pinstripe",                                    # approved default
-                # stripes / pinstripes
-                "093", "085", "097", "105", "118", "124",
-                # sashes / bands
-                "005", "022", "087", "090", "095", "098", "103", "113", "119",
-                # woven / checks / hoops
-                "067", "102", "114", "084", "091",
-            ],
-            "sleeve": (245, 245, 245), "shorts": (0, 76, 165),
-            "socks": (245, 245, 245), "collar": (200, 32, 48),
-            "gradient": 0,
-        },
-        # away: black with a touch of blue, bold angular geometry
-        2: {
-            "body": (16, 17, 21), "second": (10, 63, 133), "third": (0, 76, 165),
-            "patterns": [
-                "chevron",                                      # approved default
-                # shards / prisms / poly
-                "001", "002", "003", "004", "008", "020", "021", "023", "029", "038",
-                # chevrons / zigzags / peaks / wedges
-                "010", "011", "017", "024", "030", "039",
-                # lattice / stars / bricks / shield
-                "013", "019", "027", "033", "037", "040",
-            ],
-            "sleeve": (16, 17, 21), "shorts": (16, 17, 21),
-            "socks": (10, 63, 133), "collar": (10, 63, 133),
-            "gradient": 1,
-        },
-        # third: mainly white with a touch of blue and a tiny red
-        3: {
-            "body": (245, 246, 248), "second": (10, 63, 133), "third": (200, 32, 48),
-            "patterns": [
-                "fadegeo",                                      # approved default
-                # fluid / organic
-                "041", "043", "044", "047", "052", "064", "074", "195", "204", "205",
-                # tech / grid
-                "127", "131", "142", "153",
-                # cultural / architectural
-                "168", "169", "170", "176", "177", "178", "179", "189", "197",
-            ],
-            "sleeve": (10, 63, 133), "shorts": (245, 246, 248),
-            "socks": (245, 246, 248), "collar": (200, 32, 48),
-            "gradient": 0,
-        },
-    },
-}
+# Explicit per-club styling and dynamic fashion DNA from kit_dna.
+# Preserves iconic heritage (Arsenal white sleeves, Ajax red center, Milan/Inter/Juve stripes,
+# Celtic hoops, Boca chestband, River sash) while providing modern 2026 luxury micro-jacquards,
+# Carrara marble, houndstooth, and kinetic geometry for all clubs.
+KIT_STYLE = kit_dna.BESPOKE_DNA
 
 
 def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=None,
-                     sponsor=None):
+                     sponsor=None, badge_dir=None, badge=None):
     """Turn a club row + season + kit slot (1=home, 2=away, 3=third) into a design.
 
     The rolls are taken in the same order as kit_gen.preview() so the wrapped
@@ -295,7 +274,7 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
     a fresh design from the club's on-brand pattern pool.
 
     `style` (or KIT_STYLE[club_id][slot]) may override any of body/second/third/
-    patterns/sleeve/shorts/socks/collar/gradient/var/width_step.
+    patterns/sleeve/cuff/shorts/socks/collar/gradient/var/width_step.
     """
     if slot not in _SLOT_ROLES:
         raise ValueError("slot must be 1 (home), 2 (away) or 3 (third)")
@@ -333,50 +312,103 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
         "body": body, "second": second, "accent": accent, "third": None,
         "pattern": pattern, "var": var,
         "width_step": roll["stripe_width"], "gradient": roll["gradient"],
-        "sleeve": sleeve, "shorts": shorts, "socks": socks, "collar": collar,
+        "sleeve": sleeve, "cuff": None, "shorts": shorts, "socks": socks, "collar": collar,
         "sponsor": None, "sponsor_white": False,
         "slot": slot, "_brand": brand, "_roll": roll, "_sponsor": sponsor,
     }
 
-    st = KIT_STYLE.get(club["id"], {}).get(slot) if style is None else style
-    if st:
-        st = dict(st)                       # never mutate the module table
+    # High-fashion 2026 DNA styling: bespoke heritage or dynamic modern classification
+    if style is not None:
+        st = dict(style)
         pool = st.pop("patterns", None)
         if pool:
-            # no sponsor -> the approved first pattern; a signed sponsor -> a
-            # DIFFERENT pattern that is guaranteed to change again every season
-            # of the deal (so a 2-year deal still gives a new kit next season),
-            # and never falls back to the no-sponsor look.
             if not sponsor:
                 st["pattern"] = pool[0]
             else:
                 choices = [x for x in pool if x != pool[0]] or pool
-                brng = kit_gen.season_rng(club["id"], 0, salt="brandpick|" + sponsor)
-                base = brng.randrange(len(choices))
-                st["pattern"] = choices[(base + season) % len(choices)]
+                idx = (season + kit_dna._sponsor_hash(sponsor)) % len(choices)
+                st["pattern"] = choices[idx]
+    else:
+        st = kit_dna.get_club_style(club, slot, season, sponsor=sponsor)
+
+    if st:
         design.update(st)
 
     # the chest logo is stamped only for a signed sponsor, and chosen from the
     # FINAL body colour so a dark kit gets the white logo variant
     if brand:
         white = kit_gen.lum(design["body"]) < 120
-        design["sponsor"] = str(Path(logo_dir) / (brand + ("_white" if white else "") + ".png"))
+        cand_white = Path(logo_dir) / f"{brand}_white.png"
+        cand_std = Path(logo_dir) / f"{brand}.png"
+        if not cand_white.is_file() and not cand_std.is_file():
+            # Handle slug / prefix e.g. "calvia_networks" -> "calvia"
+            prefix = brand.split("_")[0]
+            if (Path(logo_dir) / f"{prefix}_white.png").is_file():
+                cand_white = Path(logo_dir) / f"{prefix}_white.png"
+            if (Path(logo_dir) / f"{prefix}.png").is_file():
+                cand_std = Path(logo_dir) / f"{prefix}.png"
+
+        if white and cand_white.is_file():
+            design["sponsor"] = str(cand_white)
+        elif cand_std.is_file():
+            design["sponsor"] = str(cand_std)
+            if white:
+                design["sponsor_white"] = True
+        elif cand_white.is_file():
+            design["sponsor"] = str(cand_white)
+        else:
+            design["sponsor"] = None
     else:
         design["sponsor"] = None
+
+    # club badge on the player's left chest
+    if badge:
+        design["badge"] = str(badge)
+    else:
+        bdir = Path(badge_dir) if badge_dir else (Path(logo_dir).parent / "badges")
+        cid = club.get("id") or club.get("team_id")
+        candidate = bdir / f"{cid}.png"
+        if candidate.is_file():
+            design["badge"] = str(candidate)
+        else:
+            name_slug = re.sub(r"[^a-z0-9_]+", "_", str(club.get("name", "")).lower()).strip("_")
+            candidate_slug = bdir / f"{name_slug}.png"
+            if candidate_slug.is_file():
+                design["badge"] = str(candidate_slug)
+            else:
+                design["badge"] = None
+
+    # Kit supplier on the player's right chest (e.g. adidas, nike, puma)
+    sup = design.get("supplier")
+    if sup:
+        sdir = Path(badge_dir).parent / "suppliers" if badge_dir else (Path(logo_dir).parent / "suppliers")
+        is_dark_shirt = kit_gen.lum(design["body"]) < 120
+        cand_white = sdir / f"{sup}_white.png"
+        cand_dark = sdir / f"{sup}_dark.png"
+        cand_std = sdir / f"{sup}.png"
+        if is_dark_shirt and cand_white.is_file():
+            design["supplier"] = str(cand_white)
+        elif not is_dark_shirt and cand_dark.is_file():
+            design["supplier"] = str(cand_dark)
+        elif cand_std.is_file():
+            design["supplier"] = str(cand_std)
+        else:
+            design["supplier"] = None
     return design
 
 
 def render_club(club, season, out_png, logo_dir, masks=None, brand_files=None, slot=1,
-                style=None, sponsor=None):
+                style=None, sponsor=None, badge_dir=None, badge=None):
     """Render one club's generated kit for a season; returns (path, design)."""
     design = design_from_club(club, season, logo_dir, slot=slot,
-                              brand_files=brand_files, style=style, sponsor=sponsor)
+                              brand_files=brand_files, style=style, sponsor=sponsor,
+                              badge_dir=badge_dir, badge=badge)
     render_kit(design, str(out_png), masks=masks)
     return str(out_png), design
 
 
 def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
-                   sponsor=None):
+                   sponsor=None, badge_dir=None, badge=None):
     """Render the full home/away/third set for a club + season.
 
     Returns a list of (slot, atlas_png, preview_png, design).
@@ -395,7 +427,8 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
     for slot in (1, 2, 3):
         atlas = outdir / f"u{team:04d}p{slot}_atlas.png"
         _, design = render_club(club, season, atlas, logo_dir, masks=masks,
-                                brand_files=brand_files, slot=slot, sponsor=sponsor)
+                                brand_files=brand_files, slot=slot, sponsor=sponsor,
+                                badge_dir=badge_dir, badge=badge)
         preview = uv_contact_sheet(atlas, outdir / f"u{team:04d}p{slot}_preview.png",
                                    masks=masks)
         mockup(design, club["name"], season,
@@ -423,10 +456,43 @@ def mockup(design, club_name, season, out_png):
     sleeve = tuple(design.get("sleeve") or body)
     canvas.paste(Image.new("RGBA", (W, H), sleeve + (255,)), (0, 0), smask)
 
+    cuff = design.get("cuff")
+    if cuff:
+        import numpy as np
+        sm = np.asarray(smask) > 10
+        cm = np.zeros_like(sm)
+        cm[264:283, :] = sm[264:283, :]
+        if np.any(cm):
+            cuff_col = tuple(cuff) + (255,)
+            cimg = Image.fromarray((cm * 255).astype("uint8"), "L")
+            canvas.paste(Image.new("RGBA", (W, H), cuff_col), (0, 0), cimg)
+
     d = ImageDraw.Draw(canvas)
     trim = tuple(design.get("collar") or body)
     d.polygon([(200, 40), (240, 86), (280, 40), (268, 40), (240, 70), (212, 40)],
               fill=trim + (255,))
+
+    if design.get("badge"):
+        try:
+            b_logo = Image.open(design["badge"]).convert("RGBA")
+            if design.get("badge_white"):
+                b_logo = _flatten_white(b_logo)
+            bs = min(44 / max(1, b_logo.width), 44 / max(1, b_logo.height))
+            b_logo = b_logo.resize((max(1, int(b_logo.width * bs)), max(1, int(b_logo.height * bs))), Image.LANCZOS)
+            canvas.alpha_composite(b_logo, (300 - b_logo.width // 2, 110 - b_logo.height // 2))
+        except Exception:
+            pass
+
+    if design.get("supplier"):
+        try:
+            s_logo = Image.open(design["supplier"]).convert("RGBA")
+            if design.get("supplier_white"):
+                s_logo = _flatten_white(s_logo)
+            ss = min(36 / max(1, s_logo.width), 26 / max(1, s_logo.height))
+            s_logo = s_logo.resize((max(1, int(s_logo.width * ss)), max(1, int(s_logo.height * ss))), Image.LANCZOS)
+            canvas.alpha_composite(s_logo, (180 - s_logo.width // 2, 110 - s_logo.height // 2))
+        except Exception:
+            pass
 
     if design.get("sponsor"):
         logo = Image.open(design["sponsor"]).convert("RGBA")
@@ -507,6 +573,10 @@ if __name__ == "__main__":
 
     root = Path(__file__).resolve().parent.parent
     logo_dir = root / "content" / "KitGenerator" / "logos"
+    badge_dir = root / "content" / "KitGenerator" / "badges"
+    if not logo_dir.exists():
+        logo_dir = Path(r"c:\Games\SP Football Life 2027\SiderAddons\content\KitGenerator\logos")
+        badge_dir = Path(r"c:\Games\SP Football Life 2027\SiderAddons\content\KitGenerator\badges")
     masks = kit_regions.build_masks()
 
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
@@ -538,7 +608,7 @@ if __name__ == "__main__":
         slot = int(sys.argv[sys.argv.index("--slot") + 1])
         name = "u%04dp%d" % (club_id, slot)
         out = outdir / f"{name}_atlas.png"
-        _, design = render_club(club, season, out, logo_dir, masks=masks, slot=slot)
+        _, design = render_club(club, season, out, logo_dir, masks=masks, slot=slot, badge_dir=badge_dir)
         sheet = uv_contact_sheet(out, outdir / f"{name}_preview.png", masks=masks)
         print(f"wrote {out}")
         print(f"wrote {sheet}")
@@ -546,7 +616,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     for slot, atlas, preview, design in render_kit_set(club, season, outdir,
-                                                       logo_dir, masks=masks):
+                                                       logo_dir, masks=masks, badge_dir=badge_dir):
         print(f"wrote {atlas}")
         print(f"wrote {preview}")
         print(_describe(design, season, club))

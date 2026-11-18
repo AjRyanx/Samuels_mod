@@ -41,14 +41,36 @@ import kit_render
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
-DEFAULT_GAME_ROOT = Path(r"C:\Program Files (x86)\SP Football Life 2027")
+DEFAULT_GAME_ROOT = Path(r"C:\Games\SP Football Life 2027")
 # Any real PES kit works as a header template; the three Chelsea slots share one.
 DEFAULT_BASE = Path(
-    r"C:\Program Files (x86)\SP Football Life 2027\SiderAddons\content\kits"
-    r"\TheGaffer_Chelsea_FC\p1\u0102p1.ftex")
+    r"C:\Games\SP Football Life 2027\SiderAddons\content\kits"
+    r"\Premier League\Chelsea\p1\u0102p1.ftex")
 
 INSTALL_SUBDIR = Path("SiderAddons/livecpk/KitGenerator/Asset/model/character/"
                       "uniform/texture/#windx11")
+
+
+def _find_kitserver_folder(club_id, game_root):
+    """Find the GDB folder for club_id if managed by Sider's Kitserver."""
+    map_txt = Path(game_root) / "SiderAddons/content/kits/map.txt"
+    if not map_txt.exists():
+        return None
+    try:
+        with open(map_txt, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = [p.strip() for p in line.split(",", 1)]
+                if len(parts) == 2 and parts[0].isdigit() and int(parts[0]) == club_id:
+                    rel_dir = parts[1].strip().strip('"').strip("'")
+                    target = Path(game_root) / "SiderAddons/content/kits" / rel_dir
+                    if target.exists():
+                        return target
+    except Exception:
+        pass
+    return None
 
 
 def _load_club(club_id, sider=None):
@@ -66,14 +88,17 @@ def pack_atlas(atlas_png, out_ftex, template):
     """Encode a 2048x2048 atlas PNG into a .ftex using `template`'s header."""
     img = Image.open(atlas_png).convert("RGBA").resize(
         (template["width"], template["height"]), Image.LANCZOS)
-    data = ftex_io.image_to_ftex(img, fmt=template["pixel_format"], template=template)
+    fmt = template["pixel_format"]
+    if fmt not in (2, 3, 4, 9):
+        fmt = 4  # BC3/DXT5 (Pillow supports DXT1/DXT3/DXT5/BC5; standard PES kit format is BC3)
+    data = ftex_io.image_to_ftex(img, fmt=fmt, template=template)
     ftex_io.write_ftex(out_ftex, data)
     return out_ftex
 
 
 def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
               install=False, game_root=DEFAULT_GAME_ROOT, quiet=False, sponsor=None,
-              logo_dir=None):
+              logo_dir=None, badge_dir=None, badge=None):
     """Render + pack a club's kit set.  Returns [(slot, atlas, ftex, design)].
 
     When `sponsor` is given (a brand name from content/KitGenerator/logos), the
@@ -93,15 +118,23 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
     template = ftex_io.read_ftex(base_ftex)
 
     if logo_dir is None:
-        logo_dir = ROOT / "content" / "KitGenerator" / "logos"
+        cand1 = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "logos"
+        cand2 = ROOT.parent / "content" / "KitGenerator" / "logos"
+        cand3 = ROOT / "content" / "KitGenerator" / "logos"
+        logo_dir = cand1 if cand1.is_dir() else (cand2 if cand2.is_dir() else cand3)
     logo_dir = Path(logo_dir)
+    if badge_dir is None:
+        badge_dir = logo_dir.parent / "badges"
+    badge_dir = Path(badge_dir)
     masks = kit_regions_build()
 
     rendered = kit_render.render_kit_set(club, season, outdir, logo_dir,
-                                         masks=masks, sponsor=sponsor)
+                                         masks=masks, sponsor=sponsor,
+                                         badge_dir=badge_dir, badge=badge)
     install_dir = Path(game_root) / INSTALL_SUBDIR if install else None
     if install_dir:
         install_dir.mkdir(parents=True, exist_ok=True)
+    kitserver_dir = _find_kitserver_folder(club['id'], game_root) if install else None
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     results = []
@@ -125,6 +158,19 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
             shutil.copy2(out_ftex, dst)
             if not quiet:
                 print(f"  installed -> {dst}")
+
+        if kitserver_dir:
+            ks_slot_dir = kitserver_dir / f"p{slot}"
+            if ks_slot_dir.exists():
+                ks_dst = ks_slot_dir / f"{name}.ftex"
+                ks_orig = ks_slot_dir / f"{name}.ftex.orig"
+                if ks_dst.exists() and not ks_orig.exists():
+                    shutil.copy2(ks_dst, ks_orig)
+                    if not quiet:
+                        print(f"  kitserver backup original -> {ks_orig.name}")
+                shutil.copy2(out_ftex, ks_dst)
+                if not quiet:
+                    print(f"  kitserver deployed -> {ks_dst}")
         results.append((slot, str(atlas), str(out_ftex), design))
     return results
 
@@ -162,6 +208,11 @@ def main(argv=None):
     p.add_argument("--logos", default=None,
                    help="folder holding the sponsor logo PNGs (default: this mod's "
                         "content/KitGenerator/logos)")
+    p.add_argument("--badges", default=None,
+                   help="folder holding club badge PNGs (default: this mod's "
+                        "content/KitGenerator/badges)")
+    p.add_argument("--badge", default=None,
+                   help="path to a specific badge PNG for this club")
     p.add_argument("--sider", default=None,
                    help="the game's SiderAddons folder, used to resolve a club that "
                         "is not in clubs.csv (default: <game-root>\\SiderAddons)")
@@ -174,7 +225,7 @@ def main(argv=None):
                         base_ftex=args.base, slots=_parse_slots(args.slots),
                         install=args.install, game_root=args.game_root,
                         quiet=args.quiet, sponsor=args.sponsor,
-                        logo_dir=args.logos)
+                        logo_dir=args.logos, badge_dir=args.badges, badge=args.badge)
 
     print()
     for slot, atlas, ftex, d in results:

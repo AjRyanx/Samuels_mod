@@ -39,7 +39,7 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
-DEFAULT_GAME_ROOT = Path(r"C:\Program Files (x86)\SP Football Life 2027")
+DEFAULT_GAME_ROOT = Path(r"C:\Games\SP Football Life 2027")
 LOCK_PORT = 51517
 POLL_SECONDS = 2.0
 
@@ -159,12 +159,13 @@ def rebuild(club_id, season, brand, sider, game_root, logfile):
 
     club = build_kit._load_club(club_id, sider)
     logos = Path(sider) / "content" / "KitGenerator" / "logos"
+    badges = Path(sider) / "content" / "KitGenerator" / "badges"
     outdir = Path(sider) / "content" / "KitGenerator" / "staging" / f"season_{season}"
 
     results = build_kit.build_set(
         club, season, outdir,
         install=True, game_root=game_root, quiet=True,
-        sponsor=brand, logo_dir=logos,
+        sponsor=brand, logo_dir=logos, badge_dir=badges,
     )
     for slot, _atlas, ftex, design in results:
         _log("  built p%d -> %s (pattern=%s sponsor=%s)"
