@@ -1869,6 +1869,185 @@ _reg("207", "Modern Slim Hechter Stripe", "Classics", f_centerband, mode="hechte
 _reg("208", "Contemporary Brush Hechter Stripe", "Classics", f_centerband, mode="hechter_brush")
 _reg("209", "Gradient Fade Hechter Stripe", "Classics", f_centerband, mode="hechter_gradient")
 
+# =========================================================================== #
+#  Category: 2026/2027 Modern Football & Streetwear Culture (210-220)
+# =========================================================================== #
+def f_acid_wash(p, d, img, n=75, rmin=18, rmax=55, a=110):
+    """Organic cloudy mineral wash / tie-dye bleeds for streetwear collaboration kits."""
+    r = p.rng
+    for _ in range(n):
+        cx = r.uniform(0, p.w)
+        cy = r.uniform(0, p.h)
+        rad = r.uniform(rmin, rmax)
+        col = p.second if r.random() < 0.65 else p.third
+        alpha_val = r.randint(int(a * 0.4), a)
+        _dot(d, cx, cy, rad, col, a=alpha_val)
+
+
+def f_warped_checks(p, d, img, cell=36, amp=14.0):
+    """Op-Art wavy distorted checkerboard popular in Tokyo/London rave/streetwear."""
+    ny = int(p.h / cell) + 2
+    nx = int(p.w / cell) + 2
+    for iy in range(ny):
+        for ix in range(nx):
+            if (ix + iy) % 2 == 1:
+                y0 = iy * cell + math.sin(ix * 0.8 + p.var) * amp
+                y1 = (iy + 1) * cell + math.sin(ix * 0.8 + p.var) * amp
+                x0 = ix * cell + math.cos(iy * 0.8 + p.var) * amp
+                x1 = (ix + 1) * cell + math.cos(iy * 0.8 + p.var) * amp
+                _poly(d, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], p.second, a=175)
+
+
+def f_halftone_dither(p, d, img, spacing=20, max_r=9.0):
+    """Modern performance engineered micro-dither dot matrix."""
+    ny = int(p.h / spacing) + 2
+    nx = int(p.w / spacing) + 2
+    for iy in range(ny):
+        y = iy * spacing
+        for ix in range(nx):
+            x = ix * spacing
+            diag = (x / p.w + y / p.h) * 0.5
+            rad = max_r * (0.2 + 0.8 * math.sin(diag * math.pi + p.var * 0.5))
+            if rad > 0.8:
+                _dot(d, x, y, rad, p.second if (ix + iy) % 3 != 0 else p.third, a=190)
+
+
+def f_soundwaves(p, d, img, bars=32, max_h=0.35):
+    """Urban soundwave spectrum / audio waveform chest & torso graphic."""
+    w_bar = (p.w * 0.85) / bars
+    x_start = p.w * 0.075
+    cy = p.h * 0.45
+    for i in range(bars):
+        x = x_start + i * w_bar
+        t = i / float(bars - 1)
+        env = math.sin(t * math.pi)
+        harm = math.sin(t * 12.0 + p.var) * 0.4 + math.cos(t * 7.0) * 0.3 + 0.5
+        bh = max(6.0, p.h * max_h * env * harm)
+        col = p.second if i % 2 == 0 else p.third
+        _rect(d, [x, cy - bh, x + w_bar * 0.72, cy + bh], col, a=210)
+
+
+def f_couture_monogram(p, d, img, step=52):
+    """Luxury high-fashion repeating monogram with interlocking quatrefoil & diamonds."""
+    ny = int(p.h / step) + 2
+    nx = int(p.w / step) + 2
+    for iy in range(ny):
+        y = iy * step
+        off = (step / 2.0) if (iy % 2 == 1) else 0.0
+        for ix in range(nx):
+            x = ix * step + off
+            _star(d, x, y, step * 0.28, p.second, points=4, inner=0.38, rot=math.pi / 4, a=180)
+            _ring(d, x, y, step * 0.12, p.third, w=2, a=190)
+            _poly(d, [(x + step * 0.5, y - step * 0.1), (x + step * 0.6, y),
+                      (x + step * 0.5, y + step * 0.1), (x + step * 0.4, y)], p.second, a=140)
+
+
+def f_sashiko_stitch(p, d, img, step=38):
+    """Japanese artisanal techwear cross-stitch geometric embroidery."""
+    ny = int(p.h / step) + 2
+    nx = int(p.w / step) + 2
+    for iy in range(ny):
+        y = iy * step
+        for ix in range(nx):
+            x = ix * step
+            _line(d, [(x - 8, y), (x + 8, y)], p.second, w=2.5, a=200)
+            _line(d, [(x, y - 8), (x, y + 8)], p.second, w=2.5, a=200)
+            _line(d, [(x + step * 0.5 - 6, y + step * 0.5 - 6),
+                      (x + step * 0.5 + 6, y + step * 0.5 + 6)], p.third, w=2, a=160)
+            _line(d, [(x + step * 0.5 + 6, y + step * 0.5 - 6),
+                      (x + step * 0.5 - 6, y + step * 0.5 + 6)], p.third, w=2, a=160)
+
+
+def f_velocity_warp(p, d, img, n=24, angle=0.45):
+    """High-speed aerodynamic streaks with gradient feathering and tapered terminals."""
+    r = p.rng
+    for i in range(n):
+        y = (i / float(n)) * p.h + r.uniform(-15, 15)
+        x = r.uniform(0.1, 0.9) * p.w
+        length = r.uniform(70, 240)
+        thick = r.uniform(3, 10)
+        dx = length * math.cos(angle)
+        dy = length * math.sin(angle)
+        col = p.second if r.random() < 0.7 else p.third
+        _line(d, [(x, y), (x + dx, y + dy)], col, w=thick, a=195)
+        if thick > 6:
+            _line(d, [(x - 6, y + 6), (x + dx * 0.8 - 6, y + dy * 0.8 + 6)],
+                  p.third, w=2, a=160)
+
+
+def f_thermal_topo(p, d, img, rings=16, step=28):
+    """Gorpcore / outdoor elevation terrain contour map with altitude layers."""
+    cx, cy = p.w * 0.5, p.h * 0.48
+    for i in range(rings, 0, -1):
+        rad = i * step
+        col = p.second if i % 2 == 0 else p.third
+        alpha = int(90 + 130 * (1.0 - i / float(rings)))
+        pts = []
+        for a in range(0, 360, 10):
+            rad_ang = math.radians(a)
+            perturb = 1.0 + 0.22 * math.sin(rad_ang * 3 + i * 0.4 + p.var) + 0.12 * math.cos(rad_ang * 5)
+            pts.append((cx + rad * perturb * math.cos(rad_ang),
+                        cy + rad * perturb * math.sin(rad_ang) * 0.9))
+        _poly(d, pts, col, a=alpha)
+        _line(d, pts + [pts[0]], p.second, w=2, a=230)
+
+
+def f_glitch_aurora(p, d, img, bands=18):
+    """Cyberpunk chromatic scanline glitch interference with offset laser slashes."""
+    r = p.rng
+    for i in range(bands):
+        y = r.uniform(0, p.h)
+        bh = r.uniform(4, 22)
+        shift = r.uniform(-35, 35)
+        _rect(d, [0, y, p.w, y + bh], p.second, a=110)
+        _rect(d, [p.w * 0.15 + shift, y, p.w * 0.85 + shift, y + bh * 0.6], p.third, a=175)
+        _line(d, [(0, y + bh), (p.w, y + bh)], p.second, w=1.5, a=220)
+
+
+def f_blueprint_truss(p, d, img, grid=45):
+    """Technical architectural blueprint grid, stadium truss diagonals, and coordinate marks."""
+    for x in range(0, p.w, grid):
+        _line(d, [(x, 0), (x, p.h)], p.second, w=1, a=120)
+    for y in range(0, p.h, grid):
+        _line(d, [(0, y), (p.w, y)], p.second, w=1, a=120)
+    for x in range(-p.h, p.w + p.h, grid * 2):
+        _line(d, [(x, 0), (x + p.h, p.h)], p.third, w=1.5, a=140)
+    for x in range(grid, p.w, grid * 2):
+        for y in range(grid, p.h, grid * 2):
+            _line(d, [(x - 6, y), (x + 6, y)], p.second, w=2, a=210)
+            _line(d, [(x, y - 6), (x, y + 6)], p.second, w=2, a=210)
+
+
+def f_liquid_wave(p, d, img, waves=14, amp=38.0):
+    """Venezia FC / luxury high-fashion undulating silk waves with smooth ripple curves."""
+    step = p.h / float(waves)
+    for i in range(waves + 2):
+        y_base = (i - 1) * step
+        pts_top = []
+        pts_bot = []
+        for x in range(0, p.w + 10, 10):
+            phase = (x / float(p.w)) * 4.0 * math.pi + p.var * 0.8
+            y = y_base + math.sin(phase) * amp + math.cos(phase * 0.5) * (amp * 0.4)
+            pts_top.append((x, y))
+            pts_bot.append((x, y + step * 0.65))
+        poly = pts_top + list(reversed(pts_bot))
+        col = p.second if i % 2 == 0 else p.third
+        _poly(d, poly, col, a=150)
+        _line(d, pts_top, p.second, w=2, a=220)
+
+
+_reg("210", "Acid Mineral Wash Streetwear", "Fluid", f_acid_wash)
+_reg("211", "Warped Checkerboard Op-Art", "Cultural", f_warped_checks)
+_reg("212", "Cyber Halftone Dither Matrix", "Digital", f_halftone_dither)
+_reg("213", "Audio Spectrum Soundwave", "Digital", f_soundwaves)
+_reg("214", "Couture Monogram Quatrefoil", "Cultural", f_couture_monogram)
+_reg("215", "Japanese Sashiko Cross-Stitch", "Cultural", f_sashiko_stitch)
+_reg("216", "Velocity Streaks Aerodynamic", "Geometric", f_velocity_warp)
+_reg("217", "Thermal Elevation Topo", "Fluid", f_thermal_topo)
+_reg("218", "Cyber Glitch Aurora", "Digital", f_glitch_aurora)
+_reg("219", "Architectural Blueprint Grid", "Cultural", f_blueprint_truss)
+_reg("220", "Liquid Metallic Silk Waves", "Fluid", f_liquid_wave)
+
 
 # =========================================================================== #
 #  modifiers (A-E) and the public draw() API
