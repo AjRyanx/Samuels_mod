@@ -63,6 +63,7 @@ local STATE = { month = nil, year = nil,
 local OFFICE = { open = false, sel = 1 }
 local SEL = { counter = nil, ask = 1, reply = nil, credit_msg = nil, rounds = {}, term_confirm = false }
 local OFFERS, SIGNED, BRANDS = {}, {}, {}
+local OPTED_IN = {}
 local DEAL = nil                      -- active multi-season deal (or nil)
 local REQ_SEASONS, PAID, WARNED, CLEAN = {}, {}, {}, {}
 local club_id, start_watcher
@@ -688,7 +689,29 @@ local function load_deal()
   DEAL = { id = t[1], club = tonumber(t[2]) or 0, brand = t[3], start = start,
            years = years, value = value or 0, tier = t[7] or '', signed_at = t[8] or '',
            bonus = tonumber(t[9]) or 0 }
+  if DEAL.club and DEAL.club > 0 then
+    OPTED_IN[DEAL.club] = true
+  end
   L('active deal: ' .. DEAL.brand .. ' (' .. tostring(start) .. '..' .. tostring(deal_end()) .. ')')
+end
+
+local function load_opted_in()
+  OPTED_IN = {}
+  for _, line in ipairs(read_lines('opted_in.txt')) do
+    local cid = tonumber(line:match('^%s*(%d+)%s*$'))
+    if cid then OPTED_IN[cid] = true end
+  end
+  if DEAL and DEAL.club and DEAL.club > 0 then
+    OPTED_IN[DEAL.club] = true
+  end
+end
+
+local function save_opted_in()
+  local lines = {}
+  for cid, v in pairs(OPTED_IN) do
+    if v then lines[#lines + 1] = tostring(cid) end
+  end
+  write_file('opted_in.txt', table.concat(lines, '\n'))
 end
 
 local function load_paid()
@@ -899,12 +922,16 @@ local function ensure_season_deal(season)
   if not cid then return end          -- club not detected yet: nothing to build
 
   if not deal_active(season) then
-    -- No deal for this season: make sure the club is back in its clean,
-    -- sponsor-less kit.  Without this, a deal that has just expired would leave
-    -- its logo on the shirts forever (the livecpk override is a static file).
-    -- One request per club and season; the watcher dedupes by request id.
-    -- Kits-only mode lands here every season, so the club gets a fresh kit
-    -- each year.
+    -- No deal for this season:
+    -- Storyline Mode / Opt-In Guard:
+    -- If this club has never signed a mod sponsor deal, do not generate clean dynamic kits.
+    -- The club continues wearing its authentic licensed kit from Kitserver!
+    if not (OPTED_IN and OPTED_IN[cid]) then
+      return
+    end
+
+    -- If this club has previously signed a sponsor deal (opted in), make sure the club
+    -- is back in its clean, sponsor-less dynamic kit until a new deal is signed.
     local ckey = cid .. ':' .. season
     if CFG.ENABLE_KITS and not CLEAN[ckey] then
       CLEAN[ckey] = true
@@ -989,6 +1016,11 @@ local function sign_offer(o)
            bonus = o.bonus or 0 }
   REQ_SEASONS = {}
   save_deal()
+  if o.club and not OPTED_IN[o.club] then
+    OPTED_IN[o.club] = true
+    append_line('opted_in.txt', tostring(o.club))
+    L('club #' .. tostring(o.club) .. ' opted into dynamic kit system')
+  end
   L('signed ' .. o.id .. ' (' .. tostring(o.brand) .. ') for ' .. tostring(DEAL.years) ..
     ' season(s), ' .. fmt_money(DEAL.value) .. '/yr' ..
     ((DEAL.bonus > 0) and (', ' .. DEAL.bonus .. '% signing bonus') or ''))
@@ -1211,6 +1243,21 @@ local function build_office(ui, ctx)
   local window_open = in_signing_window()
 
   ui:section('Sponsor Offers', 'trophy', 'Season ' .. tostring(SEASON) .. '  -  ' .. plural(#list, 'offer'))
+
+  if not (OPTED_IN and OPTED_IN[cid]) then
+    ui:message('Storyline Mode: Club is wearing authentic default kits (no mod sponsor selected yet). Sign an offer below when you are ready to transition to dynamic kits.', 'info')
+  else
+    ui:cols(0.7)
+    ui:message('Club is wearing a sponsorless dynamic kit while awaiting a new sponsor agreement.', 'ok')
+    ui:nextcol()
+    ui:button('revert_auth', 'Revert to authentic kits', function()
+      OPTED_IN[cid] = nil
+      save_opted_in()
+      L('reverted club #' .. tostring(cid) .. ' to authentic default kits')
+    end, 'ghost', 'edit')
+    ui:endcols()
+  end
+
   if window_open then
     ui:message('Transfer window OPEN (' .. mn .. '). You may sign deals now.', 'ok')
   else
@@ -1407,6 +1454,14 @@ function m.make_key(ctx, filename)
   local cid = club_id()
   if not cid or cid <= 0 or tid ~= cid then return nil end
 
+  -- Dynamic Kit Opt-In Check (Storyline Mode):
+  -- Only serve dynamic kits in ML if the club is currently under contract (DEAL)
+  -- OR has previously signed a sponsor and opted into the dynamic kit system.
+  -- If the user has never signed a mod sponsor, yield nil so Sider serves
+  -- the authentic licensed kit from Kitserver GDB.
+  local is_opted_in = (DEAL and DEAL.club == cid) or (OPTED_IN and OPTED_IN[cid])
+  if not is_opted_in then return nil end
+
   local rel_path = string.format("content/KitGenerator/active/u%04dp%d.ftex", cid, slot)
   local full_path = (DIR .. rel_path):gsub('/', '\\')
   local f = io.open(full_path, "rb")
@@ -1459,6 +1514,7 @@ function m.init(ctx)
   load_brands()
   load_club_file()
   load_deal()
+  load_opted_in()
   load_paid()
   install_date_reader()
   -- install_budget_hook and start_watcher deferred to display_frame / set_teams
@@ -1518,6 +1574,7 @@ end
 function m.debug_set_deal(brand, club, season, value, years, bonus)
   DEAL = { id = 'debug', club = club, brand = brand, start = season,
            years = years or 1, value = value or 0, tier = 'mid', bonus = bonus or 0 }
+  if club then OPTED_IN[club] = true end
   return true
 end
 
@@ -1525,6 +1582,17 @@ function m.debug_clear_deal()
   DEAL = nil
   REQ_SEASONS = {}
   save_deal()
+  return true
+end
+
+function m.debug_set_opted_in(club, val)
+  OPTED_IN[club] = (val ~= false)
+  return true
+end
+
+function m.debug_clear_opted_in()
+  OPTED_IN = {}
+  write_file('opted_in.txt', '')
   return true
 end
 

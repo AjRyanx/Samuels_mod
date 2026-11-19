@@ -45,6 +45,12 @@ The mod allows Master League careers to sign real-world dynamic sponsors (ANENO,
    - Mod menu previews and 2D textures read from this folder.
    - Sider serves this active folder during Master League matches and Master League squad menus.
 
+5. **Authentic Kits Until Sponsor Opt-In (Storyline Mode):**
+   - When starting a new career or playing without having signed a sponsor deal, clubs MUST continue wearing their **authentic default licensed kits** (e.g. Spotify Barcelona).
+   - No clean or generic kit is forced upon them until the user explicitly signs a sponsor in the Sider Mod Menu.
+   - Once a sponsor deal is signed, dynamic kits are activated. When that deal later expires in subsequent seasons, a **fresh sponsorless dynamic kit** is generated and served during off-season / pre-season until the next sponsor is signed.
+   - Tracked via `content/KitGenerator/opted_in.txt`. If a club has neither an active deal nor an opt-in record, `make_key` yields `nil` (serving authentic kits).
+
 ---
 
 ## File Locations & Sync

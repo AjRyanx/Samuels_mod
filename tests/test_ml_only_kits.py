@@ -82,13 +82,19 @@ expected_fp = str(tmp / "content" / "KitGenerator" / "active" / "u0108p1.ftex").
 assert fp == expected_fp, f"Expected {expected_fp}, got {fp}"
 print("PASS 6: get_filepath resolves absolute disk path correctly:", fp)
 
-# 7. Sponsorless kit at new season (no active deal): still serves dynamic kit in ML, but authentic in Exhibition
+# 7. Sponsorless kit at new season (expired deal, opted-in): serves clean dynamic kit in ML, authentic in Exhibition
 M.debug_clear_deal()
 key_clean_ml = M.make_key(ml_ctx, "k108p1.ftex")
 assert key_clean_ml == "content/KitGenerator/active/u0108p1.ftex", f"Expected clean dynamic kit in ML, got {key_clean_ml}"
 key_clean_exh = M.make_key(exh_ctx, "k108p1.ftex")
 assert key_clean_exh is None, f"Expected authentic kit in Exhibition even without deal, got {key_clean_exh}"
 print("PASS 7: Sponsorless new-season dynamic kit active in ML, authentic kit preserved in Exhibition")
+
+# 8. Un-opted club in Season 1 (never signed a sponsor): yields nil even in ML -> authentic kit preserved!
+M.debug_clear_opted_in()
+key_unopted_ml = M.make_key(ml_ctx, "k108p1.ftex")
+assert key_unopted_ml is None, f"Expected authentic kit in ML for un-opted club, got {key_unopted_ml}"
+print("PASS 8: Un-opted club in ML correctly wears authentic kit until sponsor is signed")
 
 shutil.rmtree(tmp, ignore_errors=True)
 print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")
