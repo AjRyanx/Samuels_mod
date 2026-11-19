@@ -292,11 +292,21 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     if not lines:
         return 0
 
-    done = 0
+    # Human managed club requests ALWAYS have top priority over bulk season rollovers
+    user_requests = []
+    rollover_requests = []
     for line in lines:
         req = _parse_request(line)
         if not req or req["offer"] in seen:
             continue
+        if req["club_id"] == 0 or req["brand"] == "all" or req["offer"].startswith("season-"):
+            rollover_requests.append(req)
+        else:
+            user_requests.append(req)
+
+    pending_queue = user_requests + rollover_requests
+    done = 0
+    for req in pending_queue:
         _log("processing request: offer=%s club=%d season=%d sponsor=%s"
              % (req["offer"], req["club_id"], req["season"], req["brand"]), logfile)
         try:
