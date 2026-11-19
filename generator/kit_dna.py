@@ -965,7 +965,10 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
             if not sponsor:
                 base_style["pattern"] = pool[0]
             else:
-                choices = [x for x in pool if x != pool[0]] or pool
+                if pool[0] == "plain":
+                    choices = [x for x in pool if x != "plain"] or pool
+                else:
+                    choices = pool
                 # Deterministic pick per season
                 idx = (season + _sponsor_hash(sponsor)) % len(choices)
                 base_style["pattern"] = choices[idx]

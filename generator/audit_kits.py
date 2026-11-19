@@ -160,7 +160,7 @@ def lint_kit(club, slot, design, chest_img):
         elif pattern_key == "plain" or pattern_key.endswith("-E") or "pinstripe" in pattern_key:
             results.append({"rule": "Home Authenticity", "status": "PASS",
                             "msg": f"Clean tonal luxury pattern '{pattern_key}'"})
-        elif pattern_key in kit_dna.POOL_STRIPES or pattern_key in kit_dna.POOL_HOOPS or pattern_key in kit_dna.POOL_SASH or pattern_key in ["stripes", "hoops", "sash", "chestband", "101", "086", "094", "098"]:
+        elif pattern_key in kit_dna.POOL_STRIPES or pattern_key in kit_dna.POOL_HOOPS or pattern_key in kit_dna.POOL_SASH or pattern_key in ["stripes", "hoops", "sash", "chestband", "101", "086", "094", "098", "206", "207", "208", "209"]:
             results.append({"rule": "Home Authenticity", "status": "PASS",
                             "msg": f"Authentic heritage pattern '{pattern_key}'"})
         else:
@@ -242,11 +242,26 @@ def generate_html_gallery(audit_data, out_html_path):
     fail_count = sum(1 for d in audit_data if d["overall"] == "FAIL")
     pass_pct = (passed_count / max(1, total_kits)) * 100
 
+    unique_seasons = sorted(list(set(d.get("season", 2027) for d in audit_data)))
+    season_filter_html = ""
+    if len(unique_seasons) > 1:
+        s_btns = ['<button class="filter-btn active" data-filter="all">All Seasons</button>']
+        for s in unique_seasons:
+            s_btns.append(f'<button class="filter-btn" data-filter="{s}">S{s}</button>')
+        season_filter_html = f"""
+        <div class="controls" style="margin-top:-14px; margin-bottom:20px;">
+            <div class="filter-group" id="seasonFilter" style="flex-wrap:wrap;">
+                {''.join(s_btns)}
+            </div>
+        </div>
+        """
+
     cards_html = []
     for item in audit_data:
         club = item["club"]
         cid = club.get("id", club.get("team_id"))
         slot = item["slot"]
+        season_val = item.get("season", 2027)
         slot_name = {1: "P1 Home", 2: "P2 Away", 3: "P3 Third"}.get(slot, f"P{slot}")
         overall = item["overall"]
         design = item["design"]
@@ -272,14 +287,16 @@ def generate_html_gallery(audit_data, out_html_path):
 
         badge_img_tag = f'<img src="{item["badge_rel"]}" class="club-crest" alt="crest" onerror="this.style.display=\'none\'">' if item.get("badge_rel") else ''
 
+        torso_tag = f'<img src="{item["torso_rel"]}" class="torso-img" alt="Torso Preview" loading="lazy" style="display:none;">' if item.get("torso_rel") else ''
+
         card = f"""
-        <div class="kit-card" data-status="{overall}" data-slot="{slot}" data-league="{league_key}" data-name="{html.escape(club['name']).lower()} {cid} {league_name.lower()}">
+        <div class="kit-card" data-status="{overall}" data-slot="{slot}" data-season="{season_val}" data-league="{league_key}" data-name="{html.escape(club['name']).lower()} {cid} {season_val} {league_name.lower()}">
             <div class="card-header">
                 <div class="club-info">
                     {badge_img_tag}
                     <div>
                         <div class="club-name">{html.escape(club['name'])}</div>
-                        <div class="club-meta">ID #{cid} • {league_short} • {html.escape(club.get('tier', 'mid')).upper()}</div>
+                        <div class="club-meta">ID #{cid} • S{season_val} • {league_short} • {html.escape(club.get('tier', 'mid')).upper()}</div>
                     </div>
                 </div>
                 <div class="slot-pill" style="border: 1px solid {status_color}; color: {status_color}; background: {status_color}18">
@@ -289,6 +306,7 @@ def generate_html_gallery(audit_data, out_html_path):
             
             <div class="preview-container">
                 <img src="{item['chest_rel']}" class="chest-img" alt="Chest Preview" loading="lazy">
+                {torso_tag}
             </div>
 
             <div class="card-body">
@@ -420,6 +438,11 @@ def generate_html_gallery(audit_data, out_html_path):
         <input type="text" id="searchInput" class="search-box" placeholder="Filter by club name or ID...">
         
         <div style="display:flex; gap:12px; flex-wrap:wrap">
+            <div class="filter-group" id="viewModeFilter">
+                <button class="filter-btn active" id="btnChestView" onclick="setViewMode('chest')">Chest Focus</button>
+                <button class="filter-btn" id="btnTorsoView" onclick="setViewMode('torso')">Full Torso</button>
+            </div>
+
             <div class="filter-group" id="statusFilter">
                 <button class="filter-btn active" data-filter="all">All</button>
                 <button class="filter-btn" data-filter="PASS">Passed ({passed_count})</button>
@@ -435,6 +458,8 @@ def generate_html_gallery(audit_data, out_html_path):
             </div>
         </div>
     </div>
+
+    {season_filter_html}
 
     <div class="controls" style="margin-top:-14px; margin-bottom:20px;">
         <div class="filter-group" id="leagueFilter" style="flex-wrap:wrap;">
@@ -458,6 +483,14 @@ def generate_html_gallery(audit_data, out_html_path):
         let currentStatus = 'all';
         let currentSlot = 'all';
         let currentLeague = 'all';
+        let currentSeason = 'all';
+
+        function setViewMode(mode) {{
+            document.querySelectorAll('.chest-img').forEach(el => el.style.display = (mode === 'chest') ? 'block' : 'none');
+            document.querySelectorAll('.torso-img').forEach(el => el.style.display = (mode === 'torso') ? 'block' : 'none');
+            document.getElementById('btnChestView').classList.toggle('active', mode === 'chest');
+            document.getElementById('btnTorsoView').classList.toggle('active', mode === 'torso');
+        }}
 
         function updateFilters() {{
             const query = searchInput.value.toLowerCase().trim();
@@ -465,14 +498,16 @@ def generate_html_gallery(audit_data, out_html_path):
                 const status = card.getAttribute('data-status');
                 const slot = card.getAttribute('data-slot');
                 const league = card.getAttribute('data-league');
+                const season = card.getAttribute('data-season');
                 const text = card.getAttribute('data-name');
 
                 const matchesStatus = (currentStatus === 'all' || status === currentStatus);
                 const matchesSlot = (currentSlot === 'all' || slot === currentSlot);
                 const matchesLeague = (currentLeague === 'all' || league === currentLeague);
+                const matchesSeason = (currentSeason === 'all' || season === currentSeason);
                 const matchesSearch = (!query || text.includes(query));
 
-                card.style.display = (matchesStatus && matchesSlot && matchesLeague && matchesSearch) ? 'flex' : 'none';
+                card.style.display = (matchesStatus && matchesSlot && matchesLeague && matchesSeason && matchesSearch) ? 'flex' : 'none';
             }});
         }}
 
@@ -493,6 +528,17 @@ def generate_html_gallery(audit_data, out_html_path):
             currentSlot = e.target.getAttribute('data-filter');
             updateFilters();
         }});
+
+        const seasonFilter = document.getElementById('seasonFilter');
+        if (seasonFilter) {{
+            seasonFilter.addEventListener('click', e => {{
+                if (e.target.tagName !== 'BUTTON') return;
+                document.querySelectorAll('#seasonFilter .filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentSeason = e.target.getAttribute('data-filter');
+                updateFilters();
+            }});
+        }}
 
         document.getElementById('leagueFilter').addEventListener('click', e => {{
             if (e.target.tagName !== 'BUTTON') return;
@@ -517,6 +563,8 @@ def main():
     parser.add_argument("--tier", help="Filter by tier (e.g. big, mid)")
     parser.add_argument("--all", action="store_true", help="Audit all clubs in clubs.csv")
     parser.add_argument("--season", type=int, default=2027, help="Simulation season (default: 2027)")
+    parser.add_argument("--seasons", help="Comma-separated or range of seasons to audit (e.g. 2026-2035 or 2027,2028)")
+    parser.add_argument("--rotate-sponsors", action="store_true", help="Rotate realistic sponsors across seasons")
     parser.add_argument("--sponsor", default="adenta", help="Sample sponsor name to attach (default: adenta)")
     parser.add_argument("--outdir", default=str(REPO_ROOT / "tests" / "visual_audit"),
                         help="Output directory for audit images & HTML report")
@@ -526,6 +574,21 @@ def main():
     outdir = Path(args.outdir)
     crops_dir = outdir / "crops"
     crops_dir.mkdir(parents=True, exist_ok=True)
+
+    # Parse seasons
+    if args.seasons:
+        if "-" in args.seasons:
+            s_parts = [int(x.strip()) for x in args.seasons.split("-", 1)]
+            seasons = list(range(s_parts[0], s_parts[1] + 1))
+        else:
+            seasons = [int(x.strip()) for x in args.seasons.split(",") if x.strip()]
+    else:
+        seasons = [args.season]
+
+    SPONSOR_ROSTER = [
+        "aneno", "zaltera", "oribel", "adenta", "solenta",
+        "elyenta", "cadola", "balix", "cresovo", "dorex"
+    ]
 
     # 1. Load clubs
     all_clubs = kit_gen.load_clubs(HERE / "clubs.csv")
@@ -547,11 +610,13 @@ def main():
     if args.limit > 0:
         club_ids = club_ids[:args.limit]
 
+    total_kits_to_audit = len(club_ids) * len(seasons) * 3
     print(f"\n=======================================================")
     print(f"  PES 2021 / FL26 Automated Kit Visual Audit Suite")
     print(f"=======================================================")
-    print(f"Clubs to audit: {len(club_ids)} clubs ({len(club_ids) * 3} kits total)")
-    print(f"Season: {args.season} | Sponsor test: '{args.sponsor}'")
+    print(f"Clubs to audit: {len(club_ids)} clubs | Seasons: {len(seasons)} ({seasons[0]}..{seasons[-1]})")
+    print(f"Total kit variations: {total_kits_to_audit} kits")
+    print(f"Sponsor mode: {'Rotating roster' if args.rotate_sponsors else args.sponsor}")
     print(f"Audit output: {outdir}\n")
 
     # 2. Build masks & paths
@@ -570,53 +635,68 @@ def main():
         club = clubs_map.get(cid, {"id": cid, "name": f"Club #{cid}", "primary": "#B02E34", "secondary": "#FFFFFF", "accent": "#111111", "tier": "mid"})
         cname = club["name"]
         lk, lname, lshort = get_team_league(cid)
-        print(f"[{idx:2d}/{len(club_ids)}] Auditing #{cid:4d} {cname[:22]:22s} ({lshort}) ... ", end="", flush=True)
+        print(f"[{idx:2d}/{len(club_ids)}] Auditing #{cid:4d} {cname[:22]:22s} ({lshort}) across {len(seasons)} seasons ... ", flush=True)
 
-        club_passed = True
-        for slot in [1, 2, 3]:
-            atlas_png = crops_dir / f"atlas_{cid}_p{slot}.png"
-            chest_png = crops_dir / f"chest_{cid}_p{slot}.png"
+        for s_idx, season in enumerate(seasons):
+            if args.rotate_sponsors:
+                active_sponsor = SPONSOR_ROSTER[s_idx % len(SPONSOR_ROSTER)]
+            elif args.sponsor.lower() in ("none", "clean"):
+                active_sponsor = None
+            else:
+                active_sponsor = args.sponsor
 
-            # Render kit
-            _, design = render_club(club, args.season, atlas_png, logo_dir,
-                                    masks=masks, slot=slot, sponsor=args.sponsor,
-                                    badge_dir=badge_dir)
+            print(f"    Season {season} (Sponsor: {active_sponsor or 'Clean/None'}): ", end="", flush=True)
+            season_passed = True
 
-            # Crop chest & save
-            with Image.open(atlas_png) as im:
-                c_crop = crop_chest(im)
-                c_crop.save(chest_png)
+            for slot in [1, 2, 3]:
+                atlas_png = crops_dir / f"atlas_{cid}_{season}_p{slot}.png"
+                chest_png = crops_dir / f"chest_{cid}_{season}_p{slot}.png"
+                torso_png = crops_dir / f"torso_{cid}_{season}_p{slot}.png"
 
-            # Remove heavy 2048x2048 atlas to save disk space
-            try:
-                atlas_png.unlink()
-            except Exception:
-                pass
+                # Render kit
+                _, design = render_club(club, season, atlas_png, logo_dir,
+                                        masks=masks, slot=slot, sponsor=active_sponsor,
+                                        badge_dir=badge_dir)
 
-            # Badge relative path
-            b_file = badge_dir / f"{cid}.png"
-            b_rel = f"../../SiderAddons/content/KitGenerator/badges/{cid}.png" if b_file.exists() else None
+                # Crop chest & torso & save
+                with Image.open(atlas_png) as im:
+                    c_crop = crop_chest(im)
+                    c_crop.save(chest_png)
+                    t_crop = crop_torso(im)
+                    t_crop.save(torso_png)
 
-            # Run Lint
-            overall, lint_results = lint_kit(club, slot, design, c_crop)
-            if overall == "FAIL":
-                club_passed = False
+                # Remove heavy 2048x2048 atlas to save disk space
+                try:
+                    atlas_png.unlink()
+                except Exception:
+                    pass
 
-            audit_data.append({
-                "club": club,
-                "slot": slot,
-                "overall": overall,
-                "design": design,
-                "lint": lint_results,
-                "sponsor_name": args.sponsor,
-                "chest_rel": f"crops/{chest_png.name}",
-                "badge_rel": b_rel,
-                "league_key": lk,
-                "league_name": lname,
-                "league_short": lshort,
-            })
+                # Badge relative path
+                b_file = badge_dir / f"{cid}.png"
+                b_rel = f"../../SiderAddons/content/KitGenerator/badges/{cid}.png" if b_file.exists() else None
 
-        print("FAIL" if not club_passed else "PASS")
+                # Run Lint
+                overall, lint_results = lint_kit(club, slot, design, c_crop)
+                if overall == "FAIL":
+                    season_passed = False
+
+                audit_data.append({
+                    "club": club,
+                    "slot": slot,
+                    "season": season,
+                    "overall": overall,
+                    "design": design,
+                    "lint": lint_results,
+                    "sponsor_name": active_sponsor or "None",
+                    "chest_rel": f"crops/{chest_png.name}",
+                    "torso_rel": f"crops/{torso_png.name}",
+                    "badge_rel": b_rel,
+                    "league_key": lk,
+                    "league_name": lname,
+                    "league_short": lshort,
+                })
+
+            print("PASS" if season_passed else "FAIL")
 
     # 3. Write HTML report
     html_path = outdir / "audit_gallery.html"
