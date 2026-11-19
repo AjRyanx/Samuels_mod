@@ -48,9 +48,9 @@ MASK_DIR = Path(__file__).resolve().parent / "uv_masks"
 
 # --- logo anchors (uv-space centre x, centre y, target area in px^2) -------- #
 # Calibrated directly against authentic PES 2021 / FL26 club kits:
-CHEST_SPONSOR = (1024, 1300, 48000)
-CLUB_BADGE = (1115, 1162, 21000)
-KIT_SUPPLIER = (925, 1150, 11000)
+CHEST_SPONSOR = (1024, 1310, 36000)
+CLUB_BADGE = (1148, 1155, 5500)
+KIT_SUPPLIER = (900, 1155, 3600)
 
 # --- front / back panel boxes (for reference / debug) ---------------------- #
 FRONT_BOX = (660, 952, 1390, 1888)

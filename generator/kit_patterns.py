@@ -1908,6 +1908,10 @@ def _split_spec(spec):
 
 
 def is_code(spec):
+    if not spec:
+        return False
+    if str(spec).lower() in ("plain", "solid", "none"):
+        return True
     try:
         return _split_spec(spec)[0] in CATALOG
     except Exception:                                     # noqa: BLE001
@@ -1924,6 +1928,11 @@ def list_catalog():
 
 def draw(img, spec, body, second, third=None, var=0, ws=0, rng=None):
     """Paint catalog `spec` (e.g. "127-B") onto `img` (an RGBA canvas)."""
+    if not spec or str(spec).lower() in ("plain", "solid", "none"):
+        base = Image.new("RGBA", img.size, tuple(body) + (255,))
+        img.paste(base, (0, 0))
+        return img
+
     code, mod = _split_spec(spec)
     entry = CATALOG.get(code)
     if entry is None:

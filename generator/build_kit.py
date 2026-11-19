@@ -47,8 +47,7 @@ DEFAULT_BASE = Path(
     r"C:\Games\SP Football Life 2027\SiderAddons\content\kits"
     r"\Premier League\Chelsea\p1\u0102p1.ftex")
 
-INSTALL_SUBDIR = Path("SiderAddons/livecpk/KitGenerator/Asset/model/character/"
-                      "uniform/texture/#windx11")
+ACTIVE_SUBDIR = Path("SiderAddons/content/KitGenerator/active")
 
 
 def _find_kitserver_folder(club_id, game_root):
@@ -131,12 +130,10 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
     rendered = kit_render.render_kit_set(club, season, outdir, logo_dir,
                                          masks=masks, sponsor=sponsor,
                                          badge_dir=badge_dir, badge=badge)
-    install_dir = Path(game_root) / INSTALL_SUBDIR if install else None
-    if install_dir:
-        install_dir.mkdir(parents=True, exist_ok=True)
-    kitserver_dir = _find_kitserver_folder(club['id'], game_root) if install else None
+    active_dir = Path(game_root) / ACTIVE_SUBDIR if install else None
+    if active_dir:
+        active_dir.mkdir(parents=True, exist_ok=True)
 
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     results = []
     for slot, atlas, _preview, design in rendered:
         if slot not in slots:
@@ -148,29 +145,12 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
             print(f"packed {out_ftex.name}  ({out_ftex.stat().st_size} bytes)  "
                   f"<- {Path(atlas).name}")
 
-        if install_dir:
-            dst = install_dir / f"{name}.ftex"
-            if dst.exists():
-                bak = dst.with_name(dst.name + f".bak-{stamp}")
-                shutil.copy2(dst, bak)
-                if not quiet:
-                    print(f"  backup {bak.name}")
+        if active_dir:
+            dst = active_dir / f"{name}.ftex"
             shutil.copy2(out_ftex, dst)
             if not quiet:
-                print(f"  installed -> {dst}")
+                print(f"  active deployed -> {dst}")
 
-        if kitserver_dir:
-            ks_slot_dir = kitserver_dir / f"p{slot}"
-            if ks_slot_dir.exists():
-                ks_dst = ks_slot_dir / f"{name}.ftex"
-                ks_orig = ks_slot_dir / f"{name}.ftex.orig"
-                if ks_dst.exists() and not ks_orig.exists():
-                    shutil.copy2(ks_dst, ks_orig)
-                    if not quiet:
-                        print(f"  kitserver backup original -> {ks_orig.name}")
-                shutil.copy2(out_ftex, ks_dst)
-                if not quiet:
-                    print(f"  kitserver deployed -> {ks_dst}")
         results.append((slot, str(atlas), str(out_ftex), design))
     return results
 

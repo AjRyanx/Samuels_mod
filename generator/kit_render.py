@@ -170,15 +170,15 @@ def render_kit(design, out_png, masks=None):
         _stamp_area(atlas, d["sponsor"], *kit_regions.CHEST_SPONSOR,
                     white=d.get("sponsor_white"),
                     plate=body if d.get("sponsor_plate") else None,
-                    max_w=580, max_h=190)
+                    max_w=340, max_h=140)
     if d.get("badge"):
         _stamp_area(atlas, d["badge"], *kit_regions.CLUB_BADGE,
                     white=d.get("badge_white"),
-                    max_w=155, max_h=155)
+                    max_w=82, max_h=85)
     if d.get("supplier"):
         _stamp_area(atlas, d["supplier"], *kit_regions.KIT_SUPPLIER,
                     white=d.get("supplier_white"),
-                    max_w=145, max_h=95)
+                    max_w=92, max_h=48)
 
     atlas.save(out_png)
     return out_png
@@ -338,26 +338,7 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
     # FINAL body colour so a dark kit gets the white logo variant
     if brand:
         white = kit_gen.lum(design["body"]) < 120
-        cand_white = Path(logo_dir) / f"{brand}_white.png"
-        cand_std = Path(logo_dir) / f"{brand}.png"
-        if not cand_white.is_file() and not cand_std.is_file():
-            # Handle slug / prefix e.g. "calvia_networks" -> "calvia"
-            prefix = brand.split("_")[0]
-            if (Path(logo_dir) / f"{prefix}_white.png").is_file():
-                cand_white = Path(logo_dir) / f"{prefix}_white.png"
-            if (Path(logo_dir) / f"{prefix}.png").is_file():
-                cand_std = Path(logo_dir) / f"{prefix}.png"
-
-        if white and cand_white.is_file():
-            design["sponsor"] = str(cand_white)
-        elif cand_std.is_file():
-            design["sponsor"] = str(cand_std)
-            if white:
-                design["sponsor_white"] = True
-        elif cand_white.is_file():
-            design["sponsor"] = str(cand_white)
-        else:
-            design["sponsor"] = None
+        design["sponsor"] = str(Path(logo_dir) / (brand + ("_white" if white else "") + ".png"))
     else:
         design["sponsor"] = None
 
@@ -480,17 +461,6 @@ def mockup(design, club_name, season, out_png):
             bs = min(44 / max(1, b_logo.width), 44 / max(1, b_logo.height))
             b_logo = b_logo.resize((max(1, int(b_logo.width * bs)), max(1, int(b_logo.height * bs))), Image.LANCZOS)
             canvas.alpha_composite(b_logo, (300 - b_logo.width // 2, 110 - b_logo.height // 2))
-        except Exception:
-            pass
-
-    if design.get("supplier"):
-        try:
-            s_logo = Image.open(design["supplier"]).convert("RGBA")
-            if design.get("supplier_white"):
-                s_logo = _flatten_white(s_logo)
-            ss = min(36 / max(1, s_logo.width), 26 / max(1, s_logo.height))
-            s_logo = s_logo.resize((max(1, int(s_logo.width * ss)), max(1, int(s_logo.height * ss))), Image.LANCZOS)
-            canvas.alpha_composite(s_logo, (180 - s_logo.width // 2, 110 - s_logo.height // 2))
         except Exception:
             pass
 

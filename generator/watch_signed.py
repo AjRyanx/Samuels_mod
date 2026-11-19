@@ -43,9 +43,8 @@ DEFAULT_GAME_ROOT = Path(r"C:\Games\SP Football Life 2027")
 LOCK_PORT = 51517
 POLL_SECONDS = 2.0
 
-# region the .ftex overrides are installed into, relative to the game root
-INSTALL_SUBDIR = Path("SiderAddons/livecpk/KitGenerator/Asset/model/character/"
-                      "uniform/texture/#windx11")
+# region the active .ftex files are installed into, relative to the game root
+ACTIVE_SUBDIR = Path("SiderAddons/content/KitGenerator/active")
 
 
 # --------------------------------------------------------------------------- #

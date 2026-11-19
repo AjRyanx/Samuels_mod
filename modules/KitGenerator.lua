@@ -196,7 +196,9 @@ local function read_lines(rel)
 end
 
 local function in_signing_window()
-  if not STATE.month then return true end  -- default open when date not loaded yet
+  if CFG.ALLOW_OFF_SEASON then return true end
+  if STATE.manual_window then return true end
+  if not STATE.month then return false end
   for _, mm in ipairs(CFG.SIGNING_MONTHS) do
     if STATE.month == mm then return true end
   end
@@ -245,6 +247,37 @@ local function game_date()
   local y, mo, d = math.floor(v / 10000), math.floor(v / 100) % 100, v % 100
   if mo < 1 or mo > 12 or d < 1 or d > 31 then return nil end
   return y, mo, d, mode
+end
+
+-- Read the human managed team ID directly from Master League memory
+-- identity = (team_id << 14) | team_array_index at mode + DATE.off + 8
+local function read_career_team(mode)
+  mode = mode or DATE.mode or read_mode()
+  if not mode or mode < 0x10000 then return nil end
+  local offsets = { DATE.off, 0x19115EC, 0x1642A24 }
+  for _, off in ipairs(offsets) do
+    local dval = mread_u32(mode + off)
+    if dval and dval >= 19000101 and dval <= 22001231 then
+      local identity = mread_u32(mode + off + 8)
+      if identity and identity > 0 then
+        local tid = math.floor(identity / 0x4000)
+        if tid > 0 and tid < 65000 then
+          return tid
+        end
+      end
+    end
+  end
+  return nil
+end
+
+local function is_in_ml(ctx)
+  if STATE.in_edit_mode then return false end
+  if ctx and ctx.tournament_id == 65535 then return false end
+  local y, mo, d, mode = game_date()
+  if not y or not mode then return false end
+  local career_tid = read_career_team(mode)
+  if not career_tid or career_tid <= 0 then return false end
+  return true
 end
 
 -- ===== managed club: auto-detection =======================================
@@ -426,6 +459,18 @@ local function learn_club()
 end
 
 local function detect_club(ctx)
+  local mode = DATE.mode or read_mode()
+  local mem_tid = read_career_team(mode)
+  if mem_tid and mem_tid > 0 then
+    if STATE.club ~= mem_tid then
+      set_club(mem_tid, 'memory', true)
+    end
+    if ctx and not STATE.colors[mem_tid] and fetch_colors(ctx, mem_tid) then
+      save_club()
+    end
+    return mem_tid
+  end
+
   if type(CFG.MANAGED_CLUB) == 'number' and CFG.MANAGED_CLUB > 0 then
     if not STATE.colors[CFG.MANAGED_CLUB] and fetch_colors(ctx, CFG.MANAGED_CLUB) then
       save_club()
@@ -573,129 +618,105 @@ end
 -- not guaranteed to sit within the +/-2 GB reach of a rel32 jump, so a rel32
 -- detour can silently corrupt the flow (crash).  The detour steals 17 bytes
 -- (a clean instruction boundary) so the 14-byte absolute jump fits.
-local BUDGET = { ready = false, slot = nil, disp = nil, salary_disp = nil }
+local BUDGET = { ready = false, attempted = false, slot = nil, disp = 0x16ECBF4, salary_disp = 0x16ECC08 }
 local AOB_BUDGET = '\x8B\x87\xF4\xCB\x6E\x01\x89\x45\xC4'
 -- the 8 bytes that follow the AOB (two `lea` instructions), completing the
 -- 17-byte window we steal and then replay inside the cave
 local AOB_BUDGET_TAIL = '\x48\x8D\x55\xC4\x48\x8D\x4D\xD0'
 local BUDGET_STEAL = 17
-
-local BUDGET_HOOK_FILE = 'budget_hook.txt'
-local KNOWN_BUDGET_SITE = 0x140EA4C58
-local BUDGET_SEARCH_DONE = false
-
-local function save_budget_hook(site, cave, slot, disp, sal_disp)
-  local line = string.format('%X|%X|%X|%X|%X\n', site, cave, slot, disp, sal_disp)
-  write_file(BUDGET_HOOK_FILE, line)
-end
+local BUDGET_FILE = 'budget_hook.txt'
 
 local function load_budget_hook()
-  local lines = read_lines(BUDGET_HOOK_FILE)
-  if #lines > 0 and lines[1]:sub(1, 1) ~= '#' and #lines[1] > 0 then
+  local lines = read_lines(BUDGET_FILE)
+  if lines and #lines > 0 then
     local t = split(lines[1])
-    local site = tonumber(t[1], 16)
-    local cave = tonumber(t[2], 16)
-    local slot = tonumber(t[3], 16) or 0x40
-    local disp = tonumber(t[4], 16) or 0x16ECBF4
-    local sal_disp = tonumber(t[5], 16) or (disp + CFG.SALARY_DELTA)
-    return { site = site, cave = cave, slot = slot, disp = disp, sal_disp = sal_disp }
+    if #t >= 4 then
+      local site = tonumber(t[1], 16)
+      local cave = tonumber(t[2], 16)
+      local slot = tonumber(t[3], 16)
+      local disp = tonumber(t[4], 16)
+      local sdisp = t[5] and tonumber(t[5], 16) or (disp + CFG.SALARY_DELTA)
+      if site and cave and slot and disp then
+        BUDGET.ready, BUDGET.slot = true, cave + slot
+        BUDGET.disp, BUDGET.salary_disp = disp, sdisp
+        L(string.format('budget hook loaded from cache (site=0x%X, slot=0x%X)', site, BUDGET.slot))
+        return true
+      end
+    end
   end
-  return nil
+  return false
+end
+
+local function save_budget_hook(site, cave, slot, disp, sdisp)
+  write_file(BUDGET_FILE, string.format('%X|%X|%X|%X|%X\n',
+    site, cave, slot, disp, sdisp))
 end
 
 local function install_budget_hook()
   if BUDGET.ready then return true end
-  if not (memory and memory.read and memory.unpack) then return false end
+  if BUDGET.attempted then return false end
+  BUDGET.attempted = true
 
-  local cached = load_budget_hook()
-  local site = (cached and cached.site) or KNOWN_BUDGET_SITE
+  if load_budget_hook() then return true end
+
+  if not (memory and memory.search_process and memory.allocate_codecave and memory.read) then
+    L('budget: Sider memory API unavailable - using ML mode fallback'); return false
+  end
+  local site = num_addr(memory.search_process(AOB_BUDGET))
+  if not site or site < 0x10000 then
+    L('budget: hook pattern not found - crediting will use ML mode fallback'); return false
+  end
   local original = AOB_BUDGET .. AOB_BUDGET_TAIL
-
-  -- Check if candidate site already holds the detour or original code
-  if site and site > 0x10000 then
-    local cur = memory.read(site, BUDGET_STEAL)
-    if cur and cur:sub(1, 6) == '\xFF\x25\x00\x00\x00\x00' then
-      local cave = tonumber(memory.unpack('u64', cur:sub(7, 14)))
-      if cave and cave > 0x10000 then
-        local slot = (cached and cached.slot) or 0x40
-        local disp = (cached and cached.disp) or 0x16ECBF4
-        local sal_disp = (cached and cached.sal_disp) or (disp + CFG.SALARY_DELTA)
-        BUDGET.ready = true
-        BUDGET.slot = cave + slot
-        BUDGET.disp = disp
-        BUDGET.salary_disp = sal_disp
-        save_budget_hook(site, cave, slot, disp, sal_disp)
-        L(string.format('budget: reattached to active hook at 0x%X (cave 0x%X)', site, cave))
-        return true
-      end
-    elseif cur == original then
-      local disp = memory.unpack('i32', memory.read(site + 2, 4))
-      if disp and disp > 0 and memory.allocate_codecave then
-        local cave = num_addr(memory.allocate_codecave(96))
-        if cave and cave > 0x10000 then
-          local slot = 0x40
-          memory.write(cave + slot, memory.pack('u64', 0))
-          local code = '\x48\x89\x3D' .. memory.pack('i32', slot - 7)
-          code = code .. original
-          code = code .. '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', site + BUDGET_STEAL)
-          memory.write(cave, code)
-          local patch = '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', cave) ..
-            string.rep('\x90', BUDGET_STEAL - 14)
-          memory.write(site, patch)
-          BUDGET.ready = true
-          BUDGET.slot = cave + slot
-          BUDGET.disp = disp
-          BUDGET.salary_disp = disp + CFG.SALARY_DELTA
-          save_budget_hook(site, cave, slot, disp, BUDGET.salary_disp)
-          L(string.format('budget: hook freshly installed at 0x%X (cave 0x%X)', site, cave))
-          return true
-        end
-      end
-    end
+  if memory.read(site, BUDGET_STEAL) ~= original then
+    L('budget: unexpected bytes at hook site - crediting will use ML mode fallback'); return false
   end
-
-  -- Only search process ONCE (never repeatedly during UI frames)
-  if not BUDGET_SEARCH_DONE and memory.search_process and memory.allocate_codecave then
-    BUDGET_SEARCH_DONE = true
-    L('budget: candidate site not matched, performing one-time process scan...')
-    local found = num_addr(memory.search_process(AOB_BUDGET))
-    if found and found > 0x10000 then
-      site = found
-      local disp = memory.unpack('i32', memory.read(site + 2, 4))
-      if disp and disp > 0 then
-        local cave = num_addr(memory.allocate_codecave(96))
-        if cave and cave > 0x10000 then
-          local slot = 0x40
-          memory.write(cave + slot, memory.pack('u64', 0))
-          local code = '\x48\x89\x3D' .. memory.pack('i32', slot - 7)
-          code = code .. original
-          code = code .. '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', site + BUDGET_STEAL)
-          memory.write(cave, code)
-          local patch = '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', cave) ..
-            string.rep('\x90', BUDGET_STEAL - 14)
-          memory.write(site, patch)
-          BUDGET.ready = true
-          BUDGET.slot = cave + slot
-          BUDGET.disp = disp
-          BUDGET.salary_disp = disp + CFG.SALARY_DELTA
-          save_budget_hook(site, cave, slot, disp, BUDGET.salary_disp)
-          L(string.format('budget: hook installed at scanned site 0x%X', site))
-          return true
-        end
-      end
-    end
-    L('budget: process scan did not locate pattern')
+  -- disp32 sits at offset 2 (no REX prefix): 8B 87 <disp32> 89 45 C4
+  local disp = memory.unpack('i32', memory.read(site + 2, 4))
+  if not disp or disp <= 0 then disp = 0x16ECBF4 end
+  local cave = num_addr(memory.allocate_codecave(96))
+  if not cave or cave < 0x10000 then L('budget: code cave allocation failed - using ML mode fallback'); return false end
+  local slot = 0x40
+  memory.write(cave + slot, memory.pack('u64', 0))
+  -- mov [rip+disp32], rdi            (stash rdi at cave+slot)
+  local code = '\x48\x89\x3D' .. memory.pack('i32', slot - 7)
+  -- replay the 17 stolen bytes
+  code = code .. original
+  -- absolute jump back to the instruction after the stolen window
+  code = code .. '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', site + BUDGET_STEAL)
+  memory.write(cave, code)
+  if memory.read(cave, #code) ~= code then
+    L('budget: cave verification failed - using ML mode fallback'); return false
   end
-
-  return BUDGET.ready
+  -- detour: jmp qword ptr [rip+0] ; dq cave ; nop*n
+  local patch = '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', cave) ..
+    string.rep('\x90', BUDGET_STEAL - 14)
+  memory.write(site, patch)
+  if memory.read(site, BUDGET_STEAL) ~= patch then
+    memory.write(site, original)
+    L('budget: patch verification failed - original restored'); return false
+  end
+  BUDGET.ready, BUDGET.slot = true, cave + slot
+  BUDGET.disp, BUDGET.salary_disp = disp, disp + CFG.SALARY_DELTA
+  save_budget_hook(site, cave, slot, BUDGET.disp, BUDGET.salary_disp)
+  L(string.format('budget hook installed (transfer +0x%X, salary +0x%X)',
+    BUDGET.disp, BUDGET.salary_disp))
+  return true
 end
 
--- the exact club-budget pointer the game used, once the hook has fired
+-- the exact club-budget pointer the game used, or DATE.mode fallback
 local function budget_ptr()
-  if not BUDGET.ready then return nil end
-  local p = read_ptr_at(BUDGET.slot)
-  if p and p > 0x10000 then return p end
-  if DATE.mode and DATE.mode > 0x10000 then return DATE.mode end
+  if BUDGET.ready and BUDGET.slot then
+    local p = read_ptr_at(BUDGET.slot)
+    if p and p > 0x10000 then return p end
+  end
+  local mode = DATE.mode or read_mode()
+  if mode and mode > 0x10000 then
+    local disp = BUDGET.disp or 0x16ECBF4
+    local t = mread_u32(mode + disp)
+    if t and t > 0 and t < 0x7FFFFFFF then
+      return mode
+    end
+  end
   return nil
 end
 
@@ -719,14 +740,14 @@ end
 
 local function credit_budget(euros)
   if not CFG.CREDIT_BUDGET then return false, 'crediting disabled' end
-  if not install_budget_hook() then return false, 'budget hook unavailable' end
+  install_budget_hook()
   local career = budget_ptr()
   if not career then
-    local m = DATE.mode
+    local m = DATE.mode or read_mode()
     if m then
-      return false, string.format('pointer not captured yet (mode=0x%X; open the budget/Negotiations screen once)', m)
+      return false, string.format('career pointer not captured yet (mode=0x%X)', m)
     end
-    return false, 'pointer not captured yet (open the budget/Negotiations screen once)'
+    return false, 'pointer not captured yet (no career loaded)'
   end
   euros = tonumber(euros) or 0
   if euros == 0 then return false, 'nothing to credit' end
@@ -816,8 +837,9 @@ local function ensure_season_deal(season)
     local ckey = cid .. ':' .. season
     if CFG.ENABLE_KITS and not CLEAN[ckey] then
       CLEAN[ckey] = true
-      append_line('kit_request.txt', string.format('clean-%d-%d|%d|%d||%s',
-        cid, season, cid, season, os.date('%Y-%m-%d %H:%M:%S')))
+      local stamp = os.date('%Y%m%d%H%M%S')
+      append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s',
+        cid, season, stamp, cid, season, os.date('%Y-%m-%d %H:%M:%S')))
       L('no deal for season ' .. tostring(season) ..
         ': requested the clean kit for club #' .. tostring(cid))
     end
@@ -826,8 +848,10 @@ local function ensure_season_deal(season)
   local rkey = DEAL.club .. ':' .. season
   if CFG.ENABLE_KITS and not REQ_SEASONS[rkey] then
     REQ_SEASONS[rkey] = true
-    append_line('kit_request.txt', string.format('rebuild-%d-%s-%d|%d|%d|%s|%s|%s',
-      DEAL.club, DEAL.brand, season, DEAL.club, season, DEAL.brand, DEAL.tier or '',
+    local stamp = os.date('%Y%m%d%H%M%S')
+    local req_id = string.format('rebuild-%d-%s-%d-t%s', DEAL.club, DEAL.brand, season, stamp)
+    append_line('kit_request.txt', string.format('%s|%d|%d|%s|%s|%s',
+      req_id, DEAL.club, season, DEAL.brand, DEAL.tier or '',
       os.date('%Y-%m-%d %H:%M:%S')))
     L('deal active: requested a fresh kit for season ' .. tostring(season))
   end
@@ -897,7 +921,32 @@ local function sign_offer(o)
   L('signed ' .. o.id .. ' (' .. tostring(o.brand) .. ') for ' .. tostring(DEAL.years) ..
     ' season(s), ' .. fmt_money(DEAL.value) .. '/yr' ..
     ((DEAL.bonus > 0) and (', ' .. DEAL.bonus .. '% signing bonus') or ''))
-  ensure_season_deal(SEASON)
+
+  -- Immediately dispatch rebuild request to watcher with timestamp so it never deduplicates
+  if CFG.ENABLE_KITS then
+    local stamp = os.date('%Y%m%d%H%M%S')
+    local req_id = string.format('rebuild-%d-%s-%d-t%s', DEAL.club, DEAL.brand, DEAL.start, stamp)
+    append_line('kit_request.txt', string.format('%s|%d|%d|%s|%s|%s',
+      req_id, DEAL.club, DEAL.start, DEAL.brand, DEAL.tier or '', os.date('%Y-%m-%d %H:%M:%S')))
+    REQ_SEASONS[DEAL.club .. ':' .. DEAL.start] = true
+    L('deal active: queued fresh kit rebuild (req=' .. req_id .. ')')
+  end
+
+  -- Credit yearly value immediately
+  if CFG.ENABLE_SPONSORSHIP and CFG.CREDIT_BUDGET then
+    local key = paid_key(DEAL.start)
+    if not PAID[key] then
+      local ok, why = credit_budget(DEAL.value)
+      if ok then
+        PAID[key] = true
+        append_line('paid.txt', key)
+        L('yearly sponsor value credited: ' .. tostring(why))
+      else
+        L('yearly sponsor credit deferred: ' .. tostring(why))
+      end
+    end
+  end
+
   -- the signing bonus is a one-off, separate from the yearly value; ledger it
   -- under its own key so it can never be paid twice
   if CFG.ENABLE_SPONSORSHIP and CFG.CREDIT_BUDGET and (DEAL.bonus or 0) > 0 then
@@ -914,6 +963,7 @@ local function sign_offer(o)
       end
     end
   end
+  CACHED_VISIBLE = nil
 end
 
 local function send_counter(o)
@@ -974,27 +1024,53 @@ local function terminate_deal()
 end
 
 -- ===== Sider Mod Menu page (native) =======================================
+local CACHED_VISIBLE = nil
+local CACHED_CID = nil
+local CACHED_SEASON = nil
+local OFFICE_TICKS = 0
+
+local function get_cached_visible(cid, season)
+  if CACHED_VISIBLE and CACHED_CID == cid and CACHED_SEASON == season then
+    return CACHED_VISIBLE
+  end
+  local full = visible()
+  local list = {}
+  for i = 1, math.min(4, #full) do
+    list[#list + 1] = full[i]
+  end
+  CACHED_VISIBLE = list
+  CACHED_CID = cid
+  CACHED_SEASON = season
+  return CACHED_VISIBLE
+end
+
 local function build_office(ui, ctx)
-  refresh_date(ctx)
+  OFFICE_TICKS = OFFICE_TICKS + 1
+  if OFFICE_TICKS % 30 == 0 or not STATE.date_ok then
+    refresh_date(ctx)
+  end
 
+  local in_ml = is_in_ml(ctx)
   local cid = detect_club(ctx)
+  local mn = STATE.month and MONTH_NAMES[STATE.month] or 'Pre-season'
   local window_open = in_signing_window()
-  local mn = STATE.month and MONTH_NAMES[STATE.month] or 'Pre-Season'
 
-  -- ---- Clean Executive Header ---------------------------------------------
-  ui:section('Club & Career Status', 'tag', 'Master League Dynamic Sponsorship')
+  -- Sleek Executive Club Banner
+  ui:section('Club Identity', 'trophy', 'Master League Sponsor Operations')
   ui:cols(0.5)
-  ui:kv('Club', cid and club_display_name(cid) or 'Auto-detecting...', cid and 'accent' or 'warn')
-  ui:kv('Team ID', cid and ('#' .. tostring(cid)) or '-')
+  ui:kv('Managed Club', cid and club_display_name(cid) or 'Detecting...', cid and 'accent' or 'warn')
+  ui:kv('Club ID', cid and ('#' .. tostring(cid)) or '-')
   ui:nextcol()
-  local cal_str = (STATE.year and STATE.month and STATE.day) and
-    string.format('%04d-%02d-%02d (Season %d)', STATE.year, STATE.month, STATE.day, SEASON) or ('Season ' .. tostring(SEASON))
-  ui:kv('Calendar', cal_str)
-  ui:kv('Negotiation Window', window_open and ('OPEN (' .. mn .. ')') or ('CLOSED (' .. mn .. ')'), window_open and 'ok' or 'muted')
+  ui:kv('Season', tostring(SEASON) .. ' (' .. mn .. ')')
+  ui:kv('Transfer Window', window_open and 'OPEN' or 'CLOSED', window_open and 'ok' or 'warn')
   ui:endcols()
 
+  if not in_ml and not STATE.date_ok then
+    ui:message('Enter Master League to manage dynamic sponsors and kits.', 'info')
+    return
+  end
   if not cid then
-    ui:message('Club auto-detection active. Open your Master League career or play a match to link.', 'info')
+    ui:message('Detecting your club from Master League memory...', 'warn')
     return
   end
 
@@ -1050,7 +1126,7 @@ local function build_office(ui, ctx)
   end
 
   -- ---- Offers ------------------------------------------------------------
-  local list = visible()
+  local list = get_cached_visible(cid, SEASON)
   local mn = STATE.month and MONTH_NAMES[STATE.month] or 'unknown'
   local window_open = in_signing_window()
 
@@ -1148,17 +1224,26 @@ function m.overlay_on(ctx)
     local mn_list = {}
     for _, mm in ipairs(CFG.SIGNING_MONTHS) do mn_list[#mn_list + 1] = MONTH_NAMES[mm] end
     lines[#lines + 1] = '  Signing allowed only in the pre-season: ' .. table.concat(mn_list, ', ')
-    else
+    lines[#lines + 1] = '  Press F10 to manually confirm transfer window'
+  else
     lines[#lines + 1] = '  Press Enter to sign the highlighted offer'
   end
-  lines[#lines + 1] = '  [Up/Down] select  [Enter] sign  [Esc] close'
+  lines[#lines + 1] = '  [Up/Down] select  [Enter] sign  [F10] window toggle  [Esc] close'
   lines[#lines + 1] = bar
   return table.concat(lines, '\n')
 end
 
 function m.key_down(ctx, vk)
   local handled = false
-  if vk == CFG.OFFICE_KEY then
+  if vk == CFG.MODE_KEY then
+    STATE.manual_ml = not STATE.manual_ml
+    L('manual Master League mode: ' .. tostring(STATE.manual_ml))
+    handled = true
+  elseif vk == CFG.WINDOW_KEY then
+    STATE.manual_window = not STATE.manual_window
+    L('manual transfer window: ' .. tostring(STATE.manual_window))
+    handled = true
+  elseif vk == CFG.OFFICE_KEY then
     OFFICE.open = not OFFICE.open
     handled = true
   elseif OFFICE.open then
@@ -1180,6 +1265,7 @@ end
 -- (tournament_id 65535) is ignored so exhibition opponents cannot muddy the
 -- vote.  We also grab both sides' kit colours while the game is holding them.
 function m.set_teams(ctx, home, away)
+  STATE.in_edit_mode = false
   local career = not (ctx and ctx.tournament_id == 65535)
   if career then
     record_match(home, away)
@@ -1192,12 +1278,43 @@ end
 -- Edit mode is the last-resort signal: only when no club has been found any
 -- other way do we assume the team being edited is the one you manage.
 function m.set_home_team_for_kits(ctx, team_id, edit_mode)
+  STATE.in_edit_mode = (edit_mode == 1)
   if edit_mode == 1 and not club_id() then set_club(team_id, 'edit', true) end
   fetch_colors(ctx, team_id)
   refresh_date(ctx)
 end
 
--- make_key removed to allow KitServer full control
+function m.make_key(ctx, filename)
+  if not CFG.ENABLE_KITS then return nil end
+  if not is_in_ml(ctx) then return nil end
+
+  local cid = club_id()
+  if not cid or cid <= 0 then return nil end
+
+  local fname = string.match(filename, ".*\\(.*)") or filename
+  local tid, slot = string.match(fname, "^[ku]0*(%d+)p(%d)%.ftex$")
+  if not tid then return nil end
+  tid = tonumber(tid)
+  slot = tonumber(slot)
+  if tid ~= cid then return nil end
+  if slot < 1 or slot > 3 then return nil end
+
+  local rel_path = string.format("content/KitGenerator/active/u%04dp%d.ftex", cid, slot)
+  local full_path = (DIR .. rel_path):gsub('/', '\\')
+  local f = io.open(full_path, "rb")
+  if f then
+    f:close()
+    return rel_path
+  end
+  return nil
+end
+
+function m.get_filepath(ctx, filename, key)
+  if key then
+    return (DIR .. key):gsub('/', '\\')
+  end
+  return nil
+end
 
 -- ===== background kit watcher =============================================
 local WATCHER_STARTED = false
@@ -1254,6 +1371,8 @@ function m.init(ctx)
   end
   ctx.register('set_teams', m.set_teams)
   ctx.register('set_home_team_for_kits', m.set_home_team_for_kits)
+  ctx.register('livecpk_make_key', m.make_key)
+  ctx.register('livecpk_get_filepath', m.get_filepath)
 end
 
 -- small read-only accessor (diagnostics / tests)

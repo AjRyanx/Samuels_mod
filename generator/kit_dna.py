@@ -47,21 +47,21 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     100: {
         1: {  # Home: Iconic Manchester Red, white shorts, black socks, red/black collar trim
             "body": (195, 20, 30), "second": (250, 250, 250), "third": (20, 20, 25),
-            "patterns": ["085-E", "171-E", "185-E", "041-E", "153-E", "097", "027-E"],
+            "patterns": ["plain", "185-E", "041-E", "171-E", "067-E", "153-E"],
             "sleeve": (195, 20, 30), "shorts": (250, 250, 250),
             "socks": (20, 20, 25), "collar": (20, 20, 25), "cuff": (250, 250, 250),
             "gradient": 0, "supplier": "adidas",
         },
-        2: {  # Away: Iconic European Navy Blue heritage (1968/1993/2024) - distinct from Juve
+        2: {  # Away: Iconic European Navy Blue heritage (1968/1993/2024) - clean, NO stripes
             "body": (28, 55, 115), "second": (250, 250, 250), "third": (195, 20, 30),
-            "patterns": ["085-E", "171-E", "185-E", "041-E", "141-E", "097"],
+            "patterns": ["plain", "041-E", "171-E", "185-E", "141-E", "067-E"],
             "sleeve": (28, 55, 115), "shorts": (250, 250, 250),
             "socks": (28, 55, 115), "collar": (250, 250, 250), "cuff": (195, 20, 30),
             "gradient": 0, "supplier": "adidas",
         },
         3: {  # Third: Noir Luxury - matte black/charcoal with iridescent gold & crimson accents
             "body": (22, 24, 28), "second": (212, 175, 55), "third": (195, 20, 30),
-            "patterns": ["141-E", "041-E", "171-E", "185-E", "044-B", "085-E"],
+            "patterns": ["plain", "141-E", "041-E", "171-E", "185-E", "044-B"],
             "sleeve": (22, 24, 28), "shorts": (22, 24, 28),
             "socks": (22, 24, 28), "collar": (212, 175, 55), "cuff": (212, 175, 55),
             "gradient": 1, "supplier": "adidas",
@@ -72,7 +72,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     101: {
         1: {  # Home: Canonical deep red body with crisp pure white sleeves + collar
             "body": (190, 22, 34), "second": (250, 250, 252), "third": (15, 32, 67),
-            "patterns": ["003-B", "085-E", "171-E", "pinstripe", "067-E", "041-E"],
+            "patterns": ["003-B", "171-E", "067-E", "041-E", "185-E"],
             "sleeve": (250, 250, 252), "shorts": (250, 250, 252),
             "socks": (250, 250, 252), "collar": (250, 250, 252),
             "gradient": 0,
@@ -95,17 +95,17 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
 
     # Chelsea
     102: {
-        1: {  # Home: Iconic Chelsea Royal Blue body & sleeves, white shorts/socks, white/gold trim
+        1: {  # Home: Iconic Chelsea Royal Blue body & sleeves, blue/white shorts/socks, white/gold trim (strictly NO red, NO white sleeves, NO stripes)
             "body": (3, 70, 155), "second": (250, 250, 252), "third": (212, 175, 55),
-            "patterns": ["085-E", "171-E", "185-E", "041-E", "pinstripe", "067-E", "097", "027-E"],
+            "patterns": ["plain", "185-E", "041-E", "067-E", "153-E", "171-E"],
             "sleeve": (3, 70, 155), "shorts": (3, 70, 155),
             "socks": (250, 250, 252), "collar": (3, 70, 155),
             "cuff": (250, 250, 252),
             "gradient": 0, "supplier": "nike",
         },
-        2: {  # Away: Iconic Chelsea Canary Yellow heritage with royal blue trim
+        2: {  # Away: Iconic Chelsea Canary Yellow heritage with royal blue trim (strictly NO stripes)
             "body": (252, 222, 0), "second": (3, 70, 155), "third": (18, 20, 24),
-            "patterns": ["085-E", "171-E", "pinstripe", "041-E", "141-E", "097"],
+            "patterns": ["plain", "041-E", "141-E", "067-E", "185-E"],
             "sleeve": (252, 222, 0), "shorts": (3, 70, 155),
             "socks": (252, 222, 0), "collar": (3, 70, 155),
             "cuff": (3, 70, 155),
@@ -113,7 +113,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
         },
         3: {  # Third: Noir Luxury / Ice Mint couture with royal blue and liquid chrome
             "body": (20, 24, 32), "second": (30, 185, 170), "third": (3, 70, 155),
-            "patterns": ["041-E", "044-B", "171-E", "185-E", "141-E", "085-E"],
+            "patterns": ["plain", "041-E", "044-B", "171-E", "185-E", "141-E"],
             "sleeve": (20, 24, 32), "shorts": (20, 24, 32),
             "socks": (20, 24, 32), "collar": (30, 185, 170),
             "cuff": (30, 185, 170),
@@ -560,6 +560,7 @@ POOL_HOOPS = ["084", "091", "102", "114"]
 POOL_SASH = ["005", "022", "095", "103", "113", "119"]
 # 2026 High-End Luxury Tonal Jacquards (Elevates solid shirts to $150 authentic fashion pieces!)
 POOL_LUXURY_JACQUARD = [
+    "plain",  # Iconic Solid Clean
     "041-E",  # Carrara Marble
     "171-E",  # Houndstooth Luxury Weave
     "044-E",  # Topographic Contour
@@ -567,7 +568,7 @@ POOL_LUXURY_JACQUARD = [
     "067-E",  # Woven Diamond Lattice
     "006-E",  # Obsidian Splinter Micro-Facet
     "001-B",  # Apex Shatter Fade
-    "085-E",  # Tonal Diagonal Pinstripe
+    "185-E",  # Luxury Micro-Weave
     "170-E",  # Rose Window Micro-Filigree
     "046-E",  # Silk Wave
 ]
