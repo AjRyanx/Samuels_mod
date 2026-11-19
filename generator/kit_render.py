@@ -184,6 +184,22 @@ def render_kit(design, out_png, masks=None):
     return out_png
 
 
+def _defringe_white(logo):
+    """Clean un-matted white fringe on semi-transparent edges of harvested badges."""
+    import numpy as np
+    arr = np.array(logo, dtype=np.float32)
+    a = arr[:, :, 3]
+    faint = (a > 0) & (a < 45)
+    arr[faint, 3] = 0
+    semi = (arr[:, :, 3] >= 45) & (arr[:, :, 3] < 250)
+    if np.any(semi):
+        alpha_frac = arr[semi, 3:4] / 255.0
+        rgb = arr[semi, :3]
+        unmatted = (rgb - 255.0 * (1.0 - alpha_frac)) / np.maximum(0.01, alpha_frac)
+        arr[semi, :3] = np.clip(unmatted, 0, 255)
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+
+
 def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None, max_w=None, max_h=None):
     """Place a logo centred on (cx, cy) scaled so w*h ~= area (like the tool).
 
@@ -195,6 +211,7 @@ def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None, max_w=N
     bbox = logo.getbbox()
     if bbox:
         logo = logo.crop(bbox)
+    logo = _defringe_white(logo)
     if white:
         logo = _flatten_white(logo)
     w, h = logo.size

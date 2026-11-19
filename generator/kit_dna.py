@@ -123,26 +123,29 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
 
     # Liverpool
     103: {
-        1: {  # Home: Pure crimson red with teal and gold accents, tonal heraldic jacquard
-            "body": (190, 15, 30), "second": (250, 250, 250), "third": (0, 155, 140),
-            "patterns": ["041-E", "085-E", "170-E", "067-E", "027-E", "001-B"],
-            "sleeve": (190, 15, 30), "shorts": (190, 15, 30),
-            "socks": (190, 15, 30), "collar": (0, 155, 140),
-            "gradient": 0,
+        1: {  # Home: Iconic all-red crimson with pure white/gold accents, tonal luxury jacquard
+            "body": (190, 18, 30), "second": (250, 250, 252), "third": (212, 175, 55),
+            "patterns": ["plain", "041-E", "067-E", "185-E", "171-E", "085-E"],
+            "sleeve": (190, 18, 30), "shorts": (190, 18, 30),
+            "socks": (190, 18, 30), "collar": (190, 18, 30),
+            "cuff": (250, 250, 252),
+            "gradient": 0, "supplier": "nike",
         },
-        2: {  # Away: Heritage forest green & off-white retro quarters / stripes
+        2: {  # Away: Heritage off-white & forest green / teal accents
             "body": (245, 245, 242), "second": (15, 65, 45), "third": (20, 20, 25),
-            "patterns": ["081", "082", "088", "097", "027-B", "085"],
+            "patterns": ["plain", "041-E", "081", "088", "171-E"],
             "sleeve": (245, 245, 242), "shorts": (15, 65, 45),
             "socks": (245, 245, 242), "collar": (15, 65, 45),
-            "gradient": 0,
+            "cuff": (15, 65, 45),
+            "gradient": 0, "supplier": "nike",
         },
-        3: {  # Third: High-fashion space dye purple / cosmic streetwear
-            "body": (65, 30, 85), "second": (0, 185, 170), "third": (245, 245, 250),
-            "patterns": ["042", "044-B", "043", "003-B", "126-B"],
-            "sleeve": (65, 30, 85), "shorts": (65, 30, 85),
-            "socks": (0, 185, 170), "collar": (0, 185, 170),
-            "gradient": 1,
+        3: {  # Third: Noir Luxury / Royal Purple couture with iridescent gold
+            "body": (32, 22, 42), "second": (212, 175, 55), "third": (190, 18, 30),
+            "patterns": ["plain", "041-E", "171-E", "185-E", "044-B"],
+            "sleeve": (32, 22, 42), "shorts": (32, 22, 42),
+            "socks": (32, 22, 42), "collar": (212, 175, 55),
+            "cuff": (212, 175, 55),
+            "gradient": 1, "supplier": "nike",
         },
     },
 
