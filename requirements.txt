@@ -1,0 +1,4 @@
+# Dynamic Kit and Sponsor Mod - Python Generator Dependencies
+Pillow>=9.0.0
+numpy>=1.20.0
+pytest>=7.0.0

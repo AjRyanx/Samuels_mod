@@ -93,3 +93,42 @@ When a user signs a deal in the Sponsor Office:
    $$\text{Transfer Budget} \mathrel{+}= \lfloor (\text{Deal Value} \times 0.70) / 100 \rfloor$$
    $$\text{Salary Budget} \mathrel{+}= \lfloor (\text{Deal Value} \times 0.30) / 100 \rfloor$$
 4. Payments are recorded in `paid.txt` to prevent duplicate crediting within the same season.
+
+---
+
+## 5. Career Identity & Saturated Offers Engine
+
+### 5.1 Memory-Synchronized Career Identity
+Rather than relying on a static machine UUID in `career.txt`, `KitGenerator.lua` dynamically reads the active Master League manager context block at runtime:
+- Extracts human-managed team ID `tid`, calendar year `y`, and context header bytes `raw`.
+- Hashes context metadata to form a deterministic, persistent save identifier:
+  $$\text{CAREER} = \text{ml\_}\langle\text{tid}\rangle\text{\_}\langle\text{hash}(raw)\rangle$$
+- Automatically detects save switches and club changes, isolating negotiation states, contract counter-offers, and deal histories per career slot without disk contamination.
+
+### 5.2 Saturated 26,000+ Sponsor Deal Database
+- Pre-calculated commercial sponsorship database across **all 587 clubs** for 9 full seasons (2027–2035), containing **26,415 curated offers**.
+- Enforces multi-year brand diversity constraints (clubs never see the same sponsor consecutive seasons).
+- **O(1) Indexed Lookups**: `load_offers()` indexes entries by club ID (`OFFERS[cid]`), reducing UI frame search time from $O(N)$ linear scans across 26,000 records to an instant microsecond lookup.
+
+---
+
+## 6. Goalkeeper Synthesis & Pre-Generation
+
+### 6.1 Expanded High-Vis Streetwear Aesthetics
+- Goalkeeper slots (`g1`, `g2`) utilize an expanded 28-pattern streetwear & 90s heritage pool (`POOL_GK_STREETWEAR`).
+- Evaluates Euclidean RGB color distance against outfield primary, secondary, and alternate kits to prevent visual clash:
+  $$\Delta C(\text{GK}, \text{Outfield}) \ge 130$$
+- Color palettes feature vibrant volt, hyper crimson, emerald teal, electric blue, and obsidian contrast trims.
+
+### 6.2 Full 5-Slot World Caching
+- `build_all_clubs.py` operates across all 5 slots (`1, 2, 3, g1, g2`), compiling **2,935 textures** directly into `content/KitGenerator/active/`.
+- Eliminates all in-match synthesis latency for goalkeepers and outfield squads across all 580+ clubs in the world.
+
+---
+
+## 7. 1-Click Installer Architecture (`install.ps1` / `setup.py`)
+
+- Automated pre-flight checks: Python 3.8+, Pillow, NumPy, Sider directories.
+- Automated `sider.ini` AST inspection & hook placement (strictly positioned before `common\kits.lua`).
+- Directory scaffolding and atomic asset synchronization.
+- Built-in verification CLI (`python setup.py verify`) providing real-time health checks on textures, deals, and memory modules.

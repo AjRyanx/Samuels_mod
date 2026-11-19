@@ -59,12 +59,28 @@ def _init_worker(base_ftex_path: str, logo_dir_path: str, badge_dir_path: str) -
     _WORKER_BADGE_DIR = Path(badge_dir_path)
 
 
+def parse_slots(text: str) -> tuple:
+    slots = []
+    for x in text.replace(" ", "").split(","):
+        x = x.strip()
+        if not x:
+            continue
+        if x.isdigit():
+            slots.append(int(x))
+        elif x.lower() in ("g1", "g2"):
+            slots.append(x.lower())
+        else:
+            raise ValueError(f"Invalid slot: {x} (must be 1, 2, 3, g1, or g2)")
+    return tuple(slots)
+
+
 def _render_club_task(
     club: Dict[str, Any],
     season: int,
     sponsor: Optional[str],
     outdir_path: str,
     skip_existing: bool,
+    slots: tuple = (1, 2, 3, "g1", "g2"),
 ) -> Dict[str, Any]:
     global _WORKER_MASKS, _WORKER_TEMPLATE, _WORKER_LOGO_DIR, _WORKER_BADGE_DIR
     cid = club["id"]
@@ -72,8 +88,9 @@ def _render_club_task(
     outdir = Path(outdir_path)
 
     slots_to_generate = []
-    for slot in (1, 2, 3):
-        target = outdir / f"u{cid:04d}p{slot}.ftex"
+    for slot in slots:
+        slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+        target = outdir / f"u{cid:04d}{slot_code}.ftex"
         if skip_existing and target.is_file() and target.stat().st_size > 1000:
             continue
         slots_to_generate.append(slot)
@@ -85,6 +102,7 @@ def _render_club_task(
     generated = 0
     designs = []
     for slot in slots_to_generate:
+        slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
         atlas, design = kit_render.render_club(
             club,
             season,
@@ -96,7 +114,7 @@ def _render_club_task(
             badge_dir=_WORKER_BADGE_DIR,
         )
         ftex_data = ftex_io.image_to_ftex(atlas, fmt=4, template=_WORKER_TEMPLATE)
-        target = outdir / f"u{cid:04d}p{slot}.ftex"
+        target = outdir / f"u{cid:04d}{slot_code}.ftex"
         ftex_io.write_ftex(target, ftex_data)
         generated += 1
         designs.append(design)
@@ -172,7 +190,8 @@ def main():
     parser = argparse.ArgumentParser(description="Pre-generate Master League kits for all clubs.")
     parser.add_argument("--season", type=int, default=2027, help="Master League season year (e.g. 2027)")
     parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 4, 8), help="CPU worker processes")
-    parser.add_argument("--skip-existing", action="store_true", help="Skip clubs whose 3 kit .ftex files already exist")
+    parser.add_argument("--slots", type=str, default="1,2,3,g1,g2", help="Kit slots to build (default: 1,2,3,g1,g2)")
+    parser.add_argument("--skip-existing", action="store_true", help="Skip clubs whose kit .ftex files already exist")
     parser.add_argument("--clubs", type=Path, default=ROOT / "generator" / "clubs.csv", help="Path to clubs.csv")
     parser.add_argument("--outdir", type=Path, default=DEFAULT_ACTIVE, help="Target active kit directory")
     parser.add_argument("--base-ftex", type=Path, default=DEFAULT_BASE, help="Template .ftex with valid PES kit header")
@@ -222,7 +241,9 @@ def main():
     print(f" Total Clubs In Scope   : {len(clubs)}")
     print(f" CPU Worker Processes   : {args.workers}")
     print(f" Sponsor Brand Library  : {len(brands)} brands")
+    selected_slots = parse_slots(args.slots)
     print(f" Target Output Directory: {args.outdir}")
+    print(f" Kit Slots in Scope     : {', '.join(str(s) for s in selected_slots)}")
     print(f" Base Header Template   : {args.base_ftex.name}")
     print(f" Skip Existing Files    : {'YES' if args.skip_existing else 'NO'}")
     if user_cid:
@@ -243,7 +264,7 @@ def main():
         else:
             sponsor = pick_ai_sponsor(club, args.season, brands)
 
-        tasks.append((club, args.season, sponsor, str(args.outdir), args.skip_existing))
+        tasks.append((club, args.season, sponsor, str(args.outdir), args.skip_existing, selected_slots))
 
     if skipped_user_club:
         print(f" [*] Human club #{user_cid} is preserved authentic (storyline opt-in not triggered).")
@@ -257,8 +278,8 @@ def main():
     init_args = (str(args.base_ftex), str(args.logo_dir), str(args.badge_dir))
     with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=init_args) as executor:
         futures = {
-            executor.submit(_render_club_task, c, s, sp, out, skip): c["id"]
-            for (c, s, sp, out, skip) in tasks
+            executor.submit(_render_club_task, c, s, sp, out, skip, sl): c["id"]
+            for (c, s, sp, out, skip, sl) in tasks
         }
 
         for fut in as_completed(futures):

@@ -330,6 +330,22 @@ local function unpack_career_data(raw)
   return nil
 end
 
+local function sync_career_identity(tid, y, raw)
+  if not tid or tid <= 0 then return end
+  local sig = '00000000'
+  if raw and #raw >= 12 then
+    sig = string.format('%08x', hash(raw))
+  else
+    sig = string.format('%04d', y or 2027)
+  end
+  local active_id = string.format('ml_%04d_%s', tid, sig)
+  if CAREER ~= active_id then
+    CAREER = active_id
+    write_file('career.txt', CAREER .. '\n')
+    L('career identity synced to memory: ' .. CAREER)
+  end
+end
+
 local function read_career_info(mode)
   mode = mode or DATE.mode or read_mode()
   if not mode or mode < 0x10000 then return nil end
@@ -338,6 +354,9 @@ local function read_career_info(mode)
     if raw and #raw == 12 then
       local y, mo, d, tid = unpack_career_data(raw)
       if y then
+        if tid and tid > 0 then
+          sync_career_identity(tid, y, raw)
+        end
         return y, mo, d, tid, off, mode
       end
     end
@@ -588,17 +607,29 @@ local function load_offers()
   OFFERS = {}
   local lines = read_lines('deals.txt')
   if #lines == 0 then L('deals.txt missing: Sponsor Office will be empty') end
+  local n = 0
   for _, line in ipairs(lines) do
     if line:sub(1, 1) ~= '#' and #line > 0 then
       local t = split(line)
-      OFFERS[#OFFERS + 1] = { id = t[1], season = tonumber(t[2]), club = tonumber(t[3]), brand = t[4],
-        logo = path(t[5]), value = tonumber(t[6]), years = tonumber(t[7]), bonus = tonumber(t[8]), tier = t[9] }
+      local cid = tonumber(t[3])
+      if cid then
+        local clist = OFFERS[cid]
+        if not clist then
+          clist = {}
+          OFFERS[cid] = clist
+        end
+        clist[#clist + 1] = {
+          id = t[1], season = tonumber(t[2]), club = cid, brand = t[4],
+          logo = path(t[5]), value = tonumber(t[6]), years = tonumber(t[7]), bonus = tonumber(t[8]), tier = t[9]
+        }
+        n = n + 1
+      end
     end
   end
   for _, line in ipairs(read_lines('career.txt')) do
     if #line > 0 then CAREER = line end
   end
-  L('loaded ' .. #OFFERS .. ' offers, career ' .. CAREER)
+  L('loaded ' .. n .. ' offers across ' .. tostring(#lines) .. ' lines, career ' .. CAREER)
 end
 
 -- the brand pool, written by setup_watcher.py from the logos folder.  It is what
@@ -654,8 +685,11 @@ local function visible()
   local cid = club_id()
   if not cid then return out end
   if DEAL then return out end                 -- under contract: no new offers
-  for _, o in ipairs(OFFERS) do
-    if o.club == cid and o.season == SEASON then out[#out + 1] = o end
+  local clist = OFFERS[cid]
+  if clist then
+    for _, o in ipairs(clist) do
+      if o.season == SEASON then out[#out + 1] = o end
+    end
   end
   if #out == 0 then                           -- no curated set: make one
     out = synth_offers(cid, SEASON)

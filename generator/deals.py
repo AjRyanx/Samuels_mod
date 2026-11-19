@@ -54,8 +54,9 @@ def write(root, seasons):
     d = root / 'content' / 'KitGenerator'
     (d / 'deals.txt').write_text('\n'.join(lines) + '\n')
     cp = d / 'career.txt'
-    if not cp.exists():                       # one random ID per install: a stopgap, see plan 4A
-        cp.write_text(uuid.uuid4().hex[:12] + '\n')
+    if not cp.exists():
+        # Initial offline placeholder; KitGenerator.lua automatically syncs this from live ML memory
+        cp.write_text('ml_offline_init\n')
     print('wrote', d / 'deals.txt', n, 'offers across', len(seasons), 'season(s)')
     return brands
 

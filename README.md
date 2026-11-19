@@ -118,47 +118,29 @@ In the pre-season, an executive **Sponsor Office** mod menu presents real-world 
 
 ---
 
-## Installation
+## Quick Start: 1-Click Automated Installation
 
-### Prerequisites
-- PES 2021 or SP Football Life 2026/2027 with **Sider 7.3.3+**.
-- **Python 3.10+** on your system `PATH` with `pillow` and `numpy`:
-  ```bash
-  pip install pillow numpy
-  ```
+We provide an automated installer that checks all prerequisites, scaffolds runtime directories, configures `sider.ini`, and synchronizes assets automatically:
 
-### Step 1: Copy Mod Files
-Copy the mod contents into your game directory:
-- `modules/KitGenerator.lua` ➔ `SiderAddons/modules/KitGenerator.lua`
-- `content/KitGenerator/` ➔ `SiderAddons/content/KitGenerator/`
-- `generator/` ➔ `SiderAddons/KitGenerator/generator/`
+### Option A: Windows 1-Click (Double-Click)
+Simply double-click **`install.bat`** in the mod directory.
 
-### Step 2: Configure `sider.ini`
-In `SiderAddons/sider.ini`, ensure `KitGenerator.lua` is loaded **before** `kits.lua`:
-
-```ini
-luajit.ext.enabled = 1
-
-; Sider Mod Menu (must be first)
-lua.module = "ModMenu.lua"
-
-; Dynamic Kit & Sponsor Mod (must load before kits.lua)
-lua.module = "KitGenerator.lua"
-lua.module = "common\kits.lua"
-```
-
-### Step 3: Run Setup Watcher (One-Time)
-Run the automated installer:
+### Option B: PowerShell
 ```powershell
-python SiderAddons/KitGenerator/generator/setup_watcher.py
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
-This deploys `watcher.cmd` and prepares the background service.
 
-### Step 4 (Optional): Pre-Generate World Kits (Season 2+ Immersion)
-To pre-generate dynamic kits for all 587 clubs for Season 2 onwards:
-```powershell
-python SiderAddons/KitGenerator/generator/build_all_clubs.py --season 2027 --skip-existing
+### Option C: Python CLI Setup
+```bash
+python setup.py install      # Syncs files & registers sider.ini hooks
+python setup.py verify       # Verifies Python, Sider hooks, textures & deals
+python setup.py test         # Runs full regression test suite
+python setup.py pregen       # Runs world kit pre-generation
 ```
+
+---
+
+## Manual Installation
 
 ---
 

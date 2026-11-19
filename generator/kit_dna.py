@@ -1105,8 +1105,12 @@ GK_STREETWEAR_PALETTES: List[Dict[str, Any]] = [
 ]
 
 POOL_GK_STREETWEAR = [
+    # Geometric, glitch & kinetic streetwear shards
     "126-B", "044-B", "082", "131", "001-B", "210", "215", "218", "220",
-    "141-E", "168-E", "185-E", "041-E", "067-E"
+    "141-E", "168-E", "185-E", "041-E", "067-E",
+    # Iconic 90s heritage goalkeeper & modern tech graphics
+    "011", "014", "022", "027", "033", "048", "074", "090", "112",
+    "145", "160", "172", "190", "205"
 ]
 
 
