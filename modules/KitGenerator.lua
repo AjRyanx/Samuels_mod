@@ -198,7 +198,7 @@ end
 local function in_signing_window()
   if CFG.ALLOW_OFF_SEASON then return true end
   if STATE.manual_window then return true end
-  if not STATE.month then return false end
+  if not STATE.month then return true end
   for _, mm in ipairs(CFG.SIGNING_MONTHS) do
     if STATE.month == mm then return true end
   end
@@ -207,20 +207,31 @@ end
 
 -- ===== game date (the Master League calendar) =============================
 -- Sider's set_teams / make_key context carries NO date (only tournament_id:
--- confirmed with a probe), so the date is read straight out of the game.  The
--- ML calendar is a YYYYMMDD u32 at [mode + 0x1642A24]; `mode` is the current
--- game-mode object, reached with a getter the game itself exposes:
---     48 8B 05 A9 F3 24 02 C3    ; mov rax,[rip+disp] ; ret
---   global_ptr = site + 7 + disp ; ctx = *global_ptr ; mode = *(ctx + 0x48)
--- (0x1642A24 is the same calendar offset fl26caps.lua patches, so this is the
--- real in-game date, not the wall clock.)
-local DATE = { ready = false, global_ptr = nil, off = 0x1642A24, mode = nil }
+-- confirmed with a probe), so the date is read straight out of the game.
+-- The ML calendar sits in the edit context:
+--   FL26 / FL27 modpack layout: offset 0x19115EC
+--   Stock PES 2021 layout:      offset 0x1642A24
+-- Bitfield layout:
+--   bytes 0..1: year (u16 little-endian, e.g. 2026)
+--   byte 2:     month (u8, 1..12)
+--   byte 3:     day (u8, 1..31)
+--   bytes 8..11: compact identity -> (team_id << 14) | team_array_slot
+-- Decimal layout (fallback):
+--   bytes 0..3: YYYYMMDD (u32 little-endian)
+local DATE = { ready = false, global_ptr = nil, off = 0x19115EC, mode = nil }
 local AOB_MODE = '\x48\x8B\x05\xA9\xF3\x24\x02\xC3'
+local KNOWN_DATE_GETTER = 0x1414B6A60
+local CAREER_OFFSETS = { 0x19115EC, 0x1642A24 }
 
 local function install_date_reader()
   if DATE.ready then return true end
   if not (memory and memory.search_process and memory.read and memory.unpack) then return false end
-  local site = num_addr(memory.search_process(AOB_MODE))
+  local site = nil
+  if memory.read(KNOWN_DATE_GETTER, 8) == AOB_MODE then
+    site = KNOWN_DATE_GETTER
+  else
+    site = num_addr(memory.search_process(AOB_MODE))
+  end
   if not site or site < 0x10000 then L('date: getter pattern not found'); return false end
   if memory.read(site, 8) ~= AOB_MODE then L('date: unexpected getter bytes'); return false end
   local disp = memory.unpack('i32', memory.read(site + 3, 4))
@@ -237,35 +248,67 @@ local function read_mode()
   return read_ptr_at(ctx + 0x48)
 end
 
+local function unpack_career_data(raw)
+  if not raw or #raw < 12 then return nil end
+  -- 1. Bitfield layout (FL26 / FL27 and modern PES: year u16le, month u8, day u8)
+  local y = raw:byte(1) + raw:byte(2) * 256
+  local mo = raw:byte(3)
+  local d = raw:byte(4)
+  local identity = raw:byte(9) + raw:byte(10) * 256 + raw:byte(11) * 65536 + raw:byte(12) * 16777216
+  local tid = math.floor(identity / 0x4000)
+  if tid <= 0 or tid >= 65000 then tid = nil end
+
+  if y >= 2000 and y <= 2200 and mo >= 1 and mo <= 12 and d >= 1 and d <= 31 then
+    return y, mo, d, tid
+  end
+
+  -- 2. Decimal layout fallback (YYYYMMDD as u32le)
+  local dec = raw:byte(1) + raw:byte(2) * 256 + raw:byte(3) * 65536 + raw:byte(4) * 16777216
+  if dec >= 20000101 and dec <= 22001231 then
+    y = math.floor(dec / 10000)
+    mo = math.floor(dec / 100) % 100
+    d = dec % 100
+    if mo >= 1 and mo <= 12 and d >= 1 and d <= 31 then
+      return y, mo, d, tid
+    end
+  end
+
+  return nil
+end
+
+local function read_career_info(mode)
+  mode = mode or DATE.mode or read_mode()
+  if not mode or mode < 0x10000 then return nil end
+  for _, off in ipairs(CAREER_OFFSETS) do
+    local raw = memory.read(mode + off, 12)
+    if raw and #raw == 12 then
+      local y, mo, d, tid = unpack_career_data(raw)
+      if y then
+        return y, mo, d, tid, off, mode
+      end
+    end
+  end
+  return nil
+end
+
 -- returns year, month, day, mode -- all nil when no career is loaded
 local function game_date()
   local mode = read_mode()
   if not mode then return nil end
   DATE.mode = mode
-  local v = mread_u32(mode + DATE.off)
-  if not v or v < 19000101 or v > 22001231 then return nil end
-  local y, mo, d = math.floor(v / 10000), math.floor(v / 100) % 100, v % 100
-  if mo < 1 or mo > 12 or d < 1 or d > 31 then return nil end
-  return y, mo, d, mode
+  local y, mo, d, tid, off = read_career_info(mode)
+  if y then
+    DATE.off = off
+    return y, mo, d, mode
+  end
+  return nil
 end
 
 -- Read the human managed team ID directly from Master League memory
--- identity = (team_id << 14) | team_array_index at mode + DATE.off + 8
 local function read_career_team(mode)
-  mode = mode or DATE.mode or read_mode()
-  if not mode or mode < 0x10000 then return nil end
-  local offsets = { DATE.off, 0x19115EC, 0x1642A24 }
-  for _, off in ipairs(offsets) do
-    local dval = mread_u32(mode + off)
-    if dval and dval >= 19000101 and dval <= 22001231 then
-      local identity = mread_u32(mode + off + 8)
-      if identity and identity > 0 then
-        local tid = math.floor(identity / 0x4000)
-        if tid > 0 and tid < 65000 then
-          return tid
-        end
-      end
-    end
+  local y, mo, d, tid = read_career_info(mode)
+  if tid and tid > 0 and tid < 65000 then
+    return tid
   end
   return nil
 end
@@ -275,8 +318,6 @@ local function is_in_ml(ctx)
   if ctx and ctx.tournament_id == 65535 then return false end
   local y, mo, d, mode = game_date()
   if not y or not mode then return false end
-  local career_tid = read_career_team(mode)
-  if not career_tid or career_tid <= 0 then return false end
   return true
 end
 
@@ -624,6 +665,7 @@ local AOB_BUDGET = '\x8B\x87\xF4\xCB\x6E\x01\x89\x45\xC4'
 -- 17-byte window we steal and then replay inside the cave
 local AOB_BUDGET_TAIL = '\x48\x8D\x55\xC4\x48\x8D\x4D\xD0'
 local BUDGET_STEAL = 17
+local KNOWN_BUDGET_SITE = 0x140EA4C58
 local BUDGET_FILE = 'budget_hook.txt'
 
 local function load_budget_hook()
@@ -636,11 +678,18 @@ local function load_budget_hook()
       local slot = tonumber(t[3], 16)
       local disp = tonumber(t[4], 16)
       local sdisp = t[5] and tonumber(t[5], 16) or (disp + CFG.SALARY_DELTA)
-      if site and cave and slot and disp then
-        BUDGET.ready, BUDGET.slot = true, cave + slot
-        BUDGET.disp, BUDGET.salary_disp = disp, sdisp
-        L(string.format('budget hook loaded from cache (site=0x%X, slot=0x%X)', site, BUDGET.slot))
-        return true
+      if site and site > 0x10000 and cave and cave > 0x10000 and slot and disp then
+        -- Validate that the cached hook is actually active in this running process
+        local jmp = memory and memory.read and memory.read(site, 6)
+        if jmp == '\xFF\x25\x00\x00\x00\x00' then
+          local target = read_ptr_at(site + 6)
+          if target == cave then
+            BUDGET.ready, BUDGET.slot = true, cave + slot
+            BUDGET.disp, BUDGET.salary_disp = disp, sdisp
+            L(string.format('budget hook loaded from verified cache (site=0x%X, slot=0x%X)', site, BUDGET.slot))
+            return true
+          end
+        end
       end
     end
   end
@@ -662,11 +711,33 @@ local function install_budget_hook()
   if not (memory and memory.search_process and memory.allocate_codecave and memory.read) then
     L('budget: Sider memory API unavailable - using ML mode fallback'); return false
   end
-  local site = num_addr(memory.search_process(AOB_BUDGET))
+
+  local original = AOB_BUDGET .. AOB_BUDGET_TAIL
+  local site = nil
+
+  -- Fast path: test known RVA 0xEA4C58 directly (instant, zero memory scanning freeze)
+  local cur_bytes = memory.read(KNOWN_BUDGET_SITE, BUDGET_STEAL)
+  if cur_bytes == original then
+    site = KNOWN_BUDGET_SITE
+  elseif cur_bytes and cur_bytes:sub(1, 6) == '\xFF\x25\x00\x00\x00\x00' then
+    local cave = read_ptr_at(KNOWN_BUDGET_SITE + 6)
+    if cave and cave > 0x10000 then
+      BUDGET.ready, BUDGET.slot = true, cave + 0x40
+      BUDGET.disp = 0x16ECBF4
+      BUDGET.salary_disp = BUDGET.disp + CFG.SALARY_DELTA
+      save_budget_hook(KNOWN_BUDGET_SITE, cave, 0x40, BUDGET.disp, BUDGET.salary_disp)
+      L(string.format('budget hook reattached to existing detour (site=0x%X, slot=0x%X)', KNOWN_BUDGET_SITE, BUDGET.slot))
+      return true
+    end
+  end
+
+  if not site then
+    site = num_addr(memory.search_process(AOB_BUDGET))
+  end
+
   if not site or site < 0x10000 then
     L('budget: hook pattern not found - crediting will use ML mode fallback'); return false
   end
-  local original = AOB_BUDGET .. AOB_BUDGET_TAIL
   if memory.read(site, BUDGET_STEAL) ~= original then
     L('budget: unexpected bytes at hook site - crediting will use ML mode fallback'); return false
   end
@@ -713,7 +784,7 @@ local function budget_ptr()
   if mode and mode > 0x10000 then
     local disp = BUDGET.disp or 0x16ECBF4
     local t = mread_u32(mode + disp)
-    if t and t > 0 and t < 0x7FFFFFFF then
+    if t and t >= 0 and t < 0x7FFFFFFF then
       return mode
     end
   end
