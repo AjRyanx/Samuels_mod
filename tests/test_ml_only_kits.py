@@ -96,12 +96,21 @@ key_unopted_ml = M.make_key(ml_ctx, "k108p1.ftex")
 assert key_unopted_ml is None, f"Expected authentic kit in ML for un-opted club, got {key_unopted_ml}"
 print("PASS 8: Un-opted club in ML correctly wears authentic kit until sponsor is signed")
 
-# 9. CPU Opponent in Master League (tid=102 Chelsea while user manages Barcelona)
-# Active kit file exists for Chelsea:
+# 9. CPU Opponents: Original authentic kits in Season 1, dynamic kits kick in from Season 2 onwards
 (tmp / "content" / "KitGenerator" / "active" / "u0102p1.ftex").write_bytes(b"dummy_chelsea_ftex")
-key_cpu_ml = M.make_key(ml_ctx, "k102p1.ftex")
-assert key_cpu_ml == "content/KitGenerator/active/u0102p1.ftex", f"Expected dynamic kit for CPU team in ML, got {key_cpu_ml}"
-print("PASS 9: CPU opponent in Master League wears dynamic kit:", key_cpu_ml)
+# In Season 1 (2026/27, SEASON=2027): AI opponents wear authentic kits (yields nil)
+key_cpu_s1 = M.make_key(ml_ctx, "k102p1.ftex")
+assert key_cpu_s1 is None, f"Expected authentic kit for AI team in Season 1, got {key_cpu_s1}"
+print("PASS 9A: CPU opponent in Season 1 (2026/27) wears original authentic kit")
+
+# In Season 2 (2027/28, SEASON=2028): dynamic kits kick in for AI clubs!
+M.debug_set_date(2027, 8, 1) # Aug 2027 -> Season 2028
+key_cpu_s2 = M.make_key(ml_ctx, "k102p1.ftex")
+assert key_cpu_s2 == "content/KitGenerator/active/u0102p1.ftex", f"Expected dynamic kit for CPU team in Season 2, got {key_cpu_s2}"
+print("PASS 9B: CPU opponent in Season 2 (2027/28) dynamic kit kicks in:", key_cpu_s2)
+
+# Reset date back to Season 1 for font tests
+M.debug_set_date(2026, 8, 1)
 
 # 10. CPU Opponent in Exhibition Match still receives authentic kit (yields nil)
 key_cpu_exh = M.make_key(exh_ctx, "k102p1.ftex")
@@ -138,6 +147,32 @@ M.set_home_team_for_kits(ctx, 108, 1) # Edit mode
 key_font_edit = M.make_key(ctx, "k108p1_b.ftex")
 assert key_font_edit is None, f"Expected authentic font in Edit mode, got {key_font_edit}"
 print("PASS 13: Authentic fonts preserved untouched in Exhibition and Edit mode")
+
+# 14. Dynamic Goalkeeper kits (g1 / g2) intercepted in Master League
+M.set_home_team_for_kits(ctx, 108, 0) # Exit edit mode
+(tmp / "content" / "KitGenerator" / "active" / "u0108g1.ftex").write_bytes(b"dummy_gk1_ftex")
+(tmp / "content" / "KitGenerator" / "active" / "u0108g2.ftex").write_bytes(b"dummy_gk2_ftex")
+(tmp / "content" / "KitGenerator" / "active" / "u0108g1_back.ftex").write_bytes(b"dummy_gk1_back_font")
+
+key_gk1 = M.make_key(ml_ctx, "k108g1.ftex")
+assert key_gk1 == "content/KitGenerator/active/u0108g1.ftex", f"Expected dynamic GK1 kit, got {key_gk1}"
+key_gk1_u = M.make_key(ml_ctx, "u0108g1.ftex")
+assert key_gk1_u == "content/KitGenerator/active/u0108g1.ftex", f"Expected dynamic GK1 kit (u* format), got {key_gk1_u}"
+key_gk2 = M.make_key(ml_ctx, "k108g2.ftex")
+assert key_gk2 == "content/KitGenerator/active/u0108g2.ftex", f"Expected dynamic GK2 kit, got {key_gk2}"
+key_gk1_font = M.make_key(ml_ctx, "k108g1_b.ftex")
+assert key_gk1_font == "content/KitGenerator/active/u0108g1_back.ftex", f"Expected dynamic GK1 font, got {key_gk1_font}"
+print("PASS 14: Dynamic Goalkeeper kits (g1, g2) and GK fonts intercepted and served in Master League")
+
+# 15. Goalkeeper kits in Exhibition and Edit mode strictly wear authentic licensed kits (yield nil)
+key_gk1_exh = M.make_key(exh_ctx, "k108g1.ftex")
+assert key_gk1_exh is None, f"Expected authentic GK kit in Exhibition, got {key_gk1_exh}"
+key_gk2_exh = M.make_key(exh_ctx, "u0108g2.ftex")
+assert key_gk2_exh is None, f"Expected authentic GK2 kit in Exhibition, got {key_gk2_exh}"
+M.set_home_team_for_kits(ctx, 108, 1) # Edit mode
+key_gk1_edit = M.make_key(ctx, "k108g1.ftex")
+assert key_gk1_edit is None, f"Expected authentic GK kit in Edit mode, got {key_gk1_edit}"
+print("PASS 15: Authentic Goalkeeper kits strictly preserved in Exhibition and Edit mode")
 
 shutil.rmtree(tmp, ignore_errors=True)
 print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")

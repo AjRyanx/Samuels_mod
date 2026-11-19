@@ -95,10 +95,10 @@ def pack_atlas(atlas_png, out_ftex, template):
     return out_ftex
 
 
-def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
+def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1", "g2"),
               install=False, game_root=DEFAULT_GAME_ROOT, quiet=False, sponsor=None,
               logo_dir=None, badge_dir=None, badge=None):
-    """Render + pack a club's kit set.  Returns [(slot, atlas, ftex, design)].
+    """Render + pack a club's kit set (outfield and goalkeeper). Returns [(slot, atlas, ftex, design)].
 
     When `sponsor` is given (a brand name from content/KitGenerator/logos), the
     kits are regenerated with that sponsor's logo on the chest and a fresh design
@@ -127,18 +127,31 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
     badge_dir = Path(badge_dir)
     masks = kit_regions_build()
 
+    norm_slots = []
+    for s in slots:
+        if isinstance(s, str) and s.isdigit():
+            norm_slots.append(int(s))
+        elif s in ("4", 4):
+            norm_slots.append("g1")
+        elif s in ("5", 5):
+            norm_slots.append("g2")
+        else:
+            norm_slots.append(s)
+
     rendered = kit_render.render_kit_set(club, season, outdir, logo_dir,
                                          masks=masks, sponsor=sponsor,
-                                         badge_dir=badge_dir, badge=badge)
+                                         badge_dir=badge_dir, badge=badge,
+                                         slots=norm_slots)
     active_dir = Path(game_root) / ACTIVE_SUBDIR if install else None
     if active_dir:
         active_dir.mkdir(parents=True, exist_ok=True)
 
     results = []
     for slot, atlas, _preview, design in rendered:
-        if slot not in slots:
+        if slot not in norm_slots:
             continue
-        name = f"u{club['id']:04d}p{slot}"
+        slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+        name = f"u{club['id']:04d}{slot_code}"
         out_ftex = outdir / f"{name}.ftex"
         pack_atlas(atlas, out_ftex, template)
         if not quiet:
@@ -166,7 +179,7 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
             )
         except Exception as e:
             if not quiet:
-                print(f"  [font warning] failed to process fonts for p{slot}: {e}")
+                print(f"  [font warning] failed to process fonts for {slot_code}: {e}")
 
         results.append((slot, str(atlas), str(out_ftex), design))
     return results
@@ -178,11 +191,19 @@ def kit_regions_build():
 
 
 def _parse_slots(text):
-    slots = tuple(int(x) for x in text.replace(" ", "").split(",") if x)
-    bad = [s for s in slots if s not in (1, 2, 3)]
-    if bad:
-        raise SystemExit(f"slots must be 1,2,3 (got {bad})")
-    return slots
+    slots = []
+    for x in text.replace(" ", "").split(","):
+        if not x:
+            continue
+        if x.isdigit():
+            slots.append(int(x))
+        elif x.lower() in ("g1", "g2"):
+            slots.append(x.lower())
+        elif x.lower() in ("p1", "p2", "p3"):
+            slots.append(int(x.lower().replace("p", "")))
+        else:
+            raise SystemExit(f"slot must be 1, 2, 3, g1, or g2 (got {x})")
+    return tuple(slots)
 
 
 def main(argv=None):
@@ -191,8 +212,8 @@ def main(argv=None):
     p.add_argument("club_id", type=int)
     p.add_argument("season", type=int)
     p.add_argument("outdir")
-    p.add_argument("--slots", default="1,2,3",
-                   help="which kits to build, e.g. 1 or 1,2,3 (default 1,2,3)")
+    p.add_argument("--slots", default="1,2,3,g1,g2",
+                   help="which kits to build, e.g. 1,2,3 or 1,2,3,g1,g2 (default: 1,2,3,g1,g2)")
     p.add_argument("--install", action="store_true",
                    help="copy the .ftex files into the livecpk override folder")
     p.add_argument("--base", default=str(DEFAULT_BASE),
@@ -226,8 +247,8 @@ def main(argv=None):
 
     print()
     for slot, atlas, ftex, d in results:
-        label = {1: "home", 2: "away", 3: "third"}[slot]
-        print(f"{label:5s} p{slot}: {Path(ftex).name}  pattern={d['pattern']} "
+        label = {1: "home (p1)", 2: "away (p2)", 3: "third (p3)", "g1": "gk1 (g1)", "g2": "gk2 (g2)"}.get(slot, f"slot {slot}")
+        print(f"{label:12s}: {Path(ftex).name}  pattern={d['pattern']} "
               f"body={d['body']} sleeve={d['sleeve']} shorts={d['shorts']} "
               f"socks={d['socks']} collar={d['collar']} sponsor={d['_brand']}")
     return 0

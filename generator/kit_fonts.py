@@ -183,6 +183,7 @@ def find_source_font(club_id, slot, font_type, game_root=None):
     if game_root is None:
         game_root = Path(r"C:\Games\SP Football Life 2027")
     game_root = Path(game_root)
+    slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
 
     # 1. Look in Kitserver GDB for this specific club
     map_txt = game_root / "SiderAddons/content/kits/map.txt"
@@ -198,8 +199,8 @@ def find_source_font(club_id, slot, font_type, game_root=None):
                         rel_dir = parts[1].strip().strip('"').strip("'")
                         club_folder = game_root / "SiderAddons/content/kits" / rel_dir
                         
-                        # Try exact slot folder: p<slot>/u<cid>p<slot>_<type>.ftex
-                        cand_slot = club_folder / f"p{slot}" / f"u{club_id:04d}p{slot}_{font_type}.ftex"
+                        # Try exact slot folder: e.g. p1/u0102p1_back.ftex or g1/u0102g1_back.ftex
+                        cand_slot = club_folder / slot_code / f"u{club_id:04d}{slot_code}_{font_type}.ftex"
                         if cand_slot.is_file():
                             return cand_slot
 
@@ -208,8 +209,8 @@ def find_source_font(club_id, slot, font_type, game_root=None):
                         if cand_p1.is_file():
                             return cand_p1
 
-                        # Search any p* folder in club_folder for matching font_type
-                        for sub in club_folder.glob(f"p*/*_{font_type}.ftex"):
+                        # Search any subfolder in club_folder for matching font_type
+                        for sub in club_folder.glob(f"*/*_{font_type}.ftex"):
                             if sub.is_file():
                                 return sub
         except Exception:
@@ -295,7 +296,8 @@ def process_kit_fonts(club, slot, design, outdir, game_root=None,
 
         # Pack to .ftex
         out_ftex_data = ftex_io.image_to_ftex(img, template=tmpl)
-        out_name = f"u{club_id:04d}p{slot}_{ftype}.ftex"
+        slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+        out_name = f"u{club_id:04d}{slot_code}_{ftype}.ftex"
         out_path = outdir / out_name
         out_path.write_bytes(out_ftex_data)
 

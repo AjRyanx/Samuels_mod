@@ -402,15 +402,26 @@ def _flatten_color(logo, color):
 # --------------------------------------------------------------------------- #
 #  generator -> design
 # --------------------------------------------------------------------------- #
-# Home / away / third ("p1/p2/p3") each get an independent, deterministic roll.
-# Slot 1 keeps the original salt, so the already-verified home kit is unchanged.
-_SLOT_SALT = {1: "kitgen-v1", 2: "kitgen-v1-away", 3: "kitgen-v1-third"}
+# Home / away / third ("p1/p2/p3") and goalkeeper ("g1/g2") each get an independent roll.
+_SLOT_SALT = {
+    1: "kitgen-v1",
+    2: "kitgen-v1-away",
+    3: "kitgen-v1-third",
+    "g1": "kitgen-v1-gk1",
+    "g2": "kitgen-v1-gk2",
+    4: "kitgen-v1-gk1",
+    5: "kitgen-v1-gk2",
+}
 
 # Which of the club's three colours leads each kit: (body, pattern, accent).
 _SLOT_ROLES = {
     1: ("primary", "secondary", "accent"),      # home   - club colour dominant
     2: ("secondary", "primary", "accent"),      # away   - the second colour leads
     3: ("accent", "primary", "secondary"),      # third  - the accent colour leads
+    "g1": ("primary", "secondary", "accent"),   # gk1    - vibrant high-vis
+    "g2": ("secondary", "primary", "accent"),   # gk2    - vibrant secondary high-vis
+    4: ("primary", "secondary", "accent"),      # gk1 alias
+    5: ("secondary", "primary", "accent"),      # gk2 alias
 }
 
 # Explicit per-club styling, keyed by team id then slot.  It pins the palette
@@ -443,8 +454,19 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
     `style` (or KIT_STYLE[club_id][slot]) may override any of body/second/third/
     patterns/sleeve/cuff/shorts/socks/collar/gradient/var/width_step.
     """
+    if slot in (4, "4"):
+        slot = "g1"
+    elif slot in (5, "5"):
+        slot = "g2"
+    elif slot in ("p1", "1"):
+        slot = 1
+    elif slot in ("p2", "2"):
+        slot = 2
+    elif slot in ("p3", "3"):
+        slot = 3
+
     if slot not in _SLOT_ROLES:
-        raise ValueError("slot must be 1 (home), 2 (away) or 3 (third)")
+        raise ValueError(f"slot must be 1, 2, 3, 'g1', or 'g2' (got {slot})")
 
     salt = _SLOT_SALT[slot] + (("|" + sponsor) if sponsor else "")
     rng = kit_gen.season_rng(club["id"], season, salt=salt)

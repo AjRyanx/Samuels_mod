@@ -241,8 +241,9 @@ def rebuild(club_id, season, brand, sider, game_root, logfile):
         sponsor=brand, logo_dir=logos, badge_dir=badges,
     )
     for slot, _atlas, ftex, design in results:
-        _log("  built p%d -> %s (pattern=%s sponsor=%s)"
-             % (slot, Path(ftex).name, design.get("pattern"), design.get("_brand")),
+        slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+        _log("  built %s -> %s (pattern=%s sponsor=%s)"
+             % (slot_code, Path(ftex).name, design.get("pattern"), design.get("_brand")),
              logfile)
 
     # Auto-cleanup old staging folders (recovers disk space, keeps current & recent season)

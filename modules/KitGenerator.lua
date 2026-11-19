@@ -50,6 +50,7 @@ local CFG = {
   SALARY_DELTA       = 0x14,     -- salary budget sits this far past the transfer budget
   TRANSFER_SHARE     = 0.70,     -- share of each payment added to the transfer budget
   SALARY_SHARE       = 0.30,     -- ...and to the salary budget (must sum to 1.0)
+  AI_DYNAMIC_START_SEASON = 2028, -- Season 1 (2026/27) wears authentic kits; dynamic kits kick in from Season 2 (2027/28)
 }
 m.CFG = CFG
 
@@ -1445,17 +1446,29 @@ function m.make_key(ctx, filename)
   if not is_in_ml(ctx) then return nil end
 
   local lower = filename:lower()
-  local tid, slot, suffix = string.match(lower, "[ku]0*(%d+)p(%d)([_%a%d]*)%.ftex$")
-  if not tid or not slot then return nil end
+  local tid, slot_type, slot, suffix = string.match(lower, "[ku]0*(%d+)([pg])(%d)([_%a%d]*)%.ftex$")
+  if not tid or not slot_type or not slot then return nil end
   tid = tonumber(tid)
   slot = tonumber(slot)
-  if slot < 1 or slot > 3 then return nil end
+  if slot_type == "p" then
+    if slot < 1 or slot > 3 then return nil end
+  elseif slot_type == "g" then
+    if slot < 1 or slot > 2 then return nil end
+  else
+    return nil
+  end
 
   local cid = club_id()
   -- If this is the user's club, enforce user storyline opt-in (authentic until sponsor signed)
   if cid and cid > 0 and tid == cid then
     local is_opted_in = (DEAL and DEAL.club == cid) or (OPTED_IN and OPTED_IN[cid])
     if not is_opted_in then return nil end
+  else
+    -- AI clubs: wear original authentic kits in Season 1; dynamic kits kick in from Season 2 onwards
+    local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
+    if SEASON < start_season then
+      return nil
+    end
   end
 
   local suffix_map = {
@@ -1475,13 +1488,14 @@ function m.make_key(ctx, filename)
   local target_suffix = suffix_map[suffix or ""]
   if not target_suffix then return nil end
 
-  local rel_path = string.format("content/KitGenerator/active/u%04dp%d%s.ftex", tid, slot, target_suffix)
+  local rel_path = string.format("content/KitGenerator/active/u%04d%s%d%s.ftex", tid, slot_type, slot, target_suffix)
   local full_path = (DIR .. rel_path):gsub('/', '\\')
   local f = io.open(full_path, "rb")
   if f then
     f:close()
     if target_suffix == "" then
-      L(string.format('serving dynamic kit (ML mode): %s -> %s', filename, rel_path))
+      local label = (slot_type == "g") and ("dynamic GK" .. tostring(slot) .. " kit") or ("dynamic kit")
+      L(string.format('serving %s (ML mode): %s -> %s', label, filename, rel_path))
     else
       L(string.format('serving dynamic contrasting font (ML mode): %s -> %s', filename, rel_path))
     end
