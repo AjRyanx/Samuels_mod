@@ -65,21 +65,39 @@ local SEL = { counter = nil, ask = 1, reply = nil, credit_msg = nil, rounds = {}
 local OFFERS, SIGNED, BRANDS = {}, {}, {}
 local DEAL = nil                      -- active multi-season deal (or nil)
 local REQ_SEASONS, PAID, WARNED, CLEAN = {}, {}, {}, {}
+local club_id, start_watcher
 
 local DIR, CAREER, SEASON = '', 'unknown', 2027
 local MONTH_NAMES = { 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' }
 
 local function L(msg) log('[KitGenerator] ' .. tostring(msg)) end
 
--- ===== ffi (WinExec / process id) =========================================
+-- ===== ffi (kernel32: WinExec / process id) ===============================
 local ffi = ffi
-if ffi and not ffi.kg_declared then
-  ffi.cdef([[
-    void* KG_Self(void) __asm__("GetCurrentProcess");
-    unsigned int KG_WinExec(const char* cmd, unsigned int show) __asm__("WinExec");
-    unsigned int KG_GetPid(void) __asm__("GetCurrentProcessId");
-  ]])
-  ffi.kg_declared = true
+local kernel32 = nil
+if ffi then
+  if not ffi.kg_declared then
+    ffi.cdef([[
+      unsigned int WinExec(const char* lpCmdLine, unsigned int uCmdShow);
+      unsigned int GetCurrentProcessId(void);
+    ]])
+    ffi.kg_declared = true
+  end
+  kernel32 = ffi.load('kernel32')
+end
+
+local function get_pid()
+  if kernel32 and kernel32.GetCurrentProcessId then
+    return tonumber(kernel32.GetCurrentProcessId())
+  end
+  return nil
+end
+
+local function run_winexec(cmd)
+  if kernel32 and kernel32.WinExec then
+    return kernel32.WinExec(cmd, 0)
+  end
+  return nil
 end
 
 -- ===== small helpers ======================================================
@@ -99,10 +117,19 @@ end
 -- Sider can hand addresses back as cdata/userdata; normalise to a Lua number.
 local function num_addr(x)
   if type(x) == 'number' then return x end
-  if type(x) == 'cdata' or type(x) == 'userdata' then
-    local n = tonumber(x)
-    if n then return n end
-    if memory and memory.hex then return tonumber(memory.hex(x)) end
+  if not x then return nil end
+  if ffi and type(x) == 'cdata' then
+    return tonumber(ffi.cast('uint64_t', x))
+  end
+  local direct = tonumber(x)
+  if direct then return direct end
+  if memory and memory.pack and memory.unpack then
+    local packed = memory.pack('u64', x)
+    if packed then return tonumber(memory.unpack('u64', packed)) end
+  end
+  if memory and memory.hex then
+    local h = memory.hex(x)
+    if h then return tonumber(h, 16) end
   end
   return nil
 end
@@ -174,25 +201,50 @@ local function plural(n, word)
 end
 
 local function append_line(rel, text)
-  local f = io.open(path(rel), 'a')
-  if not f then return false end
-  f:write(text .. '\n'); f:flush(); f:close()
-  return true
+  local p = path(rel)
+  for attempt = 1, 8 do
+    local f = io.open(p, 'a')
+    if f then
+      f:write(text .. '\n')
+      f:flush()
+      f:close()
+      return true
+    end
+    local t0 = os.clock()
+    while os.clock() - t0 < 0.015 do end
+  end
+  return false
 end
 
 local function write_file(rel, text)
-  local f = io.open(path(rel), 'w')
-  if not f then return false end
-  f:write(text); f:flush(); f:close()
-  return true
+  local p = path(rel)
+  for attempt = 1, 8 do
+    local f = io.open(p, 'w')
+    if f then
+      f:write(text)
+      f:flush()
+      f:close()
+      return true
+    end
+    local t0 = os.clock()
+    while os.clock() - t0 < 0.015 do end
+  end
+  return false
 end
 
 local function read_lines(rel)
-  local out, f = {}, io.open(path(rel), 'r')
-  if not f then return out end
-  for line in f:lines() do out[#out + 1] = line end
-  f:close()
-  return out
+  local p = path(rel)
+  for attempt = 1, 8 do
+    local out, f = {}, io.open(p, 'r')
+    if f then
+      for line in f:lines() do out[#out + 1] = line end
+      f:close()
+      return out
+    end
+    local t0 = os.clock()
+    while os.clock() - t0 < 0.015 do end
+  end
+  return {}
 end
 
 local function in_signing_window()
@@ -316,9 +368,11 @@ end
 local function is_in_ml(ctx)
   if STATE.in_edit_mode then return false end
   if ctx and ctx.tournament_id == 65535 then return false end
+  if STATE.in_ml_flow == false then return false end
   local y, mo, d, mode = game_date()
-  if not y or not mode then return false end
-  return true
+  if y and mode then return true end
+  if STATE.in_ml_flow == true then return true end
+  return false
 end
 
 -- ===== managed club: auto-detection =======================================
@@ -340,7 +394,7 @@ end
 -- the kits in the club's real colours.
 local CLUB_FILE = 'club.txt'
 
-local function club_id()
+club_id = function()
   return STATE.club
 end
 
@@ -706,72 +760,17 @@ local function install_budget_hook()
   if BUDGET.attempted then return false end
   BUDGET.attempted = true
 
-  if load_budget_hook() then return true end
-
-  if not (memory and memory.search_process and memory.allocate_codecave and memory.read) then
-    L('budget: Sider memory API unavailable - using ML mode fallback'); return false
+  -- Safe mode: read budget pointer directly from Master League mode context
+  local mode = DATE.mode or read_mode()
+  if mode and mode > 0x10000 then
+    BUDGET.ready = true
+    BUDGET.disp = 0x16ECBF4
+    BUDGET.salary_disp = BUDGET.disp + CFG.SALARY_DELTA
+    L(string.format('budget: ML direct mode ready at 0x%X (transfer +0x%X, salary +0x%X)',
+      mode, BUDGET.disp, BUDGET.salary_disp))
+    return true
   end
-
-  local original = AOB_BUDGET .. AOB_BUDGET_TAIL
-  local site = nil
-
-  -- Fast path: test known RVA 0xEA4C58 directly (instant, zero memory scanning freeze)
-  local cur_bytes = memory.read(KNOWN_BUDGET_SITE, BUDGET_STEAL)
-  if cur_bytes == original then
-    site = KNOWN_BUDGET_SITE
-  elseif cur_bytes and cur_bytes:sub(1, 6) == '\xFF\x25\x00\x00\x00\x00' then
-    local cave = read_ptr_at(KNOWN_BUDGET_SITE + 6)
-    if cave and cave > 0x10000 then
-      BUDGET.ready, BUDGET.slot = true, cave + 0x40
-      BUDGET.disp = 0x16ECBF4
-      BUDGET.salary_disp = BUDGET.disp + CFG.SALARY_DELTA
-      save_budget_hook(KNOWN_BUDGET_SITE, cave, 0x40, BUDGET.disp, BUDGET.salary_disp)
-      L(string.format('budget hook reattached to existing detour (site=0x%X, slot=0x%X)', KNOWN_BUDGET_SITE, BUDGET.slot))
-      return true
-    end
-  end
-
-  if not site then
-    site = num_addr(memory.search_process(AOB_BUDGET))
-  end
-
-  if not site or site < 0x10000 then
-    L('budget: hook pattern not found - crediting will use ML mode fallback'); return false
-  end
-  if memory.read(site, BUDGET_STEAL) ~= original then
-    L('budget: unexpected bytes at hook site - crediting will use ML mode fallback'); return false
-  end
-  -- disp32 sits at offset 2 (no REX prefix): 8B 87 <disp32> 89 45 C4
-  local disp = memory.unpack('i32', memory.read(site + 2, 4))
-  if not disp or disp <= 0 then disp = 0x16ECBF4 end
-  local cave = num_addr(memory.allocate_codecave(96))
-  if not cave or cave < 0x10000 then L('budget: code cave allocation failed - using ML mode fallback'); return false end
-  local slot = 0x40
-  memory.write(cave + slot, memory.pack('u64', 0))
-  -- mov [rip+disp32], rdi            (stash rdi at cave+slot)
-  local code = '\x48\x89\x3D' .. memory.pack('i32', slot - 7)
-  -- replay the 17 stolen bytes
-  code = code .. original
-  -- absolute jump back to the instruction after the stolen window
-  code = code .. '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', site + BUDGET_STEAL)
-  memory.write(cave, code)
-  if memory.read(cave, #code) ~= code then
-    L('budget: cave verification failed - using ML mode fallback'); return false
-  end
-  -- detour: jmp qword ptr [rip+0] ; dq cave ; nop*n
-  local patch = '\xFF\x25\x00\x00\x00\x00' .. memory.pack('u64', cave) ..
-    string.rep('\x90', BUDGET_STEAL - 14)
-  memory.write(site, patch)
-  if memory.read(site, BUDGET_STEAL) ~= patch then
-    memory.write(site, original)
-    L('budget: patch verification failed - original restored'); return false
-  end
-  BUDGET.ready, BUDGET.slot = true, cave + slot
-  BUDGET.disp, BUDGET.salary_disp = disp, disp + CFG.SALARY_DELTA
-  save_budget_hook(site, cave, slot, BUDGET.disp, BUDGET.salary_disp)
-  L(string.format('budget hook installed (transfer +0x%X, salary +0x%X)',
-    BUDGET.disp, BUDGET.salary_disp))
-  return true
+  return false
 end
 
 -- the exact club-budget pointer the game used, or DATE.mode fallback
@@ -863,6 +862,7 @@ local function paid_key(season)
 end
 
 local function ensure_season_deal(season)
+  season = season or SEASON or 2027
   -- Never act on a guessed season: at game load the calendar is not readable
   -- yet and SEASON would be the default, which would wrongly revert an active
   -- deal's kit to the clean one.  Wait until a real in-game date has been read.
@@ -1163,13 +1163,18 @@ local function build_office(ui, ctx)
     ui:kv('Yearly value', fmt_money(DEAL.value), 'accent')
     ui:endcols()
 
+    local p1_ftex = (DIR .. string.format('content/KitGenerator/active/u%04dp1.ftex', DEAL.club)):gsub('/', '\\')
+    local f_kit = io.open(p1_ftex, 'rb')
+    local kit_ready = false
+    if f_kit then f_kit:close(); kit_ready = true end
+
     ui:space(4)
     ui:cols(0.34)
     ui:kv('Contract', tostring(DEAL.start) .. ' - ' .. tostring(last))
     ui:kv('Length', plural(seasons, 'season'))
     ui:nextcol()
     ui:kv('Signing bonus', (DEAL.bonus or 0) > 0 and (tostring(DEAL.bonus) .. '%  (' .. fmt_money(bonus) .. ')') or 'none')
-    ui:kv('Kit', 'rebuilt each season')
+    ui:kv('Dynamic Kit', kit_ready and 'Ready (Active)' or 'Generating...', kit_ready and 'ok' or 'warn')
     ui:nextcol()
     ui:kv('Status', 'Active', 'ok')
     ui:kv('Season', 'year ' .. tostring(elapsed) .. ' of ' .. tostring(seasons))
@@ -1178,7 +1183,11 @@ local function build_office(ui, ctx)
     ui:space(4)
     ui:kv('Contract progress', progress_bar(elapsed, seasons) .. '  ' .. tostring(pct) .. '%')
 
-    ui:message('Under contract. No new offers until the deal ends; a new kit is built each season.', 'info')
+    if kit_ready then
+      ui:message('Dynamic Kit is active & ready for ' .. club_display_name(DEAL.club) .. '! It will appear in your next match.', 'ok')
+    else
+      ui:message('Under contract. Kit generator is preparing your kit files...', 'info')
+    end
     ui:row()
     ui:button('credit', 'Credit this season\'s money now', function() credit_now() end, 'primary', 'check')
     ui:button('term', SEL.term_confirm and 'Confirm termination' or 'Terminate contract',
@@ -1336,12 +1345,21 @@ end
 -- (tournament_id 65535) is ignored so exhibition opponents cannot muddy the
 -- vote.  We also grab both sides' kit colours while the game is holding them.
 function m.set_teams(ctx, home, away)
+  if not WATCHER_STARTED and CFG.START_PROCESS and CFG.ENABLE_KITS then
+    start_watcher()
+  end
+  if CFG.ENABLE_SPONSORSHIP and CFG.CREDIT_BUDGET and not BUDGET.attempted then
+    install_budget_hook()
+  end
   STATE.in_edit_mode = false
   local career = not (ctx and ctx.tournament_id == 65535)
   if career then
+    STATE.in_ml_flow = true
     record_match(home, away)
     fetch_colors(ctx, home)
     fetch_colors(ctx, away)
+  else
+    STATE.in_ml_flow = false
   end
   refresh_date(ctx)
 end
@@ -1357,41 +1375,63 @@ end
 
 function m.make_key(ctx, filename)
   if not CFG.ENABLE_KITS then return nil end
+  if not filename then return nil end
+
+  -- Track UI flow state between Master League and Exhibition/Main Menu
+  if string.find(filename, "common\\script\\flow\\", 1, true) then
+    if string.find(filename, "\\ML\\", 1, true) then
+      STATE.in_ml_flow = true
+    elseif string.find(filename, "\\Exhibition\\", 1, true)
+        or string.find(filename, "\\Top\\", 1, true)
+        or string.find(filename, "\\Edit\\", 1, true)
+        or string.find(filename, "\\BL\\", 1, true) then
+      STATE.in_ml_flow = false
+    end
+    return nil
+  end
+
+  if not string.find(filename, "%.ftex$") then return nil end
+
+  -- Master League only: Exhibition matches (65535) and non-ML modes never receive dynamic kits
+  if STATE.in_edit_mode then return nil end
+  if ctx and ctx.tournament_id == 65535 then return nil end
   if not is_in_ml(ctx) then return nil end
+  if not DEAL then return nil end
 
-  local cid = club_id()
-  if not cid or cid <= 0 then return nil end
-
-  local fname = string.match(filename, ".*\\(.*)") or filename
-  local tid, slot = string.match(fname, "^[ku]0*(%d+)p(%d)%.ftex$")
-  if not tid then return nil end
+  local lower = filename:lower()
+  local tid, slot = string.match(lower, "[ku]0*(%d+)p(%d)%.ftex$")
+  if not tid or not slot then return nil end
   tid = tonumber(tid)
   slot = tonumber(slot)
-  if tid ~= cid then return nil end
   if slot < 1 or slot > 3 then return nil end
+
+  local cid = club_id()
+  if not cid or cid <= 0 or tid ~= cid then return nil end
 
   local rel_path = string.format("content/KitGenerator/active/u%04dp%d.ftex", cid, slot)
   local full_path = (DIR .. rel_path):gsub('/', '\\')
   local f = io.open(full_path, "rb")
   if f then
     f:close()
+    L(string.format('serving dynamic kit (ML mode): %s -> %s', filename, rel_path))
     return rel_path
   end
   return nil
 end
 
 function m.get_filepath(ctx, filename, key)
-  if key then
-    return (DIR .. key):gsub('/', '\\')
+  if key and (string.find(key, "content/KitGenerator/", 1, true) or string.find(key, "content\\KitGenerator\\", 1, true)) then
+    local full = ((DIR .. key):gsub('/', '\\'))
+    L(string.format('serving kit file: %s', full))
+    return full
   end
   return nil
 end
 
 -- ===== background kit watcher =============================================
 local WATCHER_STARTED = false
-local function start_watcher()
+start_watcher = function()
   if WATCHER_STARTED or not CFG.START_PROCESS then return end
-  if not (ffi and ffi.C and ffi.C.KG_WinExec) then L('watcher: ffi/WinExec unavailable'); return end
   local cmd = (DIR .. 'content/KitGenerator/watcher.cmd'):gsub('/', '\\')
   local f = io.open(cmd, 'r')
   if not f then
@@ -1400,9 +1440,16 @@ local function start_watcher()
   end
   f:close()
   WATCHER_STARTED = true
-  if ffi.C.KG_GetPid then write_file('game.pid', tostring(ffi.C.KG_GetPid())) end
-  ffi.C.KG_WinExec('cmd.exe /c "' .. cmd .. '"', 0)
-  L('kit watcher launched')
+  local pid = get_pid()
+  if pid then write_file('game.pid', tostring(pid)) end
+  local res = run_winexec('cmd.exe /c "' .. cmd .. '"')
+  L('kit watcher launched (pid ' .. tostring(pid) .. ', status ' .. tostring(res) .. ')')
+end
+
+function m.display_frame(ctx)
+  if not WATCHER_STARTED and CFG.START_PROCESS and CFG.ENABLE_KITS then
+    start_watcher()
+  end
 end
 
 -- ===== module init ========================================================
@@ -1415,8 +1462,8 @@ function m.init(ctx)
   load_deal()
   load_paid()
   install_date_reader()
-  if CFG.ENABLE_SPONSORSHIP and CFG.CREDIT_BUDGET then install_budget_hook() end
-  if CFG.ENABLE_KITS then start_watcher() end
+  -- install_budget_hook and start_watcher deferred to display_frame / set_teams
+  -- to guarantee game process and loader locks are fully initialized first
   refresh_date(ctx)
   local y, mo, d = game_date()
   if y then
@@ -1440,6 +1487,7 @@ function m.init(ctx)
       ctx.register('key_down', m.key_down)
     end
   end
+  ctx.register('display_frame', m.display_frame)
   ctx.register('set_teams', m.set_teams)
   ctx.register('set_home_team_for_kits', m.set_home_team_for_kits)
   ctx.register('livecpk_make_key', m.make_key)

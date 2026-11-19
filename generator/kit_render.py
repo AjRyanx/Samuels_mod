@@ -34,6 +34,7 @@ Nothing is copied from a real club kit: the flat-colour template only tells us
 """
 from pathlib import Path
 import re
+import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -68,7 +69,7 @@ DEFAULT_DESIGN = {
     "sponsor_white": False,       # True = flatten the logo to white
     "badge_white": False,
     "supplier_white": False,
-    "sponsor_plate": True,        # draw a body-coloured plate behind the sponsor
+    "sponsor_plate": False,       # draw a body-coloured plate behind the sponsor (False = seamless logo with no background)
 }
 
 
@@ -165,20 +166,49 @@ def render_kit(design, out_png, masks=None):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col),
                         (0, 0), _mask_img(cuff_mask))
 
-    # logos
+    # logos with runtime UV validation & collision adjustment
+    sp_item = None
     if d.get("sponsor"):
-        _stamp_area(atlas, d["sponsor"], *kit_regions.CHEST_SPONSOR,
-                    white=d.get("sponsor_white"),
-                    plate=body if d.get("sponsor_plate") else None,
-                    max_w=340, max_h=140)
+        sp_item = _prepare_stamp_item(d["sponsor"], *kit_regions.CHEST_SPONSOR,
+                                      white=d.get("sponsor_white"),
+                                      dark=d.get("sponsor_dark"),
+                                      plate=body if d.get("sponsor_plate") else None,
+                                      max_w=340, max_h=140)
+    bg_item = None
     if d.get("badge"):
-        _stamp_area(atlas, d["badge"], *kit_regions.CLUB_BADGE,
-                    white=d.get("badge_white"),
-                    max_w=82, max_h=85)
+        bg_item = _prepare_stamp_item(d["badge"], *kit_regions.CLUB_BADGE,
+                                      white=d.get("badge_white"),
+                                      max_w=82, max_h=85)
+    sup_item = None
     if d.get("supplier"):
-        _stamp_area(atlas, d["supplier"], *kit_regions.KIT_SUPPLIER,
-                    white=d.get("supplier_white"),
-                    max_w=92, max_h=48)
+        sup_item = _prepare_stamp_item(d["supplier"], *kit_regions.KIT_SUPPLIER,
+                                       white=d.get("supplier_white"),
+                                       max_w=92, max_h=48)
+
+    # Validate against masks["body_front"] UV region and prevent inter-stamp collisions
+    stamps_adj = kit_regions.validate_and_adjust_stamps(
+        masks, sponsor=sp_item, badge=bg_item, supplier=sup_item
+    )
+
+    for key, item in (("supplier", sup_item), ("badge", bg_item), ("sponsor", sp_item)):
+        if not item:
+            continue
+        adj = stamps_adj.get(key)
+        if not adj:
+            continue
+        cur_w, cur_h = adj["w"], adj["h"]
+        x, y = adj["x"], adj["y"]
+        img = item["img"]
+        if (cur_w, cur_h) != img.size:
+            img = img.resize((cur_w, cur_h), Image.LANCZOS)
+
+        if item.get("plate") is not None:
+            pad_x, pad_y = adj.get("plate_pad") or (int(cur_w * 0.10), int(cur_h * 0.35))
+            draw = ImageDraw.Draw(atlas)
+            draw.rectangle([x - pad_x, y - pad_y, x + cur_w + pad_x, y + cur_h + pad_y],
+                           fill=tuple(item["plate"]) + (255,))
+
+        atlas.alpha_composite(img, (x, y))
 
     atlas.save(out_png)
     return out_png
@@ -200,13 +230,10 @@ def _defringe_white(logo):
     return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
 
-def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None, max_w=None, max_h=None):
-    """Place a logo centred on (cx, cy) scaled so w*h ~= area (like the tool).
-
-    `plate` optionally paints a flat rectangle of that colour behind the logo
-    (the Kit Creator reserves a flat zone behind the sponsor so stripes and
-    overlays never run through the logo).
-    """
+def _prepare_stamp_item(logo_path, cx, cy, area, white=False, dark=None, plate=None, max_w=None, max_h=None):
+    """Load, defringe, tint and measure a logo before validation and placement."""
+    if not logo_path or not Path(logo_path).is_file():
+        return None
     logo = Image.open(logo_path).convert("RGBA")
     bbox = logo.getbbox()
     if bbox:
@@ -214,6 +241,9 @@ def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None, max_w=N
     logo = _defringe_white(logo)
     if white:
         logo = _flatten_white(logo)
+    elif dark:
+        col = dark if isinstance(dark, (tuple, list)) else (15, 25, 45)
+        logo = _flatten_color(logo, col)
     w, h = logo.size
     scale = (float(area) / max(1, w * h)) ** 0.5
     nw, nh = max(1, int(round(w * scale))), max(1, int(round(h * scale)))
@@ -228,15 +258,27 @@ def _stamp_area(atlas, logo_path, cx, cy, area, white=False, plate=None, max_w=N
         nw = max(1, int(round(nw * s)))
 
     logo = logo.resize((nw, nh), Image.LANCZOS)
-    x, y = int(cx - nw / 2), int(cy - nh / 2)
+    arr = np.asarray(logo)
+    alpha = arr[:, :, 3] if (arr.ndim == 3 and arr.shape[2] == 4) else None
+    pad = (int(nw * 0.10), int(nh * 0.35)) if plate is not None else None
+    return {
+        "img": logo, "cx": cx, "cy": cy, "w": nw, "h": nh,
+        "alpha": alpha, "plate": plate, "plate_pad": pad
+    }
 
+
+def _stamp_area(atlas, logo_path, cx, cy, area, white=False, dark=None, plate=None, max_w=None, max_h=None):
+    """Fallback helper to place a logo centred on (cx, cy)."""
+    item = _prepare_stamp_item(logo_path, cx, cy, area, white=white, dark=dark, plate=plate, max_w=max_w, max_h=max_h)
+    if not item:
+        return
+    x, y = int(cx - item["w"] / 2), int(cy - item["h"] / 2)
     if plate is not None:
-        pad_x, pad_y = int(nw * 0.10), int(nh * 0.35)
+        pad_x, pad_y = item["plate_pad"]
         draw = ImageDraw.Draw(atlas)
-        draw.rectangle([x - pad_x, y - pad_y, x + nw + pad_x, y + nh + pad_y],
+        draw.rectangle([x - pad_x, y - pad_y, x + item["w"] + pad_x, y + item["h"] + pad_y],
                        fill=tuple(plate) + (255,))
-
-    atlas.alpha_composite(logo, (x, y))
+    atlas.alpha_composite(item["img"], (x, y))
 
 
 def _flatten_white(logo):
@@ -246,6 +288,16 @@ def _flatten_white(logo):
     a[:, :, 0] = 255
     a[:, :, 1] = 255
     a[:, :, 2] = 255
+    return Image.fromarray(a, "RGBA")
+
+
+def _flatten_color(logo, color):
+    """Return a monochrome silhouette in the specified RGB color keeping the logo's alpha."""
+    import numpy as np
+    a = np.asarray(logo).copy()
+    a[:, :, 0] = color[0]
+    a[:, :, 1] = color[1]
+    a[:, :, 2] = color[2]
     return Image.fromarray(a, "RGBA")
 
 
@@ -356,6 +408,21 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
     if brand:
         white = kit_gen.lum(design["body"]) < 120
         design["sponsor"] = str(Path(logo_dir) / (brand + ("_white" if white else "") + ".png"))
+        if not white and not design.get("sponsor_dark"):
+            # Check if regular logo has sufficient contrast (> 3.2:1)
+            try:
+                sim = Image.open(design["sponsor"]).convert("RGBA")
+                arr = np.array(sim)
+                opaque = arr[:, :, 3] > 128
+                if np.any(opaque):
+                    s_col = tuple(int(v) for v in np.median(arr[opaque, :3], axis=0))
+                    l1 = 0.2126 * design["body"][0] + 0.7152 * design["body"][1] + 0.0722 * design["body"][2]
+                    l2 = 0.2126 * s_col[0] + 0.7152 * s_col[1] + 0.0722 * s_col[2]
+                    ratio = (max(l1, l2) + 12.5) / (min(l1, l2) + 12.5)
+                    if ratio < 3.2:
+                        design["sponsor_dark"] = (15, 25, 45)
+            except Exception:
+                pass
     else:
         design["sponsor"] = None
 
@@ -481,13 +548,28 @@ def mockup(design, club_name, season, out_png):
         except Exception:
             pass
 
+    if design.get("supplier"):
+        try:
+            s_logo = Image.open(design["supplier"]).convert("RGBA")
+            if design.get("supplier_white"):
+                s_logo = _flatten_white(s_logo)
+            ss = min(38 / max(1, s_logo.width), 26 / max(1, s_logo.height))
+            s_logo = s_logo.resize((max(1, int(s_logo.width * ss)), max(1, int(s_logo.height * ss))), Image.LANCZOS)
+            canvas.alpha_composite(s_logo, (180 - s_logo.width // 2, 110 - s_logo.height // 2))
+        except Exception:
+            pass
+
     if design.get("sponsor"):
         logo = Image.open(design["sponsor"]).convert("RGBA")
         if design.get("sponsor_white"):
             logo = _flatten_white(logo)
+        elif design.get("sponsor_dark"):
+            col = design["sponsor_dark"] if isinstance(design["sponsor_dark"], (tuple, list)) else (15, 25, 45)
+            logo = _flatten_color(logo, col)
         s = min(190 / logo.width, 60 / logo.height)
         logo = logo.resize((max(1, int(logo.width * s)), max(1, int(logo.height * s))))
-        d.rounded_rectangle([118, 160, 362, 236], radius=10, fill=body + (255,))
+        if design.get("sponsor_plate", False):
+            d.rounded_rectangle([118, 160, 362, 236], radius=10, fill=body + (255,))
         canvas.alpha_composite(logo, (240 - logo.width // 2, 170))
 
     # shorts / socks swatches along the bottom strip

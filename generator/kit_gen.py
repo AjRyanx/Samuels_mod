@@ -140,8 +140,7 @@ def preview(club, season, logo_dir, brand_files):
     trim = [second, accent, (20, 20, 24), (245, 245, 245), body, accent][design['trim']]
     d.polygon([(200,40),(240,86),(280,40),(268,40),(240,70),(212,40)], fill=trim + (255,))
     brand = brand_files[rng.randrange(len(brand_files))]
-    # reserved logo zone: stripes and overlays stay out, so the plate is flat body colour
-    d.rounded_rectangle([118, 160, 362, 236], radius=10, fill=body + (255,))
+    # sponsor logo placed seamlessly without background plate
     logo = Image.open(Path(logo_dir) / (brand + ('_white' if lum(body) < 120 else '') + '.png')).convert('RGBA')
     s = min(190 / logo.width, 60 / logo.height); logo = logo.resize((int(logo.width*s), int(logo.height*s)))
     canvas.alpha_composite(logo, (240 - logo.width // 2, 170))

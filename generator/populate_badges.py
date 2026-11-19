@@ -14,9 +14,9 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent  # SiderAddons/KitGenerator
-SIDER = ROOT.parent  # C:\Games\SP Football Life 2027\SiderAddons
-REPO_ROOT = SIDER.parent / "mods" / "Dynamic_Kit_and_Sponsor_mod_pes21"
+REPO_ROOT = HERE.parent  # mods/Dynamic_Kit_and_Sponsor_mod_pes21
+GAME_ROOT = REPO_ROOT.parent.parent  # C:\Games\SP Football Life 2027
+SIDER = GAME_ROOT / "SiderAddons"
 
 DEST_DIRS = [
     SIDER / "content" / "KitGenerator" / "badges",

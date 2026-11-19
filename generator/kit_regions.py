@@ -105,6 +105,175 @@ def region_boxes(masks):
 
 
 # --------------------------------------------------------------------------- #
+#  Runtime UV validation and collision resolution for kit stamps
+# --------------------------------------------------------------------------- #
+def check_stamp_containment(mask, x0, y0, x1, y1, alpha=None, margin=4):
+    """Check if stamp region [x0:x1, y0:y1] is strictly inside mask with margin.
+    
+    If alpha is provided (shape (y1-y0, x1-x0)), only pixels with alpha > 10
+    are required to be inside mask.
+    """
+    H, W = mask.shape
+    if x0 < margin or y0 < margin or x1 > W - margin or y1 > H - margin:
+        return False
+    submask = mask[y0:y1, x0:x1]
+    if alpha is not None:
+        if alpha.shape != submask.shape:
+            # Resize or fallback
+            return bool(np.all(submask))
+        opaque = alpha > 10
+        if not np.any(opaque):
+            return True
+        return bool(np.all(submask[opaque]))
+    return bool(np.all(submask))
+
+
+def boxes_intersect(b1, b2, margin=8):
+    """Return True if box b1=(x0,y0,x1,y1) and b2=(x0,y0,x1,y1) overlap within margin."""
+    if b1 is None or b2 is None:
+        return False
+    if (b1[2] + margin <= b2[0]) or (b2[2] + margin <= b1[0]):
+        return False
+    if (b1[3] + margin <= b2[1]) or (b2[3] + margin <= b1[1]):
+        return False
+    return True
+
+
+def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None, min_gap=12, margin=8):
+    """Runtime UV validation and auto-adjustment for front-panel stamps.
+    
+    Input items (sponsor, badge, supplier) should be dicts:
+      {
+        'cx': int, 'cy': int, 'w': int, 'h': int,
+        'alpha': 2D np.ndarray (optional),
+        'plate_pad': (pad_x, pad_y) (optional, for sponsor)
+      }
+      
+    Validates:
+      1. Complete containment inside masks['body_front'], avoiding neck/collar holes
+         and side seam bleeds.
+      2. Inter-stamp clearances: sponsor must not overlap badge or supplier.
+         Badge and supplier must not overlap each other.
+         
+    Adjusts:
+      - Shifts sponsor downward if overlapping chest badges/supplier.
+      - Nudges and proportionally scales down stamps that would clip seams or necklines.
+    """
+    bf = masks.get("body_front") if masks else None
+    res = {}
+    adjustments = []
+
+    # Helper to compute box
+    def _box(item):
+        if not item:
+            return None
+        w, h = item["w"], item["h"]
+        x0 = int(item["cx"] - w / 2)
+        y0 = int(item["cy"] - h / 2)
+        return (x0, y0, x0 + w, y0 + h)
+
+    # 1. Process Badge & Supplier first (chest anchors)
+    for name, item, default_anchor in (("badge", badge, CLUB_BADGE), ("supplier", supplier, KIT_SUPPLIER)):
+        if not item:
+            continue
+        cur_w, cur_h = item["w"], item["h"]
+        cur_cx, cur_cy = item["cx"], item["cy"]
+        alpha = item.get("alpha")
+        orig_w, orig_h = cur_w, cur_h
+        orig_cx, orig_cy = cur_cx, cur_cy
+
+        if bf is not None:
+            # Check neckline / seam containment; adjust if needed
+            for _ in range(10):
+                x0, y0, x1, y1 = int(cur_cx - cur_w / 2), int(cur_cy - cur_h / 2), int(cur_cx - cur_w / 2) + cur_w, int(cur_cy - cur_h / 2) + cur_h
+                if check_stamp_containment(bf, x0, y0, x1, y1, alpha=alpha, margin=margin):
+                    break
+                # If too high near collar hole, nudge down
+                if y0 < 1050:
+                    cur_cy += 4
+                # If too close to left or right seam
+                if x0 < 750 and name == "supplier":
+                    cur_cx += 4
+                elif x1 > 1300 and name == "badge":
+                    cur_cx -= 4
+                else:
+                    # Scale down slightly to fit safely
+                    cur_w = max(16, int(cur_w * 0.95))
+                    cur_h = max(16, int(cur_h * 0.95))
+
+        res[name] = {
+            "cx": cur_cx, "cy": cur_cy, "w": cur_w, "h": cur_h,
+            "x": int(cur_cx - cur_w / 2), "y": int(cur_cy - cur_h / 2),
+            "adjusted": (cur_w != orig_w or cur_h != orig_h or cur_cx != orig_cx or cur_cy != orig_cy)
+        }
+        if res[name]["adjusted"]:
+            adjustments.append(f"{name}: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
+
+    # Check badge vs supplier collision
+    b_box = _box(res.get("badge"))
+    s_box = _box(res.get("supplier"))
+    if b_box and s_box and boxes_intersect(b_box, s_box, margin=min_gap):
+        # Nudge apart or scale down
+        adjustments.append("badge and supplier collided: scaled to resolve")
+        for k in ("badge", "supplier"):
+            res[k]["w"] = int(res[k]["w"] * 0.9)
+            res[k]["h"] = int(res[k]["h"] * 0.9)
+            res[k]["x"] = int(res[k]["cx"] - res[k]["w"] / 2)
+            res[k]["y"] = int(res[k]["cy"] - res[k]["h"] / 2)
+            res[k]["adjusted"] = True
+
+    # 2. Process Sponsor
+    if sponsor:
+        cur_w, cur_h = sponsor["w"], sponsor["h"]
+        cur_cx, cur_cy = sponsor["cx"], sponsor["cy"]
+        alpha = sponsor.get("alpha")
+        pad_x, pad_y = sponsor.get("plate_pad") or (0, 0)
+        orig_w, orig_h = cur_w, cur_h
+        orig_cx, orig_cy = cur_cx, cur_cy
+
+        # Enforce clearance below badge and supplier
+        min_top_y = 0
+        if "badge" in res:
+            min_top_y = max(min_top_y, res["badge"]["y"] + res["badge"]["h"] + min_gap + pad_y)
+        if "supplier" in res:
+            min_top_y = max(min_top_y, res["supplier"]["y"] + res["supplier"]["h"] + min_gap + pad_y)
+
+        sp_y0 = int(cur_cy - cur_h / 2)
+        if sp_y0 < min_top_y:
+            cur_cy = int(min_top_y + cur_h / 2)
+
+        if bf is not None:
+            # Containment loop for sponsor (including plate if any)
+            for _ in range(15):
+                x0 = int(cur_cx - cur_w / 2) - pad_x
+                y0 = int(cur_cy - cur_h / 2) - pad_y
+                x1 = int(cur_cx + cur_w / 2) + pad_x
+                y1 = int(cur_cy + cur_h / 2) + pad_y
+
+                # Check if inside body_front
+                if check_stamp_containment(bf, x0, y0, x1, y1, margin=margin):
+                    break
+                # If too wide or tall for torso front panel, scale down
+                cur_w = max(32, int(cur_w * 0.94))
+                cur_h = max(16, int(cur_h * 0.94))
+                if pad_x or pad_y:
+                    pad_x, pad_y = int(cur_w * 0.10), int(cur_h * 0.35)
+
+        res["sponsor"] = {
+            "cx": cur_cx, "cy": cur_cy, "w": cur_w, "h": cur_h,
+            "x": int(cur_cx - cur_w / 2), "y": int(cur_cy - cur_h / 2),
+            "plate_pad": (pad_x, pad_y) if (sponsor.get("plate_pad") is not None) else None,
+            "adjusted": (cur_w != orig_w or cur_h != orig_h or cur_cx != orig_cx or cur_cy != orig_cy)
+        }
+        if res["sponsor"]["adjusted"]:
+            adjustments.append(f"sponsor: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
+
+    res["valid"] = True
+    res["adjustments"] = adjustments
+    return res
+
+
+# --------------------------------------------------------------------------- #
 #  debug helpers (optional - only used when you want to eyeball the layout)
 # --------------------------------------------------------------------------- #
 DEBUG_COLOURS = {

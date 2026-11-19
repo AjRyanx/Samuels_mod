@@ -29,9 +29,12 @@ Usage
     python watch_signed.py --sider "C:\...\SiderAddons"
 """
 import argparse
+import contextlib
+import os
 import socket
 import sys
 import time
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -45,6 +48,84 @@ POLL_SECONDS = 2.0
 
 # region the active .ftex files are installed into, relative to the game root
 ACTIVE_SUBDIR = Path("SiderAddons/content/KitGenerator/active")
+
+
+# --------------------------------------------------------------------------- #
+#  Atomic file locking and concurrent read/write helpers
+# --------------------------------------------------------------------------- #
+@contextmanager
+def file_lock(lock_path, timeout=3.0, poll_delay=0.03):
+    """Cross-process lock using lockfile with retry, preventing torn reads/writes."""
+    lock_file = Path(str(lock_path) + ".lock")
+    start = time.time()
+    fd = None
+    while True:
+        try:
+            fd = os.open(str(lock_file), os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            break
+        except FileExistsError:
+            # Check for stale lock (> 30s)
+            try:
+                if time.time() - lock_file.stat().st_mtime > 30.0:
+                    lock_file.unlink()
+                    continue
+            except OSError:
+                pass
+            if time.time() - start > timeout:
+                break
+            time.sleep(poll_delay)
+        except OSError:
+            break
+    try:
+        yield
+    finally:
+        if fd is not None:
+            try:
+                os.close(fd)
+                lock_file.unlink()
+            except OSError:
+                pass
+
+
+def safe_read_lines(path, lock=True, retries=5, delay=0.04):
+    """Safely read lines from a file subject to concurrent writes."""
+    path = Path(path)
+    if not path.is_file():
+        return []
+
+    ctx = file_lock(path, timeout=2.0) if lock else contextlib.nullcontext()
+    with ctx:
+        for _ in range(retries):
+            try:
+                raw = path.read_bytes()
+                if not raw:
+                    return []
+                # Only take up to the last complete newline to guard against torn writes
+                last_nl = raw.rfind(b"\n")
+                if last_nl == -1:
+                    return []
+                complete_raw = raw[:last_nl]
+                text = complete_raw.decode("utf-8-sig", errors="replace")
+                return [ln.strip() for ln in text.splitlines() if ln.strip()]
+            except (OSError, PermissionError):
+                time.sleep(delay)
+    return []
+
+
+def safe_append_line(path, text, lock=True, retries=5, delay=0.04):
+    """Safely append a line to a file subject to concurrent writes."""
+    path = Path(path)
+    ctx = file_lock(path, timeout=2.0) if lock else contextlib.nullcontext()
+    with ctx:
+        for _ in range(retries):
+            try:
+                with open(path, "a", encoding="utf-8") as f:
+                    f.write(text.strip() + "\n")
+                    f.flush()
+                return True
+            except (OSError, PermissionError):
+                time.sleep(delay)
+    return False
 
 
 # --------------------------------------------------------------------------- #
@@ -77,13 +158,8 @@ def _acquire_lock():
 
 
 def _read_state(state_file):
-    if not state_file.is_file():
-        return set()
-    try:
-        text = state_file.read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return set()
-    return {ln.strip() for ln in text.splitlines() if ln.strip()}
+    lines = safe_read_lines(state_file, lock=False)
+    return set(lines)
 
 
 def _read_pid(pid_file):
@@ -124,11 +200,7 @@ def _game_alive(pid):
 
 
 def _mark_done(state_file, offer_id):
-    try:
-        with open(state_file, "a", encoding="utf-8") as f:
-            f.write(offer_id + "\n")
-    except OSError:
-        pass
+    safe_append_line(state_file, offer_id, lock=True)
 
 
 def _parse_request(line):
@@ -154,12 +226,14 @@ def _parse_request(line):
 def rebuild(club_id, season, brand, sider, game_root, logfile):
     """Regenerate one club's kit set with `brand` and install it. Returns the
     list of (slot, ftex, design) build_set produced."""
+    import activate_season
     import build_kit
 
     club = build_kit._load_club(club_id, sider)
     logos = Path(sider) / "content" / "KitGenerator" / "logos"
     badges = Path(sider) / "content" / "KitGenerator" / "badges"
-    outdir = Path(sider) / "content" / "KitGenerator" / "staging" / f"season_{season}"
+    staging_dir = Path(sider) / "content" / "KitGenerator" / "staging"
+    outdir = staging_dir / f"season_{season}"
 
     results = build_kit.build_set(
         club, season, outdir,
@@ -170,6 +244,15 @@ def rebuild(club_id, season, brand, sider, game_root, logfile):
         _log("  built p%d -> %s (pattern=%s sponsor=%s)"
              % (slot, Path(ftex).name, design.get("pattern"), design.get("_brand")),
              logfile)
+
+    # Auto-cleanup old staging folders (recovers disk space, keeps current & recent season)
+    try:
+        cleaned = activate_season.cleanup_old_staging(staging_dir, keep_seasons=2, current_season=season)
+        if cleaned:
+            _log("  staging cleanup: purged %d old staging item(s)" % cleaned, logfile)
+    except Exception as exc:
+        _log("  staging cleanup warning: %s" % exc, logfile)
+
     return results
 
 
@@ -178,9 +261,8 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     if not req_file.is_file():
         return 0
     seen = _read_state(state_file)
-    try:
-        lines = req_file.read_text(encoding="utf-8-sig", errors="replace").splitlines()
-    except OSError:
+    lines = safe_read_lines(req_file, lock=True)
+    if not lines:
         return 0
 
     done = 0
@@ -197,6 +279,7 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                  % (req["offer"], type(exc).__name__, exc), logfile)
             continue
         _mark_done(state_file, req["offer"])
+        seen.add(req["offer"])
         done += 1
     if done:
         _log("installed %d new kit set(s) - they appear at the next match" % done, logfile)

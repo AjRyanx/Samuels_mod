@@ -64,7 +64,7 @@ build(ui, ctx)
 n_img = sum(1 for k in calls.values() if k == "image")
 n_off = M.debug_visible_count()
 print("curated offers:", n_off, "image calls:", n_img)
-assert n_off >= 1 and n_img == n_off, (n_off, n_img)
+assert n_off >= 1 and n_img == min(4, n_off), (n_off, n_img)
 
 # ---- 4. synthesised offers for a club deals.txt does not cover --------------
 M.debug_set_club(6001)

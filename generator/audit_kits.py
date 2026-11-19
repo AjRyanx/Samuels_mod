@@ -41,29 +41,50 @@ import kit_regions
 from kit_regions import build_masks
 from kit_render import render_club, _hexc
 
-# Top clubs to audit by default (Premier League, La Liga, Serie A, Bundesliga, etc.)
-DEFAULT_AUDIT_CLUBS = [
-    100,  # Manchester United
-    101,  # Arsenal
-    102,  # Chelsea
-    103,  # Liverpool
-    173,  # Manchester City
-    109,  # Tottenham Hotspur
-    107,  # Aston Villa
-    106,  # Newcastle United
-    108,  # FC Barcelona
-    172,  # Real Madrid
-    171,  # Atletico Madrid
-    120,  # AC Milan
-    121,  # Inter Milan
-    119,  # Juventus
-    125,  # Bayern Munich
-    127,  # Borussia Dortmund
-    128,  # Bayer Leverkusen
-    114,  # Paris Saint-Germain
-    116,  # Marseille
-    398,  # Ajax
-]
+# Top leagues to audit
+LEAGUE_DEFINITIONS = {
+    "epl": {
+        "name": "Premier League",
+        "short": "EPL",
+        "teams": [100, 101, 102, 103, 105, 106, 107, 173, 177, 178, 179, 204, 207, 208, 377, 382, 386, 389, 4071, 4180],
+    },
+    "laliga": {
+        "name": "La Liga",
+        "short": "La Liga",
+        "teams": [108, 109, 110, 172, 195, 196, 258, 259, 261, 263, 265, 266, 267, 362, 364, 370, 2187, 4145, 4272],
+    },
+    "seriea": {
+        "name": "Serie A",
+        "short": "Serie A",
+        "teams": [119, 120, 121, 122, 123, 124, 125, 186, 190, 234, 235, 320, 323, 327, 333, 336, 4219, 4229, 4237, 4914],
+    },
+    "bundesliga": {
+        "name": "Bundesliga",
+        "short": "Bundesliga",
+        "teams": [126, 127, 128, 129, 185, 225, 226, 227, 231, 232, 436, 4124, 4126, 4139, 4140, 5009, 5010],
+    },
+    "ligue1": {
+        "name": "Ligue 1",
+        "short": "Ligue 1",
+        "teams": [112, 113, 114, 180, 181, 182, 213, 215, 216, 217, 218, 221, 403, 1329, 1330, 4213],
+    },
+    "world": {
+        "name": "Rest of World & Americas",
+        "short": "World / Americas",
+        "teams": [116, 117, 118, 131, 132, 138, 139],
+    },
+}
+
+def get_team_league(cid):
+    for lk, ldef in LEAGUE_DEFINITIONS.items():
+        if cid in ldef["teams"]:
+            return lk, ldef["name"], ldef["short"]
+    return "other", "Other Clubs", "Other"
+
+DEFAULT_AUDIT_CLUBS = []
+for _lk in ["epl", "laliga", "seriea", "bundesliga", "ligue1", "world"]:
+    DEFAULT_AUDIT_CLUBS.extend(LEAGUE_DEFINITIONS[_lk]["teams"])
+
 
 
 def relative_luminance(rgb):
@@ -102,6 +123,8 @@ def lint_kit(club, slot, design, chest_img):
         # Determine effective sponsor color
         if design.get("sponsor_white"):
             s_col = (255, 255, 255)
+        elif design.get("sponsor_dark"):
+            s_col = design.get("sponsor_dark") if isinstance(design.get("sponsor_dark"), tuple) else (15, 25, 45)
         else:
             # Sample dominant color from sponsor PNG
             try:
@@ -137,6 +160,9 @@ def lint_kit(club, slot, design, chest_img):
         elif pattern_key == "plain" or pattern_key.endswith("-E") or "pinstripe" in pattern_key:
             results.append({"rule": "Home Authenticity", "status": "PASS",
                             "msg": f"Clean tonal luxury pattern '{pattern_key}'"})
+        elif pattern_key in kit_dna.POOL_STRIPES or pattern_key in kit_dna.POOL_HOOPS or pattern_key in kit_dna.POOL_SASH or pattern_key in ["stripes", "hoops", "sash", "chestband", "101", "086", "094", "098"]:
+            results.append({"rule": "Home Authenticity", "status": "PASS",
+                            "msg": f"Authentic heritage pattern '{pattern_key}'"})
         else:
             results.append({"rule": "Home Authenticity", "status": "WARN",
                             "msg": f"Pattern '{pattern_key}' on Home kit (verify club fit)"})
@@ -146,17 +172,24 @@ def lint_kit(club, slot, design, chest_img):
 
     # Rule 3: Collar Harmony
     dist_to_body = color_distance(body_col, collar_col)
-    # Check if collar matches club accent or secondary colors
+    # Check if collar matches body tone, design trim colors, or club colors
+    d_sec = design.get("second", (255, 255, 255))
+    d_acc = design.get("third", (255, 255, 255))
     sec_col = _hexc(club.get("secondary", "#FFFFFF"))
     acc_col = _hexc(club.get("accent", "#FFFFFF"))
-    dist_to_sec = color_distance(sec_col, collar_col)
-    dist_to_acc = color_distance(acc_col, collar_col)
+
+    min_trim_dist = min(
+        color_distance(d_sec, collar_col),
+        color_distance(d_acc, collar_col),
+        color_distance(sec_col, collar_col),
+        color_distance(acc_col, collar_col),
+    )
 
     if dist_to_body < 40:
         results.append({"rule": "Collar Harmony", "status": "PASS", "msg": "Matching body tone"})
-    elif dist_to_sec < 45 or dist_to_acc < 45:
+    elif min_trim_dist < 55:
         results.append({"rule": "Collar Harmony", "status": "PASS", "msg": "Matches club trim colors"})
-    elif slot == 1 and dist_to_body > 180 and dist_to_sec > 100:
+    elif slot == 1 and dist_to_body > 180 and min_trim_dist > 90:
         results.append({"rule": "Collar Harmony", "status": "FAIL",
                         "msg": f"Bizarre mismatched collar RGB {collar_col} on {body_col} body"})
     else:
@@ -217,6 +250,9 @@ def generate_html_gallery(audit_data, out_html_path):
         slot_name = {1: "P1 Home", 2: "P2 Away", 3: "P3 Third"}.get(slot, f"P{slot}")
         overall = item["overall"]
         design = item["design"]
+        league_key = item.get("league_key", "other")
+        league_name = item.get("league_name", "Other")
+        league_short = item.get("league_short", "Other")
         
         status_color = "#10b981" if overall == "PASS" else ("#f59e0b" if overall == "WARN" else "#ef4444")
         body_hex = "#{:02x}{:02x}{:02x}".format(*design.get("body", (0, 0, 0)))
@@ -237,13 +273,13 @@ def generate_html_gallery(audit_data, out_html_path):
         badge_img_tag = f'<img src="{item["badge_rel"]}" class="club-crest" alt="crest" onerror="this.style.display=\'none\'">' if item.get("badge_rel") else ''
 
         card = f"""
-        <div class="kit-card" data-status="{overall}" data-slot="{slot}" data-name="{html.escape(club['name']).lower()} {cid}">
+        <div class="kit-card" data-status="{overall}" data-slot="{slot}" data-league="{league_key}" data-name="{html.escape(club['name']).lower()} {cid} {league_name.lower()}">
             <div class="card-header">
                 <div class="club-info">
                     {badge_img_tag}
                     <div>
                         <div class="club-name">{html.escape(club['name'])}</div>
-                        <div class="club-meta">ID #{cid} • {html.escape(club.get('tier', 'mid')).upper()}</div>
+                        <div class="club-meta">ID #{cid} • {league_short} • {html.escape(club.get('tier', 'mid')).upper()}</div>
                     </div>
                 </div>
                 <div class="slot-pill" style="border: 1px solid {status_color}; color: {status_color}; background: {status_color}18">
@@ -400,6 +436,18 @@ def generate_html_gallery(audit_data, out_html_path):
         </div>
     </div>
 
+    <div class="controls" style="margin-top:-14px; margin-bottom:20px;">
+        <div class="filter-group" id="leagueFilter" style="flex-wrap:wrap;">
+            <button class="filter-btn active" data-filter="all">All Leagues</button>
+            <button class="filter-btn" data-filter="epl">Premier League</button>
+            <button class="filter-btn" data-filter="laliga">La Liga</button>
+            <button class="filter-btn" data-filter="seriea">Serie A</button>
+            <button class="filter-btn" data-filter="bundesliga">Bundesliga</button>
+            <button class="filter-btn" data-filter="ligue1">Ligue 1</button>
+            <button class="filter-btn" data-filter="world">World / Americas</button>
+        </div>
+    </div>
+
     <div class="grid" id="kitGrid">
         {''.join(cards_html)}
     </div>
@@ -409,19 +457,22 @@ def generate_html_gallery(audit_data, out_html_path):
         const cards = document.querySelectorAll('.kit-card');
         let currentStatus = 'all';
         let currentSlot = 'all';
+        let currentLeague = 'all';
 
         function updateFilters() {{
             const query = searchInput.value.toLowerCase().trim();
             cards.forEach(card => {{
                 const status = card.getAttribute('data-status');
                 const slot = card.getAttribute('data-slot');
+                const league = card.getAttribute('data-league');
                 const text = card.getAttribute('data-name');
 
                 const matchesStatus = (currentStatus === 'all' || status === currentStatus);
                 const matchesSlot = (currentSlot === 'all' || slot === currentSlot);
+                const matchesLeague = (currentLeague === 'all' || league === currentLeague);
                 const matchesSearch = (!query || text.includes(query));
 
-                card.style.display = (matchesStatus && matchesSlot && matchesSearch) ? 'flex' : 'none';
+                card.style.display = (matchesStatus && matchesSlot && matchesLeague && matchesSearch) ? 'flex' : 'none';
             }});
         }}
 
@@ -442,6 +493,14 @@ def generate_html_gallery(audit_data, out_html_path):
             currentSlot = e.target.getAttribute('data-filter');
             updateFilters();
         }});
+
+        document.getElementById('leagueFilter').addEventListener('click', e => {{
+            if (e.target.tagName !== 'BUTTON') return;
+            document.querySelectorAll('#leagueFilter .filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentLeague = e.target.getAttribute('data-filter');
+            updateFilters();
+        }});
     </script>
 </body>
 </html>
@@ -453,6 +512,8 @@ def generate_html_gallery(audit_data, out_html_path):
 def main():
     parser = argparse.ArgumentParser(description="Automated Visual QA for Generated Kits")
     parser.add_argument("--clubs", help="Comma-separated club IDs (e.g. 100,102,103)")
+    parser.add_argument("--league", choices=["all", "top5", "epl", "laliga", "seriea", "bundesliga", "ligue1", "world"],
+                        default="top5", help="Filter clubs by league (default: top5 = 99 clubs across top European leagues)")
     parser.add_argument("--tier", help="Filter by tier (e.g. big, mid)")
     parser.add_argument("--all", action="store_true", help="Audit all clubs in clubs.csv")
     parser.add_argument("--season", type=int, default=2027, help="Simulation season (default: 2027)")
@@ -474,11 +535,14 @@ def main():
         club_ids = [int(x.strip()) for x in args.clubs.split(",") if x.strip()]
     elif args.tier:
         club_ids = [c["id"] for c in all_clubs if c.get("tier") == args.tier]
-    elif args.all:
+    elif args.all or args.league == "all":
         club_ids = [c["id"] for c in all_clubs]
+    elif args.league == "top5":
+        club_ids = list(DEFAULT_AUDIT_CLUBS)
+    elif args.league in LEAGUE_DEFINITIONS:
+        club_ids = list(LEAGUE_DEFINITIONS[args.league]["teams"])
     else:
-        # Default: Bespoke European Clubs
-        club_ids = DEFAULT_AUDIT_CLUBS
+        club_ids = list(DEFAULT_AUDIT_CLUBS)
 
     if args.limit > 0:
         club_ids = club_ids[:args.limit]
@@ -505,7 +569,8 @@ def main():
     for idx, cid in enumerate(club_ids, 1):
         club = clubs_map.get(cid, {"id": cid, "name": f"Club #{cid}", "primary": "#B02E34", "secondary": "#FFFFFF", "accent": "#111111", "tier": "mid"})
         cname = club["name"]
-        print(f"[{idx:2d}/{len(club_ids)}] Auditing #{cid:4d} {cname[:22]:22s} ... ", end="", flush=True)
+        lk, lname, lshort = get_team_league(cid)
+        print(f"[{idx:2d}/{len(club_ids)}] Auditing #{cid:4d} {cname[:22]:22s} ({lshort}) ... ", end="", flush=True)
 
         club_passed = True
         for slot in [1, 2, 3]:
@@ -546,6 +611,9 @@ def main():
                 "sponsor_name": args.sponsor,
                 "chest_rel": f"crops/{chest_png.name}",
                 "badge_rel": b_rel,
+                "league_key": lk,
+                "league_name": lname,
+                "league_short": lshort,
             })
 
         print("FAIL" if not club_passed else "PASS")

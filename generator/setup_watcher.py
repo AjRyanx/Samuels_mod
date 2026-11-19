@@ -26,7 +26,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent          # ...\generator
 MOD_ROOT = HERE.parent                          # the mod root (holds content/, modules/)
-DEFAULT_GAME_ROOT = Path(r"C:\Program Files (x86)\SP Football Life 2027")
+DEFAULT_GAME_ROOT = Path(r"C:\Games\SP Football Life 2027")
 
 # what we copy into the game, relative to this generator folder
 COPY_FILES = ("*.py",)
