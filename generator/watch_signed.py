@@ -204,7 +204,7 @@ def _mark_done(state_file, offer_id):
 
 
 def _parse_request(line):
-    """offer_id|club_id|season|brand|tier|timestamp -> dict (or None)."""
+    """offer_id|club_id|season|brand|tier|timestamp|career_id -> dict (or None)."""
     line = line.strip().lstrip("\ufeff")           # tolerate a Notepad BOM
     if not line or line.startswith("#"):
         return None
@@ -216,14 +216,20 @@ def _parse_request(line):
         season = int(parts[2])
     except (ValueError, IndexError):
         return None
-    return {"offer": parts[0], "club_id": club_id, "season": season,
-            "brand": parts[3] or None}
+    career_id = parts[6] if len(parts) >= 7 and parts[6] else None
+    return {
+        "offer": parts[0],
+        "club_id": club_id,
+        "season": season,
+        "brand": parts[3] or None,
+        "career_id": career_id,
+    }
 
 
 # --------------------------------------------------------------------------- #
 #  the actual rebuild
 # --------------------------------------------------------------------------- #
-def rebuild(club_id, season, brand, sider, game_root, logfile):
+def rebuild(club_id, season, brand, sider, game_root, logfile, career_id=None):
     """Regenerate one club's kit set with `brand` and install it. Returns the
     list of (slot, ftex, design) build_set produced."""
     import activate_season
@@ -240,11 +246,28 @@ def rebuild(club_id, season, brand, sider, game_root, logfile):
         install=True, game_root=game_root, quiet=True,
         sponsor=brand, logo_dir=logos, badge_dir=badges,
     )
+    active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
     for slot, _atlas, ftex, design in results:
         slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
         _log("  built %s -> %s (pattern=%s sponsor=%s)"
              % (slot_code, Path(ftex).name, design.get("pattern"), design.get("_brand")),
              logfile)
+
+    # If tagged with a specific career profile, mirror to isolated career folder
+    if career_id and career_id != "unknown":
+        career_dir = Path(sider) / "content" / "KitGenerator" / "careers" / career_id
+        career_dir.mkdir(parents=True, exist_ok=True)
+        for slot, _atlas, _ftex, _design in results:
+            slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+            name = f"u{club_id:04d}{slot_code}"
+            src_ftex = active_dir / f"{name}.ftex"
+            if src_ftex.is_file():
+                shutil.copy2(src_ftex, career_dir / f"{name}.ftex")
+            for ftype in ("back", "leg", "name"):
+                src_font = active_dir / f"{name}_{ftype}.ftex"
+                if src_font.is_file():
+                    shutil.copy2(src_font, career_dir / f"{name}_{ftype}.ftex")
+        _log("  profile isolation: mirrored kit set to careers/%s/" % career_id, logfile)
 
     # Auto-cleanup old staging folders (recovers disk space, keeps current & recent season)
     try:
@@ -274,7 +297,7 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         _log("signed: offer=%s club=%d season=%d sponsor=%s"
              % (req["offer"], req["club_id"], req["season"], req["brand"]), logfile)
         try:
-            rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile)
+            rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
         except Exception as exc:                      # noqa: BLE001 - keep watching
             _log("  ERROR building %s: %s: %s"
                  % (req["offer"], type(exc).__name__, exc), logfile)

@@ -67,7 +67,7 @@ local OFFERS, SIGNED, BRANDS = {}, {}, {}
 local OPTED_IN = {}
 local DEAL = nil                      -- active multi-season deal (or nil)
 local REQ_SEASONS, PAID, WARNED, CLEAN = {}, {}, {}, {}
-local club_id, start_watcher
+local club_id, start_watcher, load_deal
 
 local DIR, CAREER, SEASON = '', 'unknown', 2027
 local MONTH_NAMES = { 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' }
@@ -343,6 +343,7 @@ local function sync_career_identity(tid, y, raw)
     CAREER = active_id
     write_file('career.txt', CAREER .. '\n')
     L('career identity synced to memory: ' .. CAREER)
+    if load_deal then load_deal() end
   end
 end
 
@@ -707,16 +708,35 @@ local function deal_active(season)
   return season >= DEAL.start and season <= deal_end()
 end
 
-local function save_deal()
-  if not DEAL then write_file('active_deal.txt', ''); return end
-  write_file('active_deal.txt', string.format('%s|%d|%s|%d|%d|%d|%s|%s|%d',
-    DEAL.id, DEAL.club, DEAL.brand, DEAL.start, DEAL.years, DEAL.value,
-    DEAL.tier or '', DEAL.signed_at or '', DEAL.bonus or 0))
+local function career_deal_rel()
+  if CAREER and CAREER ~= 'unknown' then
+    return string.format('careers/%s/active_deal.txt', CAREER)
+  end
+  return 'active_deal.txt'
 end
 
-local function load_deal()
+local function save_deal()
+  local text = ''
+  if DEAL then
+    text = string.format('%s|%d|%s|%d|%d|%d|%s|%s|%d',
+      DEAL.id, DEAL.club, DEAL.brand, DEAL.start, DEAL.years, DEAL.value,
+      DEAL.tier or '', DEAL.signed_at or '', DEAL.bonus or 0)
+  end
+  write_file('active_deal.txt', text)
+  if CAREER and CAREER ~= 'unknown' then
+    write_file(career_deal_rel(), text)
+  end
+end
+
+function load_deal()
   DEAL = nil
-  local lines = read_lines('active_deal.txt')
+  local lines = {}
+  if CAREER and CAREER ~= 'unknown' then
+    lines = read_lines(career_deal_rel())
+  end
+  if #lines == 0 then
+    lines = read_lines('active_deal.txt')
+  end
   if #lines == 0 then return end
   local t = split(lines[1])
   local start, years, value = tonumber(t[4]), tonumber(t[5]), tonumber(t[6])
@@ -727,7 +747,7 @@ local function load_deal()
   if DEAL.club and DEAL.club > 0 then
     OPTED_IN[DEAL.club] = true
   end
-  L('active deal: ' .. DEAL.brand .. ' (' .. tostring(start) .. '..' .. tostring(deal_end()) .. ')')
+  L('active deal loaded [' .. tostring(CAREER) .. ']: ' .. DEAL.brand .. ' (' .. tostring(start) .. '..' .. tostring(deal_end()) .. ')')
 end
 
 local function load_opted_in()
@@ -937,8 +957,8 @@ local function ensure_season_deal(season)
     L('deal with ' .. tostring(brand) .. ' belongs to club #' .. tostring(old) ..
       ' - released (now following #' .. tostring(cid) .. ')')
     if CFG.ENABLE_KITS then
-      append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s',
-        old, season, os.date('%Y%m%d%H%M%S'), old, season, os.date('%Y-%m-%d %H:%M:%S')))
+      append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s|%s',
+        old, season, os.date('%Y%m%d%H%M%S'), old, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER))
     end
   end
 
@@ -971,8 +991,8 @@ local function ensure_season_deal(season)
     if CFG.ENABLE_KITS and not CLEAN[ckey] then
       CLEAN[ckey] = true
       local stamp = os.date('%Y%m%d%H%M%S')
-      append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s',
-        cid, season, stamp, cid, season, os.date('%Y-%m-%d %H:%M:%S')))
+      append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s|%s',
+        cid, season, stamp, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER))
       L('no deal for season ' .. tostring(season) ..
         ': requested the clean kit for club #' .. tostring(cid))
     end
@@ -983,9 +1003,9 @@ local function ensure_season_deal(season)
     REQ_SEASONS[rkey] = true
     local stamp = os.date('%Y%m%d%H%M%S')
     local req_id = string.format('rebuild-%d-%s-%d-t%s', DEAL.club, DEAL.brand, season, stamp)
-    append_line('kit_request.txt', string.format('%s|%d|%d|%s|%s|%s',
+    append_line('kit_request.txt', string.format('%s|%d|%d|%s|%s|%s|%s',
       req_id, DEAL.club, season, DEAL.brand, DEAL.tier or '',
-      os.date('%Y-%m-%d %H:%M:%S')))
+      os.date('%Y-%m-%d %H:%M:%S'), CAREER))
     L('deal active: requested a fresh kit for season ' .. tostring(season))
   end
   if not CFG.ENABLE_SPONSORSHIP then return end
@@ -1064,8 +1084,8 @@ local function sign_offer(o)
   if CFG.ENABLE_KITS then
     local stamp = os.date('%Y%m%d%H%M%S')
     local req_id = string.format('rebuild-%d-%s-%d-t%s', DEAL.club, DEAL.brand, DEAL.start, stamp)
-    append_line('kit_request.txt', string.format('%s|%d|%d|%s|%s|%s',
-      req_id, DEAL.club, DEAL.start, DEAL.brand, DEAL.tier or '', os.date('%Y-%m-%d %H:%M:%S')))
+    append_line('kit_request.txt', string.format('%s|%d|%d|%s|%s|%s|%s',
+      req_id, DEAL.club, DEAL.start, DEAL.brand, DEAL.tier or '', os.date('%Y-%m-%d %H:%M:%S'), CAREER))
     REQ_SEASONS[DEAL.club .. ':' .. DEAL.start] = true
     L('deal active: queued fresh kit rebuild (req=' .. req_id .. ')')
   end
@@ -1153,9 +1173,9 @@ local function terminate_deal()
     CLEAN[club .. ':' .. season] = true   -- one clean rebuild now, logo off the shirts
     -- a UNIQUE id: the season's earlier clean request (made before signing) may
     -- already be in the watcher's done-list, which dedupes by id
-    append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s',
+    append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s|%s',
       club, season, os.date('%Y%m%d%H%M%S'), club, season,
-      os.date('%Y-%m-%d %H:%M:%S')))
+      os.date('%Y-%m-%d %H:%M:%S'), CAREER))
   end
   SEL.credit_msg = 'terminated ' .. tostring(brand) .. (note ~= '' and ('; ' .. note) or '')
   L('terminated deal with ' .. tostring(brand) .. (note ~= '' and (' (' .. note .. ')') or ''))
@@ -1495,7 +1515,14 @@ function m.make_key(ctx, filename)
   local cid = club_id()
   -- If this is the user's club, enforce user storyline opt-in (authentic until sponsor signed)
   if cid and cid > 0 and tid == cid then
-    local is_opted_in = (DEAL and DEAL.club == cid) or (OPTED_IN and OPTED_IN[cid])
+    local has_career_deal = (DEAL and DEAL.club == cid)
+    local has_career_profile = false
+    if CAREER and CAREER ~= 'unknown' then
+      local cp = (DIR .. 'content/KitGenerator/careers/' .. CAREER):gsub('/', '\\')
+      local f = io.open(cp .. '\\u' .. string.format('%04d', cid) .. 'p1.ftex', 'rb')
+      if f then f:close(); has_career_profile = true end
+    end
+    local is_opted_in = has_career_deal or has_career_profile or (OPTED_IN and OPTED_IN[cid] and not (CAREER and CAREER:find('^ml_')))
     if not is_opted_in then return nil end
   else
     -- AI clubs: wear original authentic kits in Season 1; dynamic kits kick in from Season 2 onwards
@@ -1522,11 +1549,31 @@ function m.make_key(ctx, filename)
   local target_suffix = suffix_map[suffix or ""]
   if not target_suffix then return nil end
 
-  local rel_path = string.format("content/KitGenerator/active/u%04d%s%d%s.ftex", tid, slot_type, slot, target_suffix)
-  local full_path = (DIR .. rel_path):gsub('/', '\\')
-  local f = io.open(full_path, "rb")
-  if f then
-    f:close()
+  local rel_path = nil
+
+  -- 1. Check career-specific isolated profile first (if this is the managed human club)
+  if cid and tid == cid and CAREER and CAREER ~= 'unknown' then
+    local career_cand = string.format("content/KitGenerator/careers/%s/u%04d%s%d%s.ftex", CAREER, tid, slot_type, slot, target_suffix)
+    local career_full = (DIR .. career_cand):gsub('/', '\\')
+    local cf = io.open(career_full, "rb")
+    if cf then
+      cf:close()
+      rel_path = career_cand
+    end
+  end
+
+  -- 2. Fall back to global pre-generated active pool
+  if not rel_path then
+    local global_cand = string.format("content/KitGenerator/active/u%04d%s%d%s.ftex", tid, slot_type, slot, target_suffix)
+    local global_full = (DIR .. global_cand):gsub('/', '\\')
+    local gf = io.open(global_full, "rb")
+    if gf then
+      gf:close()
+      rel_path = global_cand
+    end
+  end
+
+  if rel_path then
     if target_suffix == "" then
       local label = (slot_type == "g") and ("dynamic GK" .. tostring(slot) .. " kit") or ("dynamic kit")
       L(string.format('serving %s (ML mode): %s -> %s', label, filename, rel_path))
@@ -1647,6 +1694,13 @@ function m.debug_clear_deal()
   DEAL = nil
   REQ_SEASONS = {}
   save_deal()
+  return true
+end
+
+function m.debug_set_career(career_id)
+  CAREER = career_id
+  write_file('career.txt', CAREER .. '\n')
+  if load_deal then load_deal() end
   return true
 end
 

@@ -174,5 +174,53 @@ key_gk1_edit = M.make_key(ctx, "k108g1.ftex")
 assert key_gk1_edit is None, f"Expected authentic GK kit in Edit mode, got {key_gk1_edit}"
 print("PASS 15: Authentic Goalkeeper kits strictly preserved in Exhibition and Edit mode")
 
+# 16. Multi-Career Isolation for the same club (e.g. Chelsea #102)
+M.set_home_team_for_kits(ctx, 102, 0)
+M.debug_set_club(102)
+
+# Set up Career A profile folder for Chelsea
+career_a_dir = tmp / "content" / "KitGenerator" / "careers" / "ml_0102_saveA"
+career_a_dir.mkdir(parents=True, exist_ok=True)
+(career_a_dir / "u0102p1.ftex").write_bytes(b"CHELSEA_SAVE_A_ZALTERA")
+(career_a_dir / "active_deal.txt").write_text("102-2027-1|102|zaltera|2027|3|120000000|big|2026-11-19 12:00:00|0\n")
+
+# Set up Career B profile folder for Chelsea
+career_b_dir = tmp / "content" / "KitGenerator" / "careers" / "ml_0102_saveB"
+career_b_dir.mkdir(parents=True, exist_ok=True)
+(career_b_dir / "u0102p1.ftex").write_bytes(b"CHELSEA_SAVE_B_VERILO")
+(career_b_dir / "active_deal.txt").write_text("102-2027-2|102|verilo|2027|1|90000000|mid|2026-11-19 12:00:00|0\n")
+
+# Global fallback for Chelsea in active/
+(tmp / "content" / "KitGenerator" / "active" / "u0102p1.ftex").write_bytes(b"CHELSEA_GLOBAL_PREGEN")
+
+# In Career A: serves Career A kit
+M.debug_set_career("ml_0102_saveA")
+key_save_a = M.make_key(ml_ctx, "u0102p1.ftex")
+assert key_save_a == "content/KitGenerator/careers/ml_0102_saveA/u0102p1.ftex", f"Expected Save A kit, got {key_save_a}"
+st_a = M.status()
+assert st_a["deal"] == "zaltera", f"Expected Zaltera deal in Save A, got {st_a['deal']}"
+print("PASS 16A: Multi-Career Chelsea Save A serves Save A's isolated Zaltera kit")
+
+# Hot-switch to Career B: serves Career B kit
+M.debug_set_career("ml_0102_saveB")
+key_save_b = M.make_key(ml_ctx, "u0102p1.ftex")
+assert key_save_b == "content/KitGenerator/careers/ml_0102_saveB/u0102p1.ftex", f"Expected Save B kit, got {key_save_b}"
+st_b = M.status()
+assert st_b["deal"] == "verilo", f"Expected Verilo deal in Save B, got {st_b['deal']}"
+print("PASS 16B: Hot-switching to Chelsea Save B instantly serves Save B's isolated Verilo kit")
+
+# New Career C with Chelsea (no deal signed, no profile folder yet): Storyline opt-in preserves authentic kit!
+M.debug_set_career("ml_0102_saveC")
+key_save_c = M.make_key(ml_ctx, "u0102p1.ftex")
+assert key_save_c is None, f"Expected authentic kit in Save C before sponsor signed, got {key_save_c}"
+st_c = M.status()
+assert st_c["deal"] is None, f"Expected no deal in Save C, got {st_c['deal']}"
+print("PASS 16C: New Chelsea Save C strictly preserves authentic kit until sponsor is signed")
+
+# In Exhibition: Chelsea always wears authentic kit regardless of which save is active
+key_chelsea_exh = M.make_key(exh_ctx, "u0102p1.ftex")
+assert key_chelsea_exh is None, f"Expected authentic kit in Exhibition for Chelsea, got {key_chelsea_exh}"
+print("PASS 16D: Exhibition match strictly preserves authentic kit for Chelsea across all saves")
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")
