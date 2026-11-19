@@ -103,6 +103,16 @@ def _col_lum(c):
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
 
 
+def _wcag_contrast(c1, c2):
+    """Compute exact WCAG relative luminance contrast ratio between two RGB colors."""
+    def _rel(c):
+        srgb = [v / 255.0 for v in c]
+        lin = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in srgb]
+        return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+    l1, l2 = _rel(c1), _rel(c2)
+    return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+
+
 # --------------------------------------------------------------------------- #
 #  shirt-local design tile
 # --------------------------------------------------------------------------- #
@@ -304,6 +314,15 @@ def _apply_vent_panels(atlas, d, masks):
             atlas.paste(Image.fromarray(arr, "RGBA"), (0, 0))
 
 
+def _composite_layer(atlas, layer, mask=None):
+    """Safely alpha-composite a transparent RGBA layer onto atlas, optionally clipped by mask."""
+    if mask is not None:
+        arr = np.array(layer)
+        arr[~mask] = 0
+        layer = Image.fromarray(arr, "RGBA")
+    atlas.alpha_composite(layer)
+
+
 def _apply_brand_signatures(atlas, d, masks):
     """Apply iconic kit supplier trademark languages across shoulders, sleeves, and shorts."""
     supp = str(d.get("supplier_name") or d.get("supplier") or "").lower()
@@ -319,19 +338,31 @@ def _apply_brand_signatures(atlas, d, masks):
         acc = (245, 245, 245) if l_b < 128 else (20, 25, 35)
     acc_rgba = tuple(acc) + (255,)
 
-    # 1. ADIDAS: Three iconic parallel stripes
+    # 1. ADIDAS: Three iconic parallel stripes running down outer shoulders/sleeves and shorts
     is_adidas = "adidas" in supp or d.get("sleeve_style") in ("shoulder_stripe", "adidas_stripes", "three_stripes")
     if is_adidas:
         stripe_mask = np.zeros_like(sleeve_mask)
-        stripe_y_ranges = [(367, 387), (396, 416), (425, 445)]
-        for y0, y1 in stripe_y_ranges:
-            stripe_mask[y0:y1, 39:447] = sleeve_mask[y0:y1, 39:447]
-            stripe_mask[y0:y1, 610:692] = body_back[y0:y1, 610:692]
-            stripe_mask[y0:y1, 1356:1438] = body_back[y0:y1, 1356:1438]
-            stripe_mask[y0:y1, 1601:2009] = sleeve_mask[y0:y1, 1601:2009]
-        if np.any(stripe_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(stripe_mask))
+        # Left sleeve outer shoulder 3-stripes (y: 215..570)
+        # Calibrated directly against authentic PES 2021 UV atlas layout
+        for x0, x1 in [(8, 15), (20, 27), (32, 39)]:
+            stripe_mask[215:570, x0:x1] = sleeve_mask[215:570, x0:x1]
 
+        # Right sleeve outer shoulder 3-stripes (y: 215..570)
+        for x0, x1 in [(2008, 2015), (2020, 2027), (2032, 2039)]:
+            stripe_mask[215:570, x0:x1] = sleeve_mask[215:570, x0:x1]
+
+        # Raglan shoulder seam continuation onto back panel top edges
+        for x0, x1 in [(700, 707), (712, 719), (724, 731)]:
+            stripe_mask[60:130, x0:x1] = body_back[60:130, x0:x1]
+        for x0, x1 in [(1316, 1323), (1328, 1335), (1340, 1347)]:
+            stripe_mask[60:130, x0:x1] = body_back[60:130, x0:x1]
+
+        if np.any(stripe_mask):
+            stripe_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+            stripe_layer.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(stripe_mask))
+            _composite_layer(atlas, stripe_layer)
+
+        # Shorts 3-stripes down outer leg seams
         sh_stripe = np.zeros_like(shorts_mask)
         sh_stripe[:, 32:38] = True
         sh_stripe[:, 42:48] = True
@@ -341,7 +372,9 @@ def _apply_brand_signatures(atlas, d, masks):
         sh_stripe[:, 2006:2012] = True
         sh_stripe = sh_stripe & shorts_mask
         if np.any(sh_stripe):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(sh_stripe))
+            sh_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+            sh_layer.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(sh_stripe))
+            _composite_layer(atlas, sh_layer)
 
     # 2. HUMMEL: Iconic repeating V-Chevrons
     elif "hummel" in supp:
@@ -358,7 +391,7 @@ def _apply_brand_signatures(atlas, d, masks):
                              (45, cy + 8), (53, cy), (45, cy - 8)], fill=acc_rgba)
             draw_ch.polygon([(1998, cy - 8), (2006, cy), (1998, cy + 8),
                              (2003, cy + 8), (2011, cy), (2003, cy - 8)], fill=acc_rgba)
-        atlas.paste(chevron_layer, (0, 0), _mask_img(sleeve_mask | shorts_mask))
+        _composite_layer(atlas, chevron_layer, sleeve_mask | shorts_mask)
 
     # 3. KAPPA: Iconic Banda tape
     elif "kappa" in supp:
@@ -377,7 +410,7 @@ def _apply_brand_signatures(atlas, d, masks):
         for cy in range(1240, 1900, 36):
             draw_b.rectangle([39, cy, 51, cy + 12], fill=sh_base_col)
             draw_b.rectangle([1997, cy, 2009, cy + 12], fill=sh_base_col)
-        atlas.paste(banda_layer, (0, 0), _mask_img(sleeve_mask | shorts_mask))
+        _composite_layer(atlas, banda_layer, sleeve_mask | shorts_mask)
 
     # 4. UMBRO: Double Diamond repeat tape
     elif "umbro" in supp:
@@ -395,7 +428,7 @@ def _apply_brand_signatures(atlas, d, masks):
         for cx in range(1120, 1950, 48):
             draw_u.polygon([(cx, 1942), (cx + 10, 1952), (cx, 1962), (cx - 10, 1952)], outline=acc_rgba, width=2)
             draw_u.polygon([(cx, 1947), (cx + 4, 1952), (cx, 1957), (cx - 4, 1952)], fill=acc_rgba)
-        atlas.paste(umbro_layer, (0, 0), _mask_img(sleeve_mask | shorts_mask))
+        _composite_layer(atlas, umbro_layer, sleeve_mask | shorts_mask)
 
     # 5. PUMA: T7 Formstrip broad ergonomic panel
     elif "puma" in supp:
@@ -422,7 +455,7 @@ def _apply_brand_signatures(atlas, d, masks):
         for y in range(1120, 1820, 16):
             draw_n.line([(678, y), (718, y + 6)], fill=acc_rgba, width=3)
             draw_n.line([(1328, y), (1368, y + 6)], fill=acc_rgba, width=3)
-        atlas.paste(nike_layer, (0, 0), _mask_img(masks["body_front"] | sleeve_mask))
+        _composite_layer(atlas, nike_layer, masks["body_front"] | sleeve_mask)
 
 
 def _apply_engineered_shorts(atlas, d, masks):
@@ -508,7 +541,7 @@ def _apply_engineered_socks(atlas, d, masks):
                  int(socks_base[1] * (1 - t) + socks_accent[1] * t),
                  int(socks_base[2] * (1 - t) + socks_accent[2] * t), 255)
             draw_f.line([(0, y), (ATLAS, y)], fill=c)
-        atlas.paste(fade_so, (0, 0), _mask_img(socks_mask))
+        _composite_layer(atlas, fade_so, masks["socks"])
 
 
 # --------------------------------------------------------------------------- #
@@ -854,7 +887,10 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
                 st["pattern"] = pool[0]
             else:
                 choices = [x for x in pool if x != pool[0]] or pool
-                idx = (season + kit_dna._sponsor_hash(sponsor)) % len(choices)
+                cid = int(club.get("id") or club.get("team_id", 0))
+                slot_num = slot if isinstance(slot, int) else (4 if "g" in str(slot) else int(str(slot).replace("p", "") or 1))
+                entropy = ((cid * 0x45D9F3B) ^ (season * 0x119DE1F) ^ kit_dna._sponsor_hash(sponsor) ^ (slot_num * 0x27D4EB2D)) & 0x7FFFFFFF
+                idx = entropy % len(choices)
                 st["pattern"] = choices[idx]
     else:
         st = kit_dna.get_club_style(club, slot, season, sponsor=sponsor)
@@ -865,37 +901,55 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
     # the chest logo is stamped only for a signed sponsor, and chosen from the
     # FINAL body colour so a dark kit gets the white logo variant
     if brand:
-        white = kit_gen.lum(design["body"]) < 120
-        if white:
+        body_col = tuple(design["body"])
+        body_lum = kit_gen.lum(body_col)
+        # If shirt body is dark (< 130), white logo is mandatory to guarantee legibility
+        if body_lum < 130:
+            white = True
             design["sponsor_white"] = True
             design.pop("sponsor_dark", None)
         else:
+            white = False
             design["sponsor_white"] = False
-            # If sponsor_dark was explicitly set, check that it still has good contrast (> 3.0:1) with body
+            # If sponsor_dark was explicitly set, check that it still has strict WCAG AA contrast (>= 4.5:1)
             if design.get("sponsor_dark"):
-                dark_col = design["sponsor_dark"] if isinstance(design["sponsor_dark"], (tuple, list)) else (15, 25, 45)
-                l1 = 0.2126 * design["body"][0] + 0.7152 * design["body"][1] + 0.0722 * design["body"][2]
-                l2 = 0.2126 * dark_col[0] + 0.7152 * dark_col[1] + 0.0722 * dark_col[2]
-                ratio = (max(l1, l2) + 12.5) / (min(l1, l2) + 12.5)
-                if ratio < 3.0:
-                    design.pop("sponsor_dark", None)
-                    design["sponsor_white"] = True
-                    white = True
+                dark_col = design["sponsor_dark"] if isinstance(design["sponsor_dark"], (tuple, list)) else (12, 14, 18)
+                ratio = _wcag_contrast(body_col, dark_col)
+                if ratio < 4.5:
+                    white_ratio = _wcag_contrast(body_col, (255, 255, 255))
+                    noir_ratio = _wcag_contrast(body_col, (12, 14, 18))
+                    if white_ratio >= noir_ratio:
+                        design.pop("sponsor_dark", None)
+                        design["sponsor_white"] = True
+                        white = True
+                    else:
+                        design["sponsor_dark"] = (12, 14, 18)
 
-        design["sponsor"] = str(Path(logo_dir) / (brand + ("_white" if white else "") + ".png"))
+        cand_logo = Path(logo_dir) / (brand + ("_white" if white else "") + ".png")
+        if not cand_logo.is_file():
+            cand_logo = Path(logo_dir) / (brand + ".png")
+        design["sponsor"] = str(cand_logo)
+
         if not white and not design.get("sponsor_dark"):
-            # Check if regular logo has sufficient contrast (> 3.2:1)
+            # Check if regular logo has sufficient WCAG AA contrast (>= 4.5:1)
             try:
                 sim = Image.open(design["sponsor"]).convert("RGBA")
                 arr = np.array(sim)
                 opaque = arr[:, :, 3] > 128
                 if np.any(opaque):
                     s_col = tuple(int(v) for v in np.median(arr[opaque, :3], axis=0))
-                    l1 = 0.2126 * design["body"][0] + 0.7152 * design["body"][1] + 0.0722 * design["body"][2]
-                    l2 = 0.2126 * s_col[0] + 0.7152 * s_col[1] + 0.0722 * s_col[2]
-                    ratio = (max(l1, l2) + 12.5) / (min(l1, l2) + 12.5)
-                    if ratio < 3.2:
-                        design["sponsor_dark"] = (15, 25, 45)
+                    ratio = _wcag_contrast(body_col, s_col)
+                    if ratio < 4.5:
+                        white_ratio = _wcag_contrast(body_col, (255, 255, 255))
+                        noir_ratio = _wcag_contrast(body_col, (12, 14, 18))
+                        if white_ratio >= noir_ratio:
+                            design["sponsor_white"] = True
+                            white = True
+                            cand_w = Path(logo_dir) / (brand + "_white.png")
+                            if cand_w.is_file():
+                                design["sponsor"] = str(cand_w)
+                        else:
+                            design["sponsor_dark"] = (12, 14, 18)
             except Exception:
                 pass
     else:

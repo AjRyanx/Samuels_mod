@@ -851,21 +851,21 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     4071: {
         1: {  # Home: Iconic Cherry & Black vertical stripes, black shorts, black socks
             "body": (195, 20, 30), "second": (20, 22, 28), "third": (245, 245, 248),
-            "patterns": ["081", "082", "093", "105", "083"],
+            "patterns": ["081", "088", "097", "083", "082"],
             "sleeve": (20, 22, 28), "shorts": (20, 22, 28),
             "socks": (20, 22, 28), "collar": (20, 22, 28), "cuff": (195, 20, 30),
             "gradient": 0, "supplier": "umbro",
         },
         2: {  # Away: Coastal Aqua / Mint / Sky streetwear
             "body": (160, 230, 220), "second": (20, 35, 45), "third": (245, 245, 248),
-            "patterns": ["plain", "008-B", "014-B", "082-B", "166-B"],
+            "patterns": ["plain", "041-E", "166-B", "171-E", "215-B"],
             "sleeve": (160, 230, 220), "shorts": (20, 35, 45),
             "socks": (160, 230, 220), "collar": (20, 35, 45), "cuff": (20, 35, 45),
             "gradient": 0, "supplier": "umbro",
         },
         3: {  # Third: Night Purple / Neon Coral luxury streetwear
             "body": (45, 25, 55), "second": (255, 90, 95), "third": (245, 245, 248),
-            "patterns": ["210-B", "212-B", "171-E", "126-B"],
+            "patterns": ["126-B", "216-B", "180", "191", "210-B"],
             "sleeve": (45, 25, 55), "shorts": (45, 25, 55),
             "socks": (45, 25, 55), "collar": (255, 90, 95), "cuff": (255, 90, 95),
             "gradient": 0, "supplier": "umbro",
@@ -876,21 +876,21 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     4180: {
         1: {  # Home: Iconic Red & White vertical stripes, black shorts, black/red socks
             "body": (210, 25, 35), "second": (245, 245, 248), "third": (20, 22, 28),
-            "patterns": ["081", "082", "093", "105", "083"],
+            "patterns": ["093", "105", "118", "124", "081"],
             "sleeve": (210, 25, 35), "shorts": (20, 22, 28),
             "socks": (20, 22, 28), "collar": (20, 22, 28), "cuff": (245, 245, 248),
             "gradient": 0, "supplier": "umbro",
         },
         2: {  # Away: Stealth Anthracite / Gold streetwear
             "body": (32, 34, 38), "second": (214, 175, 65), "third": (245, 245, 248),
-            "patterns": ["plain", "008-B", "014-B", "082-B", "166-B"],
+            "patterns": ["plain", "145-E", "014-B", "067-E", "219-B"],
             "sleeve": (32, 34, 38), "shorts": (32, 34, 38),
             "socks": (32, 34, 38), "collar": (214, 175, 65), "cuff": (214, 175, 65),
             "gradient": 0, "supplier": "umbro",
         },
         3: {  # Third: Raw Earth Olive / Bright Orange streetwear
             "body": (85, 95, 75), "second": (255, 110, 30), "third": (245, 245, 248),
-            "patterns": ["210-B", "212-B", "171-E", "126-B"],
+            "patterns": ["134", "213-B", "168-B", "214-E", "131-B"],
             "sleeve": (85, 95, 75), "shorts": (85, 95, 75),
             "socks": (85, 95, 75), "collar": (255, 110, 30), "cuff": (255, 110, 30),
             "gradient": 0, "supplier": "umbro",
@@ -915,7 +915,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
         },
         3: {  # Third: Vintage Burgundy & Old Gold luxury
             "body": (120, 25, 45), "second": (214, 175, 65), "third": (245, 245, 248),
-            "patterns": ["210-B", "212-B", "171-E", "126-B"],
+            "patterns": ["210-B", "168-E", "171-E", "126-B"],
             "sleeve": (120, 25, 45), "shorts": (120, 25, 45),
             "socks": (120, 25, 45), "collar": (214, 175, 65), "cuff": (214, 175, 65),
             "gradient": 0, "supplier": "nike",
@@ -927,16 +927,16 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
 #  Enrich Bespoke DNA with 2026/2027 Streetwear, Cultural & Kinetic Patterns
 # --------------------------------------------------------------------------- #
 _NEW_STREETWEAR_AWAY = [
-    "210-B", "211-B", "212-B", "213-B", "214-B", "215-B", "216-B", "217-B",
+    "210-B", "211-B", "185-E", "213-B", "214-B", "215-B", "216-B", "217-B",
     "218-B", "219-B", "220-B"
 ]
 _NEW_STREETWEAR_THIRD = [
     "126", "127", "128", "130", "131", "134", "138", "144", "152", "158",
     "166", "167", "168", "169", "171", "177", "180", "184", "191", "197",
-    "204", "210", "211", "212", "213", "214", "215", "216", "217", "218",
+    "204", "210", "211", "213", "214", "215", "216", "217", "218",
     "219", "220", "126-B", "127-B", "131-B", "166-B", "167-B", "168-B",
-    "169-E", "171-E", "204-B", "210-B", "211-B", "212-B", "213-B", "214-E",
-    "215-E", "216-B", "217-B", "218-B", "219-B", "220-B"
+    "169-E", "171-E", "204-B", "210-B", "211-B", "041-E", "213-B", "214-E",
+    "215-E", "216-B", "217-B", "218-B", "219-B", "220-B", "067-E", "141-E", "153-E"
 ]
 _NEW_HOME_SOLID = ["214-E", "215-E", "219-E", "220-E", "212-E", "041-E"]
 _NEW_HOME_STRIPES = ["081", "082", "083", "088", "093", "105", "124"]
@@ -948,20 +948,27 @@ def _enrich_bespoke_dna(dna: Dict[int, Any]) -> None:
                 pats = sdef["patterns"]
                 if slot == 1:
                     is_stripes = any(p in ["081", "082", "083", "088", "093", "stripes"] for p in pats)
-                    to_add = _NEW_HOME_STRIPES if is_stripes else _NEW_HOME_SOLID
+                    cand = _NEW_HOME_STRIPES if is_stripes else _NEW_HOME_SOLID
                 elif slot == 2:
-                    to_add = _NEW_STREETWEAR_AWAY
+                    cand = _NEW_STREETWEAR_AWAY
                 else:
-                    to_add = _NEW_STREETWEAR_THIRD
-                for p in to_add:
+                    cand = _NEW_STREETWEAR_THIRD
+                # Rotate pattern injection per club to ensure distinct pattern pools
+                n_add = min(5, len(cand))
+                offset = (cid * 7 + (slot if isinstance(slot, int) else 4) * 13) % len(cand)
+                for i in range(n_add):
+                    p = cand[(offset + i * 3) % len(cand)]
                     if p not in pats:
                         pats.append(p)
             elif "palettes" in sdef:
                 for pal in sdef["palettes"]:
                     if "patterns" in pal:
                         pats = pal["patterns"]
-                        to_add = _NEW_STREETWEAR_AWAY if slot == 2 else _NEW_STREETWEAR_THIRD
-                        for p in to_add:
+                        cand = _NEW_STREETWEAR_AWAY if slot == 2 else _NEW_STREETWEAR_THIRD
+                        n_add = min(5, len(cand))
+                        offset = (cid * 11 + (slot if isinstance(slot, int) else 4) * 17) % len(cand)
+                        for i in range(n_add):
+                            p = cand[(offset + i * 3) % len(cand)]
                             if p not in pats:
                                 pats.append(p)
 
@@ -1220,17 +1227,17 @@ GK_STREETWEAR_PALETTES: List[Dict[str, Any]] = [
         "socks": (120, 40, 220),
         "sponsor_white": True,
     },
-    # 7. Stealth Noir (Obsidian Carbon with Volt)
+    # 7. Solar Volt Blaze (Ultra High-Vis Electric Lime-Yellow)
     {
-        "name": "Stealth Noir",
-        "body": (22, 24, 30),
-        "second": (215, 255, 0),
-        "third": (0, 240, 255),
-        "collar": (215, 255, 0),
-        "cuff": (215, 255, 0),
-        "shorts": (22, 24, 30),
-        "socks": (22, 24, 30),
-        "sponsor_white": True,
+        "name": "Solar Volt Blaze",
+        "body": (225, 255, 20),
+        "second": (15, 20, 28),
+        "third": (0, 220, 255),
+        "collar": (15, 20, 28),
+        "cuff": (15, 20, 28),
+        "shorts": (15, 20, 28),
+        "socks": (225, 255, 20),
+        "sponsor_dark": (15, 20, 28),
     },
     # 8. Emerald Pulse (Luminous Electric Green)
     {
@@ -1341,11 +1348,27 @@ POOL_GK_STREETWEAR = [
 
 def pick_gk_palette(club: Dict[str, Any], season: int, slot: str = "g1", sponsor: Optional[str] = None) -> Dict[str, Any]:
     """Pick an iconic high-vis GK streetwear palette that is guaranteed NOT to clash
-    with the club's outfield kits (and g2 contrasts sharply with g1)."""
+    with ANY of the club's outfield kits (P1, P2, P3) and g2 contrasts sharply with g1."""
     primary = _hexc(club.get("primary", "#034694"))
     secondary = _hexc(club.get("secondary", "#FFFFFF"))
     cid = int(club.get("id") or club.get("team_id", 0))
     s_off = season - 2026
+
+    # Gather all outfield kit body colors (P1, P2, P3) to prevent GK vs Outfield clashing
+    outfield_colors = [primary, secondary]
+    if cid in BESPOKE_DNA:
+        for s in (1, 2, 3):
+            if s in BESPOKE_DNA[cid]:
+                sdef = BESPOKE_DNA[cid][s]
+                if "body" in sdef:
+                    outfield_colors.append(sdef["body"])
+                if "palettes" in sdef:
+                    for pal in sdef["palettes"]:
+                        if "body" in pal:
+                            outfield_colors.append(pal["body"])
+
+    def _no_outfield_clash(cand_body, min_dist=95):
+        return all(_dist(cand_body, c) >= min_dist for c in outfield_colors)
 
     n_pal = len(GK_STREETWEAR_PALETTES)
 
@@ -1355,27 +1378,30 @@ def pick_gk_palette(club: Dict[str, Any], season: int, slot: str = "g1", sponsor
     g1_palette = None
     for offset in range(n_pal):
         candidate = GK_STREETWEAR_PALETTES[(g1_idx + offset) % n_pal]
-        if _dist(candidate["body"], primary) >= 115 and _dist(candidate["body"], secondary) >= 60:
+        if _no_outfield_clash(candidate["body"], min_dist=95):
             g1_palette = candidate
             break
     if g1_palette is None:
-        g1_palette = GK_STREETWEAR_PALETTES[0]
+        # Fallback: choose the candidate with maximum minimum distance from any outfield color
+        g1_palette = max(GK_STREETWEAR_PALETTES,
+                         key=lambda p: min(_dist(p["body"], c) for c in outfield_colors))
 
     if slot == "g1":
         return dict(g1_palette)
 
-    # For g2, must avoid both g1 and club primary/secondary kits
+    # For g2, must avoid both g1 (distance >= 130) and ALL club outfield kits
     g2_seed = _club_seed(cid, "g2", season, sponsor)
     g2_idx = (g2_seed + s_off * 7) % n_pal
     for offset in range(n_pal):
         candidate = GK_STREETWEAR_PALETTES[(g2_idx + offset) % n_pal]
         if (_dist(candidate["body"], g1_palette["body"]) >= 130 and
-            _dist(candidate["body"], primary) >= 100 and
-            _dist(candidate["body"], secondary) >= 80):
+            _no_outfield_clash(candidate["body"], min_dist=90)):
             return dict(candidate)
 
-    # Fallback for g2 if constraints are tight: choose the furthest palette from g1
-    furthest = max(GK_STREETWEAR_PALETTES, key=lambda p: _dist(p["body"], g1_palette["body"]))
+    # Fallback for g2 if constraints are tight: choose palette maximizing contrast with g1 and outfield
+    furthest = max(GK_STREETWEAR_PALETTES,
+                   key=lambda p: min(_dist(p["body"], g1_palette["body"]),
+                                     min(_dist(p["body"], c) for c in outfield_colors)))
     return dict(furthest)
 
 
@@ -1852,7 +1878,7 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
         cycle = (s_off + (seed % 8)) % 8
         third_body, third_second, third_third = generate_streetwear_palette(club, cycle + cid * 3 + seed)
         choices = POOL_THIRD_STREETWEAR
-        pattern = choices[(seed + s_off * 23) % len(choices)]
+        pattern = choices[((seed ^ (cid * 0x45D9F3B)) + s_off * 23) % len(choices)]
 
         third_shorts = third_body if ((seed >> 2) % 4 != 0) else third_second
         third_socks = third_body if ((seed >> 3) % 2 == 0) else third_second

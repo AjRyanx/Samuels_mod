@@ -628,12 +628,15 @@ def main():
 
     # 2. Build masks & paths
     masks = build_masks()
-    logo_dir = Path("SiderAddons/content/KitGenerator/logos")
-    badge_dir = Path("SiderAddons/content/KitGenerator/badges")
-    if not logo_dir.exists():
-        logo_dir = HERE.parent / "content" / "KitGenerator" / "logos"
-    if not badge_dir.exists():
-        badge_dir = HERE.parent / "content" / "KitGenerator" / "badges"
+    sider_root = None
+    for candidate in [HERE.parent.parent, HERE.parent, Path("SiderAddons"), Path(".")]:
+        if (candidate / "content" / "KitGenerator" / "logos").exists():
+            sider_root = candidate
+            break
+    if not sider_root:
+        sider_root = Path("SiderAddons")
+    logo_dir = sider_root / "content" / "KitGenerator" / "logos"
+    badge_dir = sider_root / "content" / "KitGenerator" / "badges"
 
     audit_data = []
     t0 = time.time()
