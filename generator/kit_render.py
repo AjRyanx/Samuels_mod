@@ -273,12 +273,12 @@ def render_kit(design, out_png, masks=None):
     if d.get("badge"):
         bg_item = _prepare_stamp_item(d["badge"], *kit_regions.CLUB_BADGE,
                                       white=d.get("badge_white"),
-                                      max_w=135, max_h=135, defringe=False)
+                                      max_w=85, max_h=85, defringe=False)
     sup_item = None
     if d.get("supplier"):
         sup_item = _prepare_stamp_item(d["supplier"], *kit_regions.KIT_SUPPLIER,
                                        white=d.get("supplier_white"),
-                                       max_w=120, max_h=65, defringe=True)
+                                       max_w=90, max_h=48, defringe=True)
 
     # Validate against masks["body_front"] UV region and prevent inter-stamp collisions
     stamps_adj = kit_regions.validate_and_adjust_stamps(
