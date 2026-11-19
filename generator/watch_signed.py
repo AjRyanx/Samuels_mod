@@ -217,12 +217,14 @@ def _parse_request(line):
         season = int(parts[2])
     except (ValueError, IndexError):
         return None
+    tier = parts[4] if len(parts) >= 5 and parts[4] else None
     career_id = parts[6] if len(parts) >= 7 and parts[6] else None
     return {
         "offer": parts[0],
         "club_id": club_id,
         "season": season,
         "brand": parts[3] or None,
+        "tier": tier,
         "career_id": career_id,
     }
 
@@ -299,9 +301,12 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
              % (req["offer"], req["club_id"], req["season"], req["brand"]), logfile)
         try:
             if req["club_id"] == 0 or req["brand"] == "all" or req["offer"].startswith("season-"):
-                _log("season rollover: refreshing AI dynamic kits for season %d" % req["season"], logfile)
+                mode = (req.get("tier") or "balanced").lower()
+                slots = "1,2,3,g1,g2" if mode == "power" else "1,g1"
+                _log("season rollover: refreshing AI dynamic kits for season %d (mode=%s, slots=%s)"
+                     % (req["season"], mode, slots), logfile)
                 import build_all_clubs
-                build_all_clubs.generate_all_kits(season=req["season"], sider_dir=Path(sider))
+                build_all_clubs.generate_all_kits(season=req["season"], sider_dir=Path(sider), slots=slots)
             else:
                 rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
         except Exception as exc:                      # noqa: BLE001 - keep watching

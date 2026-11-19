@@ -51,8 +51,19 @@ _WORKER_LOGO_DIR: Optional[Path] = None
 _WORKER_BADGE_DIR: Optional[Path] = None
 
 
-def _init_worker(base_ftex_path: str, logo_dir_path: str, badge_dir_path: str) -> None:
+def _init_worker(base_ftex_path: str, logo_dir_path: str, badge_dir_path: str, low_priority: bool = False) -> None:
     global _WORKER_MASKS, _WORKER_TEMPLATE, _WORKER_LOGO_DIR, _WORKER_BADGE_DIR
+    if low_priority:
+        try:
+            import ctypes
+            from ctypes import wintypes
+            k32 = ctypes.windll.kernel32
+            k32.GetCurrentProcess.restype = wintypes.HANDLE
+            k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+            k32.SetPriorityClass.restype = wintypes.BOOL
+            k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
+        except Exception:
+            pass
     _WORKER_MASKS = kit_regions.build_masks()
     _WORKER_TEMPLATE = ftex_io.read_ftex(Path(base_ftex_path))
     _WORKER_LOGO_DIR = Path(logo_dir_path)
@@ -190,7 +201,7 @@ def generate_all_kits(
     season: int = 2027,
     sider_dir: Optional[Path] = None,
     workers: Optional[int] = None,
-    slots: str = "1,2,3,g1,g2",
+    slots: str = "1,g1",
     skip_existing: bool = False,
     team: Optional[int] = None,
     limit: Optional[int] = None,
@@ -199,6 +210,7 @@ def generate_all_kits(
     base_ftex_path: Optional[Path] = None,
     logo_dir_path: Optional[Path] = None,
     badge_dir_path: Optional[Path] = None,
+    low_priority: Optional[bool] = None,
 ) -> Dict[str, Any]:
     outdir = Path(outdir or DEFAULT_ACTIVE)
     sider_dir = Path(sider_dir or outdir.parent.parent.parent)
@@ -267,13 +279,16 @@ def generate_all_kits(
     if skipped_user_club:
         print(f" [*] Human club #{user_cid} is preserved (isolated career profile protected).")
 
+    if low_priority is None:
+        low_priority = (selected_slots == (1, "g1") or selected_slots == (1,))
+
     t_start = time.time()
     total_generated = 0
     total_skipped = 0
     completed = 0
     total_tasks = len(tasks)
 
-    init_args = (str(base_ftex), str(logo_dir_path), str(badge_dir_path))
+    init_args = (str(base_ftex), str(logo_dir_path), str(badge_dir_path), low_priority)
     with ProcessPoolExecutor(max_workers=workers, initializer=_init_worker, initargs=init_args) as executor:
         futures = {
             executor.submit(_render_club_task, c, s, sp, out, skip, sl): c["id"]
@@ -317,7 +332,9 @@ def main():
     parser = argparse.ArgumentParser(description="Pre-generate Master League kits for all clubs.")
     parser.add_argument("--season", type=int, default=2027, help="Master League season year (e.g. 2027)")
     parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 4, 8), help="CPU worker processes")
-    parser.add_argument("--slots", type=str, default="1,2,3,g1,g2", help="Kit slots to build (default: 1,2,3,g1,g2)")
+    parser.add_argument("--slots", type=str, default="1,g1", help="Kit slots to build (default: 1,g1 - scoutable roster)")
+    parser.add_argument("--power", action="store_true", help="Power PC mode: generate all 5 slots (1,2,3,g1,g2) upfront")
+    parser.add_argument("--low-priority", action="store_true", default=None, help="Set background worker CPU priority below normal")
     parser.add_argument("--skip-existing", action="store_true", help="Skip clubs whose kit .ftex files already exist")
     parser.add_argument("--clubs", type=Path, default=ROOT / "generator" / "clubs.csv", help="Path to clubs.csv")
     parser.add_argument("--outdir", type=Path, default=DEFAULT_ACTIVE, help="Target active kit directory")
@@ -328,10 +345,11 @@ def main():
     parser.add_argument("--team", type=int, default=None, help="Process only a single club ID")
     args = parser.parse_args()
 
+    slots_to_build = "1,2,3,g1,g2" if args.power else args.slots
     generate_all_kits(
         season=args.season,
         workers=args.workers,
-        slots=args.slots,
+        slots=slots_to_build,
         skip_existing=args.skip_existing,
         team=args.team,
         limit=args.limit,
@@ -340,6 +358,7 @@ def main():
         base_ftex_path=args.base_ftex,
         logo_dir_path=args.logo_dir,
         badge_dir_path=args.badge_dir,
+        low_priority=args.low_priority,
     )
 
 

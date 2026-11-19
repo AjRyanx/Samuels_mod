@@ -51,6 +51,7 @@ local CFG = {
   TRANSFER_SHARE     = 0.70,     -- share of each payment added to the transfer budget
   SALARY_SHARE       = 0.30,     -- ...and to the salary budget (must sum to 1.0)
   AI_DYNAMIC_START_SEASON = 2028, -- Season 1 (2026/27) wears authentic kits; dynamic kits kick in from Season 2 (2027/28)
+  ROLLOVER_MODE      = "balanced", -- "balanced" (p1 + g1 Scoutable Roster, ~5 min, quiet) or "power" (all 5 slots upfront)
 }
 m.CFG = CFG
 
@@ -1100,9 +1101,10 @@ local function refresh_date(ctx)
       L(string.format('season %d  (game date %04d-%02d-%02d)', SEASON, y, mo, d))
       if CFG.ENABLE_KITS and prev and prev > 0 then
         local req_id = string.format('season-%d', SEASON)
-        append_line('kit_request.txt', string.format('%s|0|%d|all||%s|%s',
-          req_id, SEASON, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
-        L('season rollover: queued AI dynamic kit update for season ' .. tostring(SEASON))
+        local mode = CFG.ROLLOVER_MODE or "balanced"
+        append_line('kit_request.txt', string.format('%s|0|%d|all|%s|%s|%s',
+          req_id, SEASON, mode, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
+        L(string.format('season rollover: queued AI dynamic kit update for season %d (mode=%s)', SEASON, mode))
       end
     end
   end
