@@ -305,8 +305,10 @@ def render_kit(design, out_png, masks=None):
 
         atlas.alpha_composite(img, (x, y))
 
-    atlas.save(out_png)
-    return out_png
+    if out_png:
+        atlas.save(out_png)
+        return out_png
+    return atlas
 
 
 def _defringe_white(logo):
@@ -576,17 +578,17 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
 
 def render_club(club, season, out_png, logo_dir, masks=None, brand_files=None, slot=1,
                 style=None, sponsor=None, badge_dir=None, badge=None):
-    """Render one club's generated kit for a season; returns (path, design)."""
+    """Render one club's generated kit for a season; returns (path_or_image, design)."""
     design = design_from_club(club, season, logo_dir, slot=slot,
                               brand_files=brand_files, style=style, sponsor=sponsor,
                               badge_dir=badge_dir, badge=badge)
-    render_kit(design, str(out_png), masks=masks)
-    return str(out_png), design
+    res = render_kit(design, str(out_png) if out_png else None, masks=masks)
+    return res, design
 
 
 def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
-                   sponsor=None, badge_dir=None, badge=None):
-    """Render the full home/away/third set for a club + season.
+                   sponsor=None, badge_dir=None, badge=None, slots=(1, 2, 3, "g1", "g2")):
+    """Render the full outfield and goalkeeper kit set for a club + season.
 
     Returns a list of (slot, atlas_png, preview_png, design).
     """
@@ -601,15 +603,16 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
 
     team = club["id"]
     out = []
-    for slot in (1, 2, 3):
-        atlas = outdir / f"u{team:04d}p{slot}_atlas.png"
+    for slot in slots:
+        slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+        atlas = outdir / f"u{team:04d}{slot_code}_atlas.png"
         _, design = render_club(club, season, atlas, logo_dir, masks=masks,
                                 brand_files=brand_files, slot=slot, sponsor=sponsor,
                                 badge_dir=badge_dir, badge=badge)
-        preview = uv_contact_sheet(atlas, outdir / f"u{team:04d}p{slot}_preview.png",
+        preview = uv_contact_sheet(atlas, outdir / f"u{team:04d}{slot_code}_preview.png",
                                    masks=masks)
         mockup(design, club["name"], season,
-               outdir / f"u{team:04d}p{slot}_mockup.png")
+               outdir / f"u{team:04d}{slot_code}_mockup.png")
         out.append((slot, str(atlas), str(preview), design))
     return out
 
@@ -704,7 +707,9 @@ def mockup(design, club_name, season, out_png):
     swatch(10, design.get("shorts") or body, "shorts", design.get("shorts_accent"))
     swatch(150, design.get("socks") or body, "socks", design.get("socks_accent"))
     swatch(290, design.get("collar") or body, "collar", design.get("collar_tip"))
-    d.text((10, 10), f"{club_name} S{season} p{design.get('slot', 1)} {design['pattern']}",
+    slot_val = design.get('slot', 1)
+    slot_label = f"p{slot_val}" if isinstance(slot_val, int) else str(slot_val)
+    d.text((10, 10), f"{club_name} S{season} {slot_label} {design['pattern']}",
            fill=(240, 240, 245, 255))
 
     canvas.convert("RGB").save(out_png)

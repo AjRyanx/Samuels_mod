@@ -1445,29 +1445,46 @@ function m.make_key(ctx, filename)
   if not is_in_ml(ctx) then return nil end
 
   local lower = filename:lower()
-  local tid, slot = string.match(lower, "[ku]0*(%d+)p(%d)%.ftex$")
+  local tid, slot, suffix = string.match(lower, "[ku]0*(%d+)p(%d)([_%a%d]*)%.ftex$")
   if not tid or not slot then return nil end
   tid = tonumber(tid)
   slot = tonumber(slot)
   if slot < 1 or slot > 3 then return nil end
 
   local cid = club_id()
-  if not cid or cid <= 0 or tid ~= cid then return nil end
+  -- If this is the user's club, enforce user storyline opt-in (authentic until sponsor signed)
+  if cid and cid > 0 and tid == cid then
+    local is_opted_in = (DEAL and DEAL.club == cid) or (OPTED_IN and OPTED_IN[cid])
+    if not is_opted_in then return nil end
+  end
 
-  -- Dynamic Kit Opt-In Check (Storyline Mode):
-  -- Only serve dynamic kits in ML if the club is currently under contract (DEAL)
-  -- OR has previously signed a sponsor and opted into the dynamic kit system.
-  -- If the user has never signed a mod sponsor, yield nil so Sider serves
-  -- the authentic licensed kit from Kitserver GDB.
-  local is_opted_in = (DEAL and DEAL.club == cid) or (OPTED_IN and OPTED_IN[cid])
-  if not is_opted_in then return nil end
+  local suffix_map = {
+    [""] = "",
+    ["_b"] = "_back",
+    ["_back"] = "_back",
+    ["_l"] = "_leg",
+    ["_leg"] = "_leg",
+    ["_n"] = "_name",
+    ["_name"] = "_name",
+    ["_n_ex"] = "_name_ex",
+    ["_name_ex"] = "_name_ex",
+    ["_c"] = "_chest",
+    ["_chest"] = "_chest",
+  }
 
-  local rel_path = string.format("content/KitGenerator/active/u%04dp%d.ftex", cid, slot)
+  local target_suffix = suffix_map[suffix or ""]
+  if not target_suffix then return nil end
+
+  local rel_path = string.format("content/KitGenerator/active/u%04dp%d%s.ftex", tid, slot, target_suffix)
   local full_path = (DIR .. rel_path):gsub('/', '\\')
   local f = io.open(full_path, "rb")
   if f then
     f:close()
-    L(string.format('serving dynamic kit (ML mode): %s -> %s', filename, rel_path))
+    if target_suffix == "" then
+      L(string.format('serving dynamic kit (ML mode): %s -> %s', filename, rel_path))
+    else
+      L(string.format('serving dynamic contrasting font (ML mode): %s -> %s', filename, rel_path))
+    end
     return rel_path
   end
   return nil

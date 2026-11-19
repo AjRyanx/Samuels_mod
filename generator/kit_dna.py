@@ -1002,6 +1002,204 @@ def generate_streetwear_palette(club: Dict[str, Any], salt: int) -> Tuple[Tuple[
     return body, second, third
 
 
+# --------------------------------------------------------------------------- #
+#  High-Visibility 2026/2027 Goalkeeper Streetwear Palettes & Generator
+# --------------------------------------------------------------------------- #
+GK_STREETWEAR_PALETTES: List[Dict[str, Any]] = [
+    # 0. Cyber Volt (Electric High-Vis Lime)
+    {
+        "name": "Cyber Volt",
+        "body": (215, 255, 0),
+        "second": (18, 20, 24),
+        "third": (0, 240, 255),
+        "collar": (18, 20, 24),
+        "cuff": (18, 20, 24),
+        "shorts": (18, 20, 24),
+        "socks": (215, 255, 0),
+        "sponsor_dark": (18, 20, 24),
+    },
+    # 1. Glacier Cyan (Luminous Laser Turquoise)
+    {
+        "name": "Glacier Cyan",
+        "body": (0, 235, 230),
+        "second": (12, 25, 48),
+        "third": (250, 250, 252),
+        "collar": (12, 25, 48),
+        "cuff": (12, 25, 48),
+        "shorts": (0, 235, 230),
+        "socks": (0, 235, 230),
+        "sponsor_dark": (12, 25, 48),
+    },
+    # 2. Hyper Infrared (Blaze Safety Orange)
+    {
+        "name": "Hyper Infrared",
+        "body": (255, 95, 20),
+        "second": (18, 20, 25),
+        "third": (255, 255, 255),
+        "collar": (18, 20, 25),
+        "cuff": (18, 20, 25),
+        "shorts": (18, 20, 25),
+        "socks": (255, 95, 20),
+        "sponsor_dark": (18, 20, 25),
+    },
+    # 3. Laser Berry (Shocking Neon Pink)
+    {
+        "name": "Laser Berry",
+        "body": (250, 30, 130),
+        "second": (15, 15, 25),
+        "third": (255, 255, 0),
+        "collar": (15, 15, 25),
+        "cuff": (15, 15, 25),
+        "shorts": (250, 30, 130),
+        "socks": (250, 30, 130),
+        "sponsor_dark": (15, 15, 25),
+    },
+    # 4. Acid Toxic (Flash Hyper Mint)
+    {
+        "name": "Acid Toxic",
+        "body": (50, 240, 90),
+        "second": (10, 35, 20),
+        "third": (250, 250, 252),
+        "collar": (10, 35, 20),
+        "cuff": (10, 35, 20),
+        "shorts": (10, 35, 20),
+        "socks": (50, 240, 90),
+        "sponsor_dark": (10, 35, 20),
+    },
+    # 5. Solar Gold (Radiant Neon Amber)
+    {
+        "name": "Solar Gold",
+        "body": (255, 205, 10),
+        "second": (20, 20, 32),
+        "third": (240, 60, 30),
+        "collar": (20, 20, 32),
+        "cuff": (20, 20, 32),
+        "shorts": (255, 205, 10),
+        "socks": (255, 205, 10),
+        "sponsor_dark": (20, 20, 32),
+    },
+    # 6. Cyber Violet (Deep Neon Purple with Turquoise)
+    {
+        "name": "Cyber Violet",
+        "body": (120, 40, 220),
+        "second": (20, 240, 220),
+        "third": (250, 250, 252),
+        "collar": (20, 240, 220),
+        "cuff": (20, 240, 220),
+        "shorts": (20, 20, 32),
+        "socks": (120, 40, 220),
+        "sponsor_white": True,
+    },
+    # 7. Stealth Noir (Obsidian Carbon with Volt)
+    {
+        "name": "Stealth Noir",
+        "body": (22, 24, 30),
+        "second": (215, 255, 0),
+        "third": (0, 240, 255),
+        "collar": (215, 255, 0),
+        "cuff": (215, 255, 0),
+        "shorts": (22, 24, 30),
+        "socks": (22, 24, 30),
+        "sponsor_white": True,
+    },
+]
+
+POOL_GK_STREETWEAR = [
+    "126-B", "044-B", "082", "131", "001-B", "210", "215", "218", "220",
+    "141-E", "168-E", "185-E", "041-E", "067-E"
+]
+
+
+def pick_gk_palette(club: Dict[str, Any], season: int, slot: str = "g1") -> Dict[str, Any]:
+    """Pick an iconic high-vis GK streetwear palette that is guaranteed NOT to clash
+    with the club's outfield kits (and g2 contrasts sharply with g1)."""
+    primary = _hexc(club.get("primary", "#034694"))
+    secondary = _hexc(club.get("secondary", "#FFFFFF"))
+    cid = int(club.get("id") or club.get("team_id", 0))
+    s_off = season - 2026
+
+    n_pal = len(GK_STREETWEAR_PALETTES)
+    base_idx = (s_off * 3 + cid * 7 + (0 if slot == "g1" else 4)) % n_pal
+
+    # First determine g1 palette so g2 can avoid clashing with it
+    g1_idx = (s_off * 3 + cid * 7) % n_pal
+    g1_palette = None
+    for offset in range(n_pal):
+        candidate = GK_STREETWEAR_PALETTES[(g1_idx + offset) % n_pal]
+        if _dist(candidate["body"], primary) >= 115 and _dist(candidate["body"], secondary) >= 60:
+            g1_palette = candidate
+            break
+    if g1_palette is None:
+        g1_palette = GK_STREETWEAR_PALETTES[0]
+
+    if slot == "g1":
+        return dict(g1_palette)
+
+    # For g2, must avoid both g1 and club primary/secondary kits
+    for offset in range(n_pal):
+        candidate = GK_STREETWEAR_PALETTES[(base_idx + offset) % n_pal]
+        if (_dist(candidate["body"], g1_palette["body"]) >= 130 and
+            _dist(candidate["body"], primary) >= 100 and
+            _dist(candidate["body"], secondary) >= 80):
+            return dict(candidate)
+
+    # Fallback for g2 if constraints are tight: choose the furthest palette from g1
+    furthest = max(GK_STREETWEAR_PALETTES, key=lambda p: _dist(p["body"], g1_palette["body"]))
+    return dict(furthest)
+
+
+def _generate_gk_dna(club: Dict[str, Any], season: int, slot: str = "g1", sponsor: Optional[str] = None) -> Dict[str, Any]:
+    cid = int(club.get("id") or club.get("team_id", 0))
+    cname = str(club.get("name", ""))
+    supplier = get_club_supplier(cid, cname)
+    s_off = season - 2026
+    slot_num = 1 if slot == "g1" else 2
+    salt_val = (cid * 104729 + s_off * 7919 + (slot_num + 3) * 3571) & 0x7FFFFFFF
+
+    pal = pick_gk_palette(club, season, slot=slot)
+    choices = POOL_GK_STREETWEAR
+    pattern = choices[(s_off * 7 + cid * 3 + (0 if slot == "g1" else 5)) % len(choices)]
+
+    gk_body = pal["body"]
+    gk_second = pal["second"]
+    gk_third = pal.get("third", gk_second)
+
+    shorts_col = pal.get("shorts", gk_body)
+    socks_col = pal.get("socks", gk_body)
+    collar_col = pal.get("collar", gk_second)
+    cuff_col = pal.get("cuff", gk_second)
+
+    style: Dict[str, Any] = {
+        "body": gk_body,
+        "second": gk_second,
+        "third": gk_third,
+        "pattern": pattern,
+        "var": salt_val % 3,
+        "width_step": (salt_val // 3) % 8,
+        "sleeve": gk_body,
+        "sleeve_style": ["raglan", "tipped", "shoulder_stripe", "solid"][(salt_val // 5) % 4],
+        "shorts": shorts_col,
+        "shorts_style": ["side_stripe", "hem_tape", "side_stripe", "solid"][(salt_val // 7) % 4],
+        "shorts_accent": gk_second if shorts_col == gk_body else gk_body,
+        "socks": socks_col,
+        "socks_style": ["turnover_hoop", "calf_band", "turnover_hoop", "solid"][(salt_val // 11) % 4],
+        "socks_accent": gk_second if socks_col == gk_body else gk_body,
+        "socks_tip": gk_third,
+        "collar": collar_col,
+        "collar_tip": gk_third if (salt_val % 2) else collar_col,
+        "cuff": cuff_col,
+        "cuff_tip": gk_third if (salt_val % 3 == 0) else cuff_col,
+        "gradient": 1 if (salt_val % 2) else 0,
+        "supplier": supplier,
+    }
+    if pal.get("sponsor_dark"):
+        style["sponsor_dark"] = pal["sponsor_dark"]
+    if pal.get("sponsor_white"):
+        style["sponsor_white"] = True
+
+    return style
+
+
 # Comprehensive authentic supplier mappings
 CLUB_SUPPLIERS: Dict[int, str] = {
     # Premier League
@@ -1128,11 +1326,24 @@ def get_club_supplier(cid: int, name: str = "") -> str:
     return GENERIC_SUPPLIERS[idx]
 
 
-def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Optional[str] = None) -> Dict[str, Any]:
+def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: Optional[str] = None) -> Dict[str, Any]:
     """Return a complete, fashion-forward 2026/2027 styling dict for club + slot + season with dynamic multi-decade evolution."""
     cid = int(club.get("id") or club.get("team_id", 0))
     cname = str(club.get("name", ""))
     supplier = get_club_supplier(cid, cname)
+
+    # Goalkeeper kit slots
+    if slot in ("g1", 4, "4"):
+        if cid in BESPOKE_DNA and "g1" in BESPOKE_DNA[cid]:
+            return dict(BESPOKE_DNA[cid]["g1"])
+        return _generate_gk_dna(club, season, slot="g1", sponsor=sponsor)
+    elif slot in ("g2", 5, "5"):
+        if cid in BESPOKE_DNA and "g2" in BESPOKE_DNA[cid]:
+            return dict(BESPOKE_DNA[cid]["g2"])
+        return _generate_gk_dna(club, season, slot="g2", sponsor=sponsor)
+
+    if isinstance(slot, str):
+        slot = int(slot.replace("p", ""))
 
     primary = _hexc(club.get("primary", "#034694"))
     secondary = _hexc(club.get("secondary", "#FFFFFF"))

@@ -167,7 +167,7 @@ def _encode_frame(frame):
     body = bytearray()
     for i in range(chunk_count):
         chunk = frame[i * CHUNK_SIZE:(i + 1) * CHUNK_SIZE]
-        comp = zlib.compress(chunk, 9)
+        comp = zlib.compress(chunk, 1)
         if len(comp) >= len(chunk):
             comp, flag = chunk, 1 << 31  # incompressible -> store raw
         else:
@@ -321,7 +321,7 @@ def image_to_dds(img, fmt=4, mip_count=None):
     frames = []
     for i in range(mip_count):
         lw, lh = max(1, w >> i), max(1, h >> i)
-        level = img if (lw, lh) == (w, h) else img.resize((lw, lh), Image.LANCZOS)
+        level = img if (lw, lh) == (w, h) else img.resize((lw, lh), Image.BILINEAR)
         buf = io.BytesIO()
         level.save(buf, format="DDS", pixel_format=PIL_FORMAT[fmt])
         frames.append(buf.getvalue()[128:])
@@ -331,13 +331,27 @@ def image_to_dds(img, fmt=4, mip_count=None):
 def image_to_ftex(img, fmt=4, mip_count=None, template=None):
     """Encode a PIL image directly to .ftex bytes, optionally inheriting a
     template's version / texture_type / hashes (use the kit you are replacing)."""
-    dds = image_to_dds(img, fmt=fmt, mip_count=mip_count)
-    info = parse_ftex(dds_to_ftex(dds, color_space="SRGB"))
+    from PIL import Image
+    if fmt not in PIL_FORMAT:
+        raise FtexError(f"cannot encode pixel format {fmt} from an image "
+                        f"(supported: {sorted(PIL_FORMAT)})")
+    img = img.convert("RGBA" if fmt != 9 else "RGB")
+    w, h = img.size
+    if mip_count is None:
+        mip_count = int(math.log2(max(w, h))) + 1
+
+    frames = []
+    for i in range(mip_count):
+        lw, lh = max(1, w >> i), max(1, h >> i)
+        lvl = img if (lw, lh) == (w, h) else img.resize((lw, lh), Image.BILINEAR)
+        buf = io.BytesIO()
+        lvl.save(buf, format="DDS", pixel_format=PIL_FORMAT[fmt])
+        frames.append(buf.getvalue()[128:])
+
     version = template["version"] if template else None
     ttype = template["texture_type"] if template else 3
     hashes = template["hashes"] if template else b"\x00" * 16
-    return build_ftex(info["frames"], info["width"], info["height"], fmt=fmt,
-                      version=version, texture_type=ttype, hashes=hashes)
+    return build_ftex(frames, w, h, fmt=fmt, version=version, texture_type=ttype, hashes=hashes)
 
 
 # --------------------------------------------------------------------------- #

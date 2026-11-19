@@ -151,6 +151,23 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3),
             if not quiet:
                 print(f"  active deployed -> {dst}")
 
+        # Auto-contrasting squad numbers and player name fonts
+        try:
+            import kit_fonts
+            kit_fonts.process_kit_fonts(
+                club=club,
+                slot=slot,
+                design=design,
+                outdir=outdir,
+                game_root=game_root,
+                install=install,
+                active_dir=active_dir,
+                quiet=quiet,
+            )
+        except Exception as e:
+            if not quiet:
+                print(f"  [font warning] failed to process fonts for p{slot}: {e}")
+
         results.append((slot, str(atlas), str(out_ftex), design))
     return results
 

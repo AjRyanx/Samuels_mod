@@ -96,5 +96,48 @@ key_unopted_ml = M.make_key(ml_ctx, "k108p1.ftex")
 assert key_unopted_ml is None, f"Expected authentic kit in ML for un-opted club, got {key_unopted_ml}"
 print("PASS 8: Un-opted club in ML correctly wears authentic kit until sponsor is signed")
 
+# 9. CPU Opponent in Master League (tid=102 Chelsea while user manages Barcelona)
+# Active kit file exists for Chelsea:
+(tmp / "content" / "KitGenerator" / "active" / "u0102p1.ftex").write_bytes(b"dummy_chelsea_ftex")
+key_cpu_ml = M.make_key(ml_ctx, "k102p1.ftex")
+assert key_cpu_ml == "content/KitGenerator/active/u0102p1.ftex", f"Expected dynamic kit for CPU team in ML, got {key_cpu_ml}"
+print("PASS 9: CPU opponent in Master League wears dynamic kit:", key_cpu_ml)
+
+# 10. CPU Opponent in Exhibition Match still receives authentic kit (yields nil)
+key_cpu_exh = M.make_key(exh_ctx, "k102p1.ftex")
+assert key_cpu_exh is None, f"Expected authentic kit for CPU team in Exhibition, got {key_cpu_exh}"
+print("PASS 10: CPU opponent in Exhibition correctly wears authentic licensed kit")
+
+# 11. Dynamic contrasting squad numbers & font files in Master League
+M.debug_set_deal("aneno", 108, 2027, 60000000, 1, 0)
+(tmp / "content" / "KitGenerator" / "active" / "u0108p1_back.ftex").write_bytes(b"dummy_back_font")
+(tmp / "content" / "KitGenerator" / "active" / "u0108p1_leg.ftex").write_bytes(b"dummy_leg_font")
+(tmp / "content" / "KitGenerator" / "active" / "u0108p1_name.ftex").write_bytes(b"dummy_name_font")
+
+key_font_b = M.make_key(ml_ctx, "k108p1_b.ftex")
+assert key_font_b == "content/KitGenerator/active/u0108p1_back.ftex", f"Expected active back number, got {key_font_b}"
+key_font_back = M.make_key(ml_ctx, "u0108p1_back.ftex")
+assert key_font_back == "content/KitGenerator/active/u0108p1_back.ftex", f"Expected active back number (u* format), got {key_font_back}"
+key_font_l = M.make_key(ml_ctx, "k108p1_l.ftex")
+assert key_font_l == "content/KitGenerator/active/u0108p1_leg.ftex", f"Expected active leg number, got {key_font_l}"
+key_font_n = M.make_key(ml_ctx, "k108p1_n.ftex")
+assert key_font_n == "content/KitGenerator/active/u0108p1_name.ftex", f"Expected active name font, got {key_font_n}"
+print("PASS 11: Dynamic contrasting font textures intercepted and served in Master League (back, leg, name)")
+
+# 12. Non-font textures like _srm and missing active files yield nil (fall back to authentic/kitserver)
+key_srm = M.make_key(ml_ctx, "k108p1_srm.ftex")
+assert key_srm is None, f"Expected nil for _srm texture, got {key_srm}"
+key_chest_missing = M.make_key(ml_ctx, "k108p1_c.ftex")
+assert key_chest_missing is None, f"Expected nil when chest number file not in active folder, got {key_chest_missing}"
+print("PASS 12: Specular maps (_srm) and missing active font files yield nil (fall back to kitserver)")
+
+# 13. Dynamic fonts NEVER served in Exhibition match or Edit Mode (authentic fonts preserved!)
+key_font_exh = M.make_key(exh_ctx, "k108p1_b.ftex")
+assert key_font_exh is None, f"Expected authentic font in Exhibition match, got {key_font_exh}"
+M.set_home_team_for_kits(ctx, 108, 1) # Edit mode
+key_font_edit = M.make_key(ctx, "k108p1_b.ftex")
+assert key_font_edit is None, f"Expected authentic font in Edit mode, got {key_font_edit}"
+print("PASS 13: Authentic fonts preserved untouched in Exhibition and Edit mode")
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")
