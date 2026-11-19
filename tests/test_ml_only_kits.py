@@ -82,5 +82,13 @@ expected_fp = str(tmp / "content" / "KitGenerator" / "active" / "u0108p1.ftex").
 assert fp == expected_fp, f"Expected {expected_fp}, got {fp}"
 print("PASS 6: get_filepath resolves absolute disk path correctly:", fp)
 
+# 7. Sponsorless kit at new season (no active deal): still serves dynamic kit in ML, but authentic in Exhibition
+M.debug_clear_deal()
+key_clean_ml = M.make_key(ml_ctx, "k108p1.ftex")
+assert key_clean_ml == "content/KitGenerator/active/u0108p1.ftex", f"Expected clean dynamic kit in ML, got {key_clean_ml}"
+key_clean_exh = M.make_key(exh_ctx, "k108p1.ftex")
+assert key_clean_exh is None, f"Expected authentic kit in Exhibition even without deal, got {key_clean_exh}"
+print("PASS 7: Sponsorless new-season dynamic kit active in ML, authentic kit preserved in Exhibition")
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")

@@ -1396,7 +1396,6 @@ function m.make_key(ctx, filename)
   if STATE.in_edit_mode then return nil end
   if ctx and ctx.tournament_id == 65535 then return nil end
   if not is_in_ml(ctx) then return nil end
-  if not DEAL then return nil end
 
   local lower = filename:lower()
   local tid, slot = string.match(lower, "[ku]0*(%d+)p(%d)%.ftex$")
