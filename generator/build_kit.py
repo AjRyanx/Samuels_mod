@@ -160,7 +160,8 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
 
         if active_dir:
             dst = active_dir / f"{name}.ftex"
-            shutil.copy2(out_ftex, dst)
+            if dst.resolve() != out_ftex.resolve():
+                shutil.copy2(out_ftex, dst)
             if not quiet:
                 print(f"  active deployed -> {dst}")
 

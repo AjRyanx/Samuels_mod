@@ -2115,8 +2115,11 @@ def apply_modifier(overlay, mod, p):
         from PIL import ImageChops, ImageFilter
         al = out.getchannel("A")
         edge = ImageChops.subtract(al, al.filter(ImageFilter.MinFilter(3)))
-        hl = Image.new("RGBA", out.size, (255, 255, 255, 0))
-        hl.putalpha(edge.point(lambda v: int(v * 0.5)))
+        body_col = tuple(int(v) for v in p.body[:3])
+        # Subtle tonal highlight: 12-16% brighter than body color, woven fabric feel (never harsh white)
+        hl_rgb = tuple(min(255, int(c * 1.14 + 8)) for c in body_col)
+        hl = Image.new("RGBA", out.size, hl_rgb + (0,))
+        hl.putalpha(edge.point(lambda v: int(v * 0.30)))
         out = Image.alpha_composite(out, hl)
     return out
 

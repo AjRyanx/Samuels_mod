@@ -166,6 +166,9 @@ def lint_kit(club, slot, design, chest_img):
         else:
             results.append({"rule": "Home Authenticity", "status": "WARN",
                             "msg": f"Pattern '{pattern_key}' on Home kit (verify club fit)"})
+    elif slot in ("g1", "g2"):
+        results.append({"rule": "Goalkeeper Visual Language", "status": "PASS",
+                        "msg": f"Streetwear high-vis GK pattern '{pattern_key}'"})
     else:
         results.append({"rule": "Pattern Tier", "status": "PASS",
                         "msg": f"Away/Third acceptable pattern '{pattern_key}'"})
@@ -262,7 +265,7 @@ def generate_html_gallery(audit_data, out_html_path):
         cid = club.get("id", club.get("team_id"))
         slot = item["slot"]
         season_val = item.get("season", 2027)
-        slot_name = {1: "P1 Home", 2: "P2 Away", 3: "P3 Third"}.get(slot, f"P{slot}")
+        slot_name = {1: "P1 Home", 2: "P2 Away", 3: "P3 Third", "g1": "G1 GK Primary", "g2": "G2 GK Alternate"}.get(slot, f"P{slot}")
         overall = item["overall"]
         design = item["design"]
         league_key = item.get("league_key", "other")
@@ -455,6 +458,8 @@ def generate_html_gallery(audit_data, out_html_path):
                 <button class="filter-btn" data-filter="1">Home (P1)</button>
                 <button class="filter-btn" data-filter="2">Away (P2)</button>
                 <button class="filter-btn" data-filter="3">Third (P3)</button>
+                <button class="filter-btn" data-filter="g1">GK 1 (G1)</button>
+                <button class="filter-btn" data-filter="g2">GK 2 (G2)</button>
             </div>
         </div>
     </div>
@@ -569,6 +574,7 @@ def main():
     parser.add_argument("--outdir", default=str(REPO_ROOT / "tests" / "visual_audit"),
                         help="Output directory for audit images & HTML report")
     parser.add_argument("--limit", type=int, default=0, help="Limit number of clubs to audit")
+    parser.add_argument("--include-gk", action="store_true", help="Include goalkeeper kits (g1, g2)")
     args = parser.parse_args()
 
     outdir = Path(args.outdir)
@@ -610,12 +616,13 @@ def main():
     if args.limit > 0:
         club_ids = club_ids[:args.limit]
 
-    total_kits_to_audit = len(club_ids) * len(seasons) * 3
+    slots_to_audit = [1, 2, 3, "g1", "g2"] if args.include_gk else [1, 2, 3]
+    total_kits_to_audit = len(club_ids) * len(seasons) * len(slots_to_audit)
     print(f"\n=======================================================")
     print(f"  PES 2021 / FL26 Automated Kit Visual Audit Suite")
     print(f"=======================================================")
     print(f"Clubs to audit: {len(club_ids)} clubs | Seasons: {len(seasons)} ({seasons[0]}..{seasons[-1]})")
-    print(f"Total kit variations: {total_kits_to_audit} kits")
+    print(f"Total kit variations: {total_kits_to_audit} kits (slots: {', '.join(str(s) for s in slots_to_audit)})")
     print(f"Sponsor mode: {'Rotating roster' if args.rotate_sponsors else args.sponsor}")
     print(f"Audit output: {outdir}\n")
 
@@ -648,10 +655,11 @@ def main():
             print(f"    Season {season} (Sponsor: {active_sponsor or 'Clean/None'}): ", end="", flush=True)
             season_passed = True
 
-            for slot in [1, 2, 3]:
-                atlas_png = crops_dir / f"atlas_{cid}_{season}_p{slot}.png"
-                chest_png = crops_dir / f"chest_{cid}_{season}_p{slot}.png"
-                torso_png = crops_dir / f"torso_{cid}_{season}_p{slot}.png"
+            for slot in slots_to_audit:
+                slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+                atlas_png = crops_dir / f"atlas_{cid}_{season}_{slot_code}.png"
+                chest_png = crops_dir / f"chest_{cid}_{season}_{slot_code}.png"
+                torso_png = crops_dir / f"torso_{cid}_{season}_{slot_code}.png"
 
                 # Render kit
                 _, design = render_club(club, season, atlas_png, logo_dir,

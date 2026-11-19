@@ -29,7 +29,7 @@ from pathlib import Path
 
 from kg_core import h32, color_dist
 
-DEFAULT_SIDER = Path(r"C:\Program Files (x86)\SP Football Life 2027\SiderAddons")
+DEFAULT_SIDER = Path(r"C:\Games\SP Football Life 2027\SiderAddons")
 
 # Deterministic fallback kits, used only when neither club.txt nor a kit
 # config.txt has anything for the club.  Each triple is (home, pattern, accent).
@@ -53,6 +53,42 @@ FALLBACK_PALETTES = [
 ]
 
 _MAP_CACHE = {}          # str(sider) -> {team_id: folder}
+_CLUBS_CSV_CACHE = None
+
+
+def _get_clubs_csv():
+    global _CLUBS_CSV_CACHE
+    if _CLUBS_CSV_CACHE is not None:
+        return _CLUBS_CSV_CACHE
+    _CLUBS_CSV_CACHE = {}
+    candidates = [
+        Path(__file__).parent / "clubs.csv",
+        Path(r"C:\Games\SP Football Life 2027\SiderAddons\KitGenerator\generator\clubs.csv"),
+        Path(r"C:\Games\SP Football Life 2027\mods\Dynamic_Kit_and_Sponsor_mod_pes21\generator\clubs.csv"),
+    ]
+    for p in candidates:
+        if p.is_file():
+            try:
+                import csv
+                with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        if not row or not row[0].strip().isdigit():
+                            continue
+                        cid = int(row[0].strip())
+                        name = row[1].strip() if len(row) > 1 else ""
+                        pri = row[2].strip() if len(row) > 2 else ""
+                        sec = row[3].strip() if len(row) > 3 else ""
+                        acc = row[4].strip() if len(row) > 4 else ""
+                        tier = row[5].strip() if len(row) > 5 else "mid"
+                        _CLUBS_CSV_CACHE[cid] = {
+                            "id": cid, "name": name, "primary": pri,
+                            "secondary": sec, "accent": acc, "tier": tier
+                        }
+            except Exception:
+                pass
+            break
+    return _CLUBS_CSV_CACHE
 
 
 def tier_from_id(club_id):
@@ -233,6 +269,11 @@ def resolve(club_id, sider=None, csv_row=None):
     """
     club_id = int(club_id)
     sider = Path(sider or DEFAULT_SIDER)
+
+    if csv_row is None:
+        cached = _get_clubs_csv().get(club_id)
+        if cached:
+            csv_row = cached
 
     if csv_row is not None:
         return {"id": club_id,
