@@ -160,7 +160,7 @@ def lint_kit(club, slot, design, chest_img):
         elif pattern_key == "plain" or pattern_key.endswith("-E") or "pinstripe" in pattern_key:
             results.append({"rule": "Home Authenticity", "status": "PASS",
                             "msg": f"Clean tonal luxury pattern '{pattern_key}'"})
-        elif pattern_key in kit_dna.POOL_STRIPES or pattern_key in kit_dna.POOL_HOOPS or pattern_key in kit_dna.POOL_SASH or pattern_key in ["stripes", "hoops", "sash", "chestband", "101", "086", "094", "098", "206", "207", "208", "209"]:
+        elif pattern_key in kit_dna.POOL_STRIPES or pattern_key in kit_dna.POOL_HOOPS or pattern_key in kit_dna.POOL_SASH or pattern_key in kit_dna.POOL_CHESTBAND or pattern_key in kit_dna.POOL_HALF_HALF or pattern_key in kit_dna.POOL_PINSTRIPES or pattern_key in ["stripes", "hoops", "sash", "chestband", "101", "086", "094", "098", "206", "207", "208", "209"]:
             results.append({"rule": "Home Authenticity", "status": "PASS",
                             "msg": f"Authentic heritage pattern '{pattern_key}'"})
         else:

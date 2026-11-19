@@ -1017,6 +1017,14 @@ def f_centerband(p, d, img, mode="plain", band=0.14, vband=0.0):
         _rect(d, [cx - hw, 0, cx + hw, p.h], p.second)
         _rect(d, [cx - hw - pw, 0, cx - hw, p.h], p.third)
         _rect(d, [cx + hw, 0, cx + hw + pw, p.h], p.third)
+    elif mode == "hechter_offset":
+        # Asymmetric stripe running under the club crest (left chest)
+        cx = p.w * 0.668
+        hw = p.w * 0.075
+        pw = max(3, int(p.w * 0.014))
+        _rect(d, [cx - hw, 0, cx + hw, p.h], p.second)
+        _rect(d, [cx - hw - pw, 0, cx - hw, p.h], p.third)
+        _rect(d, [cx + hw, 0, cx + hw + pw, p.h], p.third)
     elif mode == "hechter_slim":
         cx = p.w * 0.5
         hw = p.w * 0.075
@@ -1865,7 +1873,7 @@ _reg("203", "Leopard Rosette Tonal", "Cultural", f_animal, mode="leopard")
 _reg("204", "Snake / Dragon Scale", "Cultural", f_scales)
 _reg("205", "Feather Camouflage", "Cultural", f_feathers)
 _reg("206", "Iconic Daniel Hechter Center Stripe", "Classics", f_centerband, mode="hechter")
-_reg("207", "Modern Slim Hechter Stripe", "Classics", f_centerband, mode="hechter_slim")
+_reg("207", "Asymmetric Crest-Aligned Hechter Stripe", "Classics", f_centerband, mode="hechter_offset")
 _reg("208", "Contemporary Brush Hechter Stripe", "Classics", f_centerband, mode="hechter_brush")
 _reg("209", "Gradient Fade Hechter Stripe", "Classics", f_centerband, mode="hechter_gradient")
 

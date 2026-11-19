@@ -59,10 +59,18 @@ DEFAULT_DESIGN = {
     "width_step": 0,              # stripe width step (0..7)
     "gradient": 0,                # 0..3 vertical shading strength
     "sleeve": None,               # None = same as body
+    "sleeve_style": "solid",      # "solid", "raglan", "shoulder_stripe", "tipped"
     "cuff": None,                 # None = same as sleeve
+    "cuff_tip": None,             # contrast tipping on sleeve cuff
     "shorts": None,               # None = same as body
+    "shorts_style": "solid",      # "solid", "side_stripe", "hem_tape"
+    "shorts_accent": None,        # contrast stripe/tape colour on shorts
     "socks": None,                # None = same as body
+    "socks_style": "solid",       # "solid", "turnover_hoop", "calf_band"
+    "socks_accent": None,         # contrast hoop/band colour on socks
+    "socks_tip": None,            # contrast tipping on socks turnover
     "collar": None,               # None = same as body
+    "collar_tip": None,           # contrast tipping on collar ribbing
     "sponsor": None,              # path to a PNG logo (chest)
     "badge": None,                # path to a PNG logo (club badge)
     "supplier": None,             # path to a PNG logo (kit maker)
@@ -154,10 +162,28 @@ def render_kit(design, out_png, masks=None):
         atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), colour + (255,)),
                     (0, 0), _mask_img(masks[region]))
 
-    # Contrast sleeve cuff bands (y=640..679 on short sleeve hem)
+    # ----------------------------------------------------------------------- #
+    #  Modern 2026/2027 Streetwear Tailoring & Trim Layers
+    # ----------------------------------------------------------------------- #
+    import numpy as np
+
+    # 1. Shoulder athletic racing stripes / raglan accents
+    if d.get("sleeve_style") == "shoulder_stripe":
+        sleeve_mask = masks["sleeve"]
+        stripe_mask = np.zeros_like(sleeve_mask)
+        acc_col = tuple(d.get("second") or d["body"]) + (255,)
+        for x_off in (210, 240, 270):
+            stripe_mask[120:320, x_off:x_off + 12] = True
+        for x_off in (1766, 1796, 1826):
+            stripe_mask[120:320, x_off:x_off + 12] = True
+        stripe_mask = stripe_mask & sleeve_mask
+        if np.any(stripe_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_col),
+                        (0, 0), _mask_img(stripe_mask))
+
+    # 2. Contrast sleeve cuff bands + engineered tipping line (y=640..679 on short sleeve hem)
     cuff = d.get("cuff")
     if cuff:
-        import numpy as np
         cuff_col = tuple(cuff) + (255,)
         sleeve_mask = masks["sleeve"]
         cuff_mask = np.zeros_like(sleeve_mask)
@@ -165,6 +191,75 @@ def render_kit(design, out_png, masks=None):
         if np.any(cuff_mask):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col),
                         (0, 0), _mask_img(cuff_mask))
+        cuff_tip = d.get("cuff_tip")
+        if cuff_tip and cuff_tip != cuff:
+            tip_col = tuple(cuff_tip) + (255,)
+            tip_mask = np.zeros_like(sleeve_mask)
+            tip_mask[674:680, :] = sleeve_mask[674:680, :]
+            if np.any(tip_mask):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col),
+                            (0, 0), _mask_img(tip_mask))
+
+    # 3. Collar tipping / engineered two-tone ribbing (y=1868..1882)
+    collar_tip = d.get("collar_tip")
+    if collar_tip and collar_tip != collar:
+        col_tip_col = tuple(collar_tip) + (255,)
+        collar_mask = masks["collar"]
+        col_tip_mask = np.zeros_like(collar_mask)
+        col_tip_mask[1868:1882, :] = collar_mask[1868:1882, :]
+        if np.any(col_tip_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), col_tip_col),
+                        (0, 0), _mask_img(col_tip_mask))
+
+    # 4. Shorts lateral side stripes & hem tape
+    shorts_style = d.get("shorts_style")
+    shorts_accent = d.get("shorts_accent") or d.get("second")
+    if shorts_accent and shorts_style in ("side_stripe", "hem_tape"):
+        shorts_mask = masks["shorts"]
+        sh_col = tuple(shorts_accent) + (255,)
+        if shorts_style == "side_stripe":
+            side_mask = np.zeros_like(shorts_mask)
+            side_mask[:, 0:36] = True
+            side_mask[:, 2012:2048] = True
+            side_mask = side_mask & shorts_mask
+            if np.any(side_mask):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col),
+                            (0, 0), _mask_img(side_mask))
+        elif shorts_style == "hem_tape":
+            hem_mask = np.zeros_like(shorts_mask)
+            hem_mask[1935:1968, :] = True
+            hem_mask = hem_mask & shorts_mask
+            if np.any(hem_mask):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col),
+                            (0, 0), _mask_img(hem_mask))
+
+    # 5. Socks turnover cuff & mid-calf athletic hoops
+    socks_style = d.get("socks_style")
+    socks_accent = d.get("socks_accent") or d.get("second")
+    if socks_accent and socks_style in ("turnover_hoop", "calf_band"):
+        socks_mask = masks["socks"]
+        so_col = tuple(socks_accent) + (255,)
+        if socks_style == "turnover_hoop":
+            cuff_so = np.zeros_like(socks_mask)
+            cuff_so[630:695, :] = True
+            cuff_so = cuff_so & socks_mask
+            if np.any(cuff_so):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col),
+                            (0, 0), _mask_img(cuff_so))
+                so_tip = d.get("socks_tip") or body
+                so_tip_mask = np.zeros_like(socks_mask)
+                so_tip_mask[690:696, :] = True
+                so_tip_mask = so_tip_mask & socks_mask
+                if np.any(so_tip_mask):
+                    atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tuple(so_tip) + (255,)),
+                                (0, 0), _mask_img(so_tip_mask))
+        elif socks_style == "calf_band":
+            band_so = np.zeros_like(socks_mask)
+            band_so[830:875, :] = True
+            band_so = band_so & socks_mask
+            if np.any(band_so):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col),
+                            (0, 0), _mask_img(band_so))
 
     # logos with runtime UV validation & collision adjustment
     sp_item = None
@@ -408,6 +503,22 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
     # FINAL body colour so a dark kit gets the white logo variant
     if brand:
         white = kit_gen.lum(design["body"]) < 120
+        if white:
+            design["sponsor_white"] = True
+            design.pop("sponsor_dark", None)
+        else:
+            design["sponsor_white"] = False
+            # If sponsor_dark was explicitly set, check that it still has good contrast (> 3.0:1) with body
+            if design.get("sponsor_dark"):
+                dark_col = design["sponsor_dark"] if isinstance(design["sponsor_dark"], (tuple, list)) else (15, 25, 45)
+                l1 = 0.2126 * design["body"][0] + 0.7152 * design["body"][1] + 0.0722 * design["body"][2]
+                l2 = 0.2126 * dark_col[0] + 0.7152 * dark_col[1] + 0.0722 * dark_col[2]
+                ratio = (max(l1, l2) + 12.5) / (min(l1, l2) + 12.5)
+                if ratio < 3.0:
+                    design.pop("sponsor_dark", None)
+                    design["sponsor_white"] = True
+                    white = True
+
         design["sponsor"] = str(Path(logo_dir) / (brand + ("_white" if white else "") + ".png"))
         if not white and not design.get("sponsor_dark"):
             # Check if regular logo has sufficient contrast (> 3.2:1)
@@ -532,11 +643,21 @@ def mockup(design, club_name, season, out_png):
             cuff_col = tuple(cuff) + (255,)
             cimg = Image.fromarray((cm * 255).astype("uint8"), "L")
             canvas.paste(Image.new("RGBA", (W, H), cuff_col), (0, 0), cimg)
+        cuff_tip = design.get("cuff_tip")
+        if cuff_tip and cuff_tip != cuff:
+            tip_mask = np.zeros_like(sm)
+            tip_mask[279:283, :] = sm[279:283, :]
+            if np.any(tip_mask):
+                timg = Image.fromarray((tip_mask * 255).astype("uint8"), "L")
+                canvas.paste(Image.new("RGBA", (W, H), tuple(cuff_tip) + (255,)), (0, 0), timg)
 
     d = ImageDraw.Draw(canvas)
     trim = tuple(design.get("collar") or body)
     d.polygon([(200, 40), (240, 86), (280, 40), (268, 40), (240, 70), (212, 40)],
               fill=trim + (255,))
+    collar_tip = design.get("collar_tip")
+    if collar_tip and collar_tip != trim:
+        d.line([(200, 40), (240, 86), (280, 40)], fill=tuple(collar_tip) + (255,), width=2)
 
     if design.get("badge"):
         try:
@@ -574,13 +695,15 @@ def mockup(design, club_name, season, out_png):
         canvas.alpha_composite(logo, (240 - logo.width // 2, 170))
 
     # shorts / socks swatches along the bottom strip
-    def swatch(x, colour, label):
+    def swatch(x, colour, label, accent=None):
         d.rectangle([x, H + 6, x + 44, H + 38], fill=tuple(colour) + (255,))
+        if accent and accent != colour:
+            d.rectangle([x + 34, H + 6, x + 44, H + 38], fill=tuple(accent) + (255,))
         d.text((x + 50, H + 14), label, fill=(210, 212, 218, 255))
 
-    swatch(10, design.get("shorts") or body, "shorts")
-    swatch(150, design.get("socks") or body, "socks")
-    swatch(290, design.get("collar") or body, "collar")
+    swatch(10, design.get("shorts") or body, "shorts", design.get("shorts_accent"))
+    swatch(150, design.get("socks") or body, "socks", design.get("socks_accent"))
+    swatch(290, design.get("collar") or body, "collar", design.get("collar_tip"))
     d.text((10, 10), f"{club_name} S{season} p{design.get('slot', 1)} {design['pattern']}",
            fill=(240, 240, 245, 255))
 

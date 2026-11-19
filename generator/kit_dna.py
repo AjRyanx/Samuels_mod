@@ -556,75 +556,75 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
 
     # PSG (Paris Saint-Germain)
     114: {
-        1: {  # Home: Iconic Daniel Hechter on midnight navy with seasonal shorts/socks rotation
+        1: {  # Home: Multi-Year Identity Evolution (Daniel Hechter -> Asymmetric -> Fine Pinstripes -> Clean Tonal Luxury)
             "body": (15, 25, 55), "second": (210, 20, 35), "third": (250, 250, 252),
-            "patterns": ["206", "207", "208", "209"],
+            "patterns": ["206", "207", "088", "041-E"],  # Y0: Classic Hechter, Y1: Crest-Aligned Hechter, Y2: Fine Multi-Pinstripes, Y3: Clean Tonal Luxury
             "sleeve": (15, 25, 55), "shorts": (15, 25, 55),
             "socks": (15, 25, 55), "collar": (15, 25, 55),
             "cuff": (210, 20, 35),
-            "alt_shorts": [(15, 25, 55), (250, 250, 252)],  # Navy vs Classic 1990s White shorts
-            "alt_socks": [(15, 25, 55), (15, 25, 55), (210, 20, 35)],  # Navy vs Red-accented socks
+            "alt_shorts": [(15, 25, 55), (250, 250, 252), (15, 25, 55), (250, 250, 252)],  # Navy vs Classic 1990s White shorts alternating
+            "alt_socks": [(15, 25, 55), (15, 25, 55), (210, 20, 35), (15, 25, 55)],
             "gradient": 0, "supplier": "nike",
         },
-        2: {  # Away: Multi-Palette Rotation across seasons
+        2: {  # Away: 4 Completely Distinct Fashion & Heritage Colorways (Zero Center-Stripe Clones)
             "palettes": [
                 {  # Palette 0: Parisian Pure White Hechter
                     "body": (250, 250, 252), "second": (15, 25, 55), "third": (210, 20, 35),
-                    "patterns": ["206", "207", "208"],
+                    "patterns": ["206", "207", "041-E"],
                     "sleeve": (250, 250, 252), "shorts": (250, 250, 252),
                     "socks": (250, 250, 252), "collar": (15, 25, 55), "cuff": (210, 20, 35),
                     "gradient": 0, "supplier": "nike",
                 },
-                {  # Palette 1: French University Crimson
-                    "body": (195, 20, 35), "second": (15, 25, 55), "third": (250, 250, 252),
-                    "patterns": ["206", "207", "209"],
-                    "sleeve": (195, 20, 35), "shorts": (15, 25, 55),
-                    "socks": (195, 20, 35), "collar": (15, 25, 55), "cuff": (250, 250, 252),
-                    "gradient": 0, "supplier": "nike",
-                },
-                {  # Palette 2: Jordan Desert Sand / Warm Ivory Couture
-                    "body": (235, 228, 215), "second": (15, 25, 55), "third": (210, 175, 75),
-                    "patterns": ["plain", "041-E", "171-E"],
-                    "sleeve": (235, 228, 215), "shorts": (235, 228, 215),
-                    "socks": (235, 228, 215), "collar": (15, 25, 55), "cuff": (210, 175, 75),
-                    "gradient": 0, "supplier": "nike",
-                },
-                {  # Palette 3: Brazilian Heritage Canary Gold
+                {  # Palette 1: Brazilian Canary Yellow (PSG Club Heritage Gold)
                     "body": (248, 215, 30), "second": (15, 25, 55), "third": (250, 250, 252),
-                    "patterns": ["plain", "087", "041-E"],
+                    "patterns": ["041-E", "plain", "171-E"],
                     "sleeve": (248, 215, 30), "shorts": (15, 25, 55),
                     "socks": (248, 215, 30), "collar": (15, 25, 55), "cuff": (15, 25, 55),
                     "gradient": 0, "supplier": "nike",
                 },
+                {  # Palette 2: Jordan Desert Sand / Warm Champagne Haute Couture
+                    "body": (235, 228, 215), "second": (15, 25, 55), "third": (210, 175, 75),
+                    "patterns": ["171-E", "041-E", "plain"],
+                    "sleeve": (235, 228, 215), "shorts": (235, 228, 215),
+                    "socks": (235, 228, 215), "collar": (15, 25, 55), "cuff": (210, 175, 75),
+                    "gradient": 0, "supplier": "nike",
+                },
+                {  # Palette 3: French University Crimson (Solid Tonal with Navy Raglan Sleeves, NO center stripe)
+                    "body": (195, 20, 35), "second": (15, 25, 55), "third": (250, 250, 252),
+                    "patterns": ["041-E", "plain", "168-E"],
+                    "sleeve": (15, 25, 55), "shorts": (15, 25, 55),
+                    "socks": (195, 20, 35), "collar": (15, 25, 55), "cuff": (250, 250, 252),
+                    "gradient": 0, "supplier": "nike",
+                },
             ],
         },
-        3: {  # Third: Jordan Collection Multi-Year Rotations
+        3: {  # Third: Jordan Collection Multi-Year Streetwear Rotations
             "palettes": [
                 {  # Palette 0: Jordan Paris Nocturne (Obsidian & Metallic Gold)
                     "body": (18, 20, 26), "second": (220, 180, 70), "third": (215, 30, 45),
-                    "patterns": ["207", "090", "110", "124"],
+                    "patterns": ["090", "124", "110", "042"],
                     "sleeve": (18, 20, 26), "shorts": (18, 20, 26),
                     "socks": (18, 20, 26), "collar": (18, 20, 26), "cuff": (220, 180, 70),
                     "gradient": 0, "supplier": "nike",
                 },
                 {  # Palette 1: Jordan Bordeaux Wine / Haute Couture
                     "body": (75, 20, 42), "second": (220, 180, 70), "third": (250, 250, 252),
-                    "patterns": ["plain", "041-E", "171-E"],
+                    "patterns": ["171-E", "041-E", "plain"],
                     "sleeve": (75, 20, 42), "shorts": (75, 20, 42),
                     "socks": (75, 20, 42), "collar": (220, 180, 70), "cuff": (220, 180, 70),
                     "gradient": 0, "supplier": "nike",
                 },
                 {  # Palette 2: Jordan Arctic Platinum / Light Bone
                     "body": (232, 236, 242), "second": (18, 20, 26), "third": (215, 30, 45),
-                    "patterns": ["plain", "041-E", "067-E"],
+                    "patterns": ["041-E", "067-E", "plain"],
                     "sleeve": (232, 236, 242), "shorts": (18, 20, 26),
                     "socks": (232, 236, 242), "collar": (18, 20, 26), "cuff": (215, 30, 45),
                     "gradient": 0, "supplier": "nike",
                 },
                 {  # Palette 3: Jordan Infrared 23 Streetwear
                     "body": (205, 20, 50), "second": (18, 20, 26), "third": (250, 250, 252),
-                    "patterns": ["plain", "044-B", "126-B"],
-                    "sleeve": (205, 20, 50), "shorts": (18, 20, 26),
+                    "patterns": ["126-B", "044-B", "003-B"],
+                    "sleeve": (18, 20, 26), "shorts": (18, 20, 26),
                     "socks": (205, 20, 50), "collar": (18, 20, 26), "cuff": (18, 20, 26),
                     "gradient": 0, "supplier": "nike",
                 },
@@ -811,57 +811,116 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     },
 }
 
+# --------------------------------------------------------------------------- #
+#  Enrich Bespoke DNA with 2026/2027 Streetwear, Cultural & Kinetic Patterns
+# --------------------------------------------------------------------------- #
+_NEW_STREETWEAR_AWAY = [
+    "210-B", "211-B", "212-B", "213-B", "214-B", "215-B", "216-B", "217-B",
+    "218-B", "219-B", "220-B"
+]
+_NEW_STREETWEAR_THIRD = [
+    "210", "210-B", "211-B", "212-B", "213-B", "214-B", "215-B", "216-B",
+    "217-B", "218-B", "219-B", "220-B"
+]
+_NEW_HOME_SOLID = ["214-E", "215-E", "219-E", "220-E", "212-E", "217-E"]
+_NEW_HOME_STRIPES = ["216-B", "212-B", "211-B", "215-E", "218-B"]
+
+def _enrich_bespoke_dna(dna: Dict[int, Any]) -> None:
+    for cid, slots in dna.items():
+        for slot, sdef in slots.items():
+            if "patterns" in sdef:
+                pats = sdef["patterns"]
+                if slot == 1:
+                    is_stripes = any(p in ["081", "082", "083", "088", "093", "stripes"] for p in pats)
+                    to_add = _NEW_HOME_STRIPES if is_stripes else _NEW_HOME_SOLID
+                elif slot == 2:
+                    to_add = _NEW_STREETWEAR_AWAY
+                else:
+                    to_add = _NEW_STREETWEAR_THIRD
+                for p in to_add:
+                    if p not in pats:
+                        pats.append(p)
+            elif "palettes" in sdef:
+                for pal in sdef["palettes"]:
+                    if "patterns" in pal:
+                        pats = pal["patterns"]
+                        to_add = _NEW_STREETWEAR_AWAY if slot == 2 else _NEW_STREETWEAR_THIRD
+                        for p in to_add:
+                            if p not in pats:
+                                pats.append(p)
+
+_enrich_bespoke_dna(BESPOKE_DNA)
+
 
 # --------------------------------------------------------------------------- #
 #  Dynamic DNA Archetype Classification for ANY of the 580+ other clubs
 # --------------------------------------------------------------------------- #
-# High-Fashion Pattern Pools for General Clubs:
+# High-Fashion Pattern Pools for General Clubs (2026/2027 Streetwear & Heritage):
 # Modern Stripe Archetypes
-POOL_STRIPES = ["081", "082", "083", "088", "092", "093", "097", "105", "118", "124"]
+POOL_STRIPES = [
+    "081", "082", "083", "088", "092", "093", "097", "105", "118", "124",
+    "081-B", "082-B", "083-C", "088-B", "092-B", "097-E", "105-B", "118-E",
+    "124-B", "081-E", "082-E", "083-E", "211", "211-B"
+]
 # Modern Hoops Archetypes
-POOL_HOOPS = ["084", "091", "102", "114"]
+POOL_HOOPS = [
+    "084", "091", "102", "114", "084-B", "091-B", "102-E", "114-B", "084-C", "091-C", "102-B"
+]
 # Modern Sash / Band Archetypes
-POOL_SASH = ["005", "022", "095", "103", "113", "119"]
-# 2026 High-End Luxury Tonal Jacquards (Elevates solid shirts to $150 authentic fashion pieces!)
+POOL_SASH = [
+    "sash", "005", "022", "095", "103", "113", "119",
+    "005-B", "022-B", "095-B", "103-B", "119-B", "005-C"
+]
+# Modern Chestband Archetypes (Boca / Sampdoria / Parma style)
+POOL_CHESTBAND = [
+    "chestband", "086", "095", "101", "113", "206", "207", "208", "209",
+    "086-B", "206-B", "207-B", "208-B", "209-B"
+]
+# Modern Half-and-Half Archetypes (Feyenoord / Blackburn / Young Boys style)
+POOL_HALF_HALF = [
+    "halves", "089", "094", "099", "104", "089-B", "094-E", "099-B", "104-B"
+]
+# Modern Pinstripes Archetypes
+POOL_PINSTRIPES = [
+    "pinstripe", "085", "085-E", "090", "096", "110", "118",
+    "090-E", "096-E", "110-E"
+]
+# 2026/2027 High-End Luxury Tonal Jacquards (Elevates solid shirts to luxury streetwear)
 POOL_LUXURY_JACQUARD = [
-    "plain",  # Iconic Solid Clean
-    "041-E",  # Carrara Marble
-    "171-E",  # Houndstooth Luxury Weave
-    "044-E",  # Topographic Contour
-    "168-E",  # Art Deco Fan
-    "067-E",  # Woven Diamond Lattice
-    "006-E",  # Obsidian Splinter Micro-Facet
-    "001-E",  # Apex Shatter Tonal Jacquard
-    "185-E",  # Luxury Micro-Weave
-    "170-E",  # Rose Window Micro-Filigree
-    "046-E",  # Silk Wave
+    "plain", "041-E", "171-E", "044-E", "168-E", "067-E", "006-E", "001-E",
+    "185-E", "170-E", "046-E", "214-E", "215-E", "217-E", "219-E", "220-E",
+    "131-E", "167-E", "153-E", "141-E", "172-E", "174-E", "176-E", "177-E",
+    "179-E", "183-E", "186-E", "190-E", "198-E", "204-E", "210-E", "212-E"
 ]
 # Modern Angular & Kinetic Away Patterns
 POOL_AWAY_GEOMETRIC = [
-    "001", "002", "003", "008", "010", "017", "020", "024", "029",
-    "082", "083", "085", "041-E"
+    "001", "002", "003", "005", "008", "010", "014", "017", "020", "022", "024", "029",
+    "082", "083", "085", "166", "167", "213", "216", "219",
+    "001-B", "002-B", "003-B", "008-B", "010-B", "014-B", "017-B", "020-B",
+    "024-B", "029-B", "082-B", "083-C", "166-B", "167-B", "213-B", "216-B",
+    "219-B", "041-E", "171-E", "214-E"
 ]
 # High-Fashion Streetwear / Lifestyle Third Kit Patterns
 POOL_THIRD_STREETWEAR = [
-    "041", "042", "043", "044-B", "046-B",
-    "126-B", "127-B", "131",
-    "166-B", "167-B", "169-E", "171-E", "204-B"
+    "210", "211", "212", "213", "214", "215", "216", "217", "218", "219", "220",
+    "041", "042", "043", "044", "046", "126", "127", "128", "129", "130", "131",
+    "166", "167", "168", "169", "171", "177", "180", "191", "204",
+    "210-B", "211-B", "212-B", "213-B", "214-E", "215-E", "216-B", "217-B",
+    "218-B", "219-B", "220-B", "041-B", "042-B", "043-B", "044-B", "046-B",
+    "126-B", "127-B", "131-B", "166-B", "167-B", "168-B", "169-E", "171-E", "204-B"
 ]
 
 # Keywords that indicate traditional kit identity
+RE_CHESTBAND = re.compile(r"\b(boca|sampdoria|parma|wolfsburg|velez)\b", re.IGNORECASE)
+RE_HALF_HALF = re.compile(r"\b(feyenoord|blackburn|young boys|basel|genoa|nice)\b", re.IGNORECASE)
+RE_PINSTRIPES = re.compile(r"\b(inter|internazionale|olympiacos|besiktas|penarol)\b", re.IGNORECASE)
+RE_HOOPS = re.compile(r"\b(celtic|sporting|qpr|reading|doncaster|flamengo|sport recife|shamrock)\b", re.IGNORECASE)
+RE_SASH = re.compile(r"\b(rayo|vallecano|vasco|river|bordeaux|puebla|curico)\b", re.IGNORECASE)
 RE_STRIPES = re.compile(
     r"\b(albion|athletic|atletico|crystal palace|palace|sunderland|southampton|stoke|porto|espanyol|"
-    r"betis|malaga|huesca|alaves|girona|granada|almeria|rayo|sparta|feyenoord|"
-    r"psv|olympiacos|fenerbahce|besiktas|trabzonspor|gremio|fluminense|botafogo|"
-    r"atletico mineiro|chivas|necaxa|monterrey)\b",
-    re.IGNORECASE,
-)
-RE_HOOPS = re.compile(
-    r"\b(celtic|sporting|qpr|reading|doncaster|flamengo|sport recife)\b",
-    re.IGNORECASE,
-)
-RE_SASH = re.compile(
-    r"\b(rayo|vallecano|vasco|river|bordeaux|puebla)\b",
+    r"betis|malaga|huesca|alaves|girona|granada|almeria|sparta|"
+    r"psv|fenerbahce|trabzonspor|gremio|fluminense|botafogo|"
+    r"atletico mineiro|chivas|necaxa|monterrey|juventus|milan|barcelona)\b",
     re.IGNORECASE,
 )
 
@@ -869,13 +928,78 @@ RE_SASH = re.compile(
 def classify_club_dna(club: Dict[str, Any]) -> str:
     """Classify a club's canonical design archetype based on name and profile."""
     name = str(club.get("name", ""))
+    if RE_CHESTBAND.search(name):
+        return "CHESTBAND"
+    if RE_HALF_HALF.search(name):
+        return "HALF_AND_HALF"
     if RE_HOOPS.search(name):
         return "HOOPS"
     if RE_SASH.search(name):
         return "SASH"
+    if RE_PINSTRIPES.search(name):
+        return "PINSTRIPES"
     if RE_STRIPES.search(name):
         return "STRIPES"
     return "LUXURY_SOLID"
+
+
+def generate_streetwear_palette(club: Dict[str, Any], salt: int) -> Tuple[Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]]:
+    """Generate high-fashion 2026/2027 streetwear palette (body, second, third)."""
+    primary = _hexc(club.get("primary", "#034694"))
+    secondary = _hexc(club.get("secondary", "#FFFFFF"))
+    accent = _hexc(club.get("accent", "#C8102E"))
+
+    mood = salt % 8
+    if mood == 0:
+        # NOIR & METALLIC LUXURY (Venezia FC / Y-3)
+        body = (18, 20, 24)
+        metals = [(214, 175, 65), (225, 228, 235), (200, 140, 70), (195, 205, 215)]
+        second = metals[(salt // 8) % len(metals)]
+        third = primary if _lum(primary) > 70 else accent
+    elif mood == 1:
+        # RAW BOTANICAL & EARTHY ECRU (Aimé Leon Dore / Wales Bonner)
+        ecrus = [(244, 241, 234), (238, 233, 222), (232, 225, 212)]
+        body = ecrus[(salt // 8) % len(ecrus)]
+        earths = [(25, 65, 45), (75, 88, 72), (180, 50, 45), (42, 32, 28), (145, 95, 65)]
+        second = earths[(salt // 8) % len(earths)]
+        third = (212, 175, 55) if (salt % 2) else primary
+    elif mood == 2:
+        # CYBER DUSK & NEON AURORA (Tokyo / London Rave Underground)
+        body = (14, 18, 30) if (salt % 2) else (20, 14, 32)
+        neons = [(210, 255, 0), (255, 35, 90), (0, 235, 230), (165, 255, 40), (240, 90, 220)]
+        second = neons[(salt // 8) % len(neons)]
+        third = (245, 245, 250) if _lum(second) < 180 else primary
+    elif mood == 3:
+        # PASTEL COUTURE & WASHED MINERALS (Paris Runway)
+        pastels = [(218, 212, 230), (205, 226, 232), (226, 175, 160), (228, 192, 190), (195, 215, 205)]
+        body = pastels[(salt // 8) % len(pastels)]
+        second = (18, 20, 24)
+        third = primary if _lum(primary) < 100 else accent
+    elif mood == 4:
+        # GORPCORE TECHWEAR & TACTICAL UTILITY (Arc'teryx / Corteiz)
+        stealths = [(95, 102, 110), (45, 50, 58), (125, 120, 110), (60, 68, 62)]
+        body = stealths[(salt // 8) % len(stealths)]
+        hi_vis = [(255, 85, 0), (225, 255, 20), (0, 230, 180), (255, 40, 40)]
+        second = hi_vis[(salt // 8) % len(hi_vis)]
+        third = (240, 242, 245)
+    elif mood == 5:
+        # MONOCHROME OP-ART ARCHIVE (Yohji Yamamoto / Minimalist)
+        body = (16, 17, 20) if (salt % 2 == 0) else (248, 248, 250)
+        second = (248, 248, 250) if body[0] < 50 else (16, 17, 20)
+        third = primary if _lum(primary) > 60 else (214, 175, 65)
+    elif mood == 6:
+        # TWILIGHT HORIZON & SUNSET GRADIENT
+        body = (24, 20, 45) if (salt % 2) else (18, 32, 60)
+        sunsets = [(255, 120, 80), (255, 75, 130), (0, 220, 210), (245, 185, 55)]
+        second = sunsets[(salt // 8) % len(sunsets)]
+        third = secondary if _lum(secondary) > 160 else (245, 245, 250)
+    else:
+        # INVERTED CLUB ARCHIVE STREETWEAR
+        body = secondary if (_lum(secondary) > 180 or _lum(primary) < 100) else accent
+        second = primary
+        third = (212, 175, 55) if (salt % 2) else accent
+
+    return body, second, third
 
 
 # Comprehensive authentic supplier mappings
@@ -1005,7 +1129,7 @@ def get_club_supplier(cid: int, name: str = "") -> str:
 
 
 def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Optional[str] = None) -> Dict[str, Any]:
-    """Return a complete, fashion-forward 2026 styling dict for club + slot + season with dynamic multi-season evolution."""
+    """Return a complete, fashion-forward 2026/2027 styling dict for club + slot + season with dynamic multi-decade evolution."""
     cid = int(club.get("id") or club.get("team_id", 0))
     cname = str(club.get("name", ""))
     supplier = get_club_supplier(cid, cname)
@@ -1013,45 +1137,70 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
     primary = _hexc(club.get("primary", "#034694"))
     secondary = _hexc(club.get("secondary", "#FFFFFF"))
     accent = _hexc(club.get("accent", "#C8102E"))
-    salt_val = (cid * 31 + season * 7 + _sponsor_hash(sponsor))
+    s_off = season - 2026
+    salt_val = (cid * 104729 + s_off * 7919 + slot * 3571) & 0x7FFFFFFF
 
     # 1. Check bespoke curated DNA first
     if cid in BESPOKE_DNA and slot in BESPOKE_DNA[cid]:
         slot_def = BESPOKE_DNA[cid][slot]
         if "palettes" in slot_def:
             p_choices = slot_def["palettes"]
-            # Deterministic multi-palette rotation across seasons
-            p_idx = (season + (cid * 3) + _sponsor_hash(sponsor)) % len(p_choices)
+            # Strict linear progression guarantees consecutive seasons never duplicate
+            p_idx = s_off % len(p_choices)
             base_style = dict(p_choices[p_idx])
         else:
             base_style = dict(slot_def)
-            # If no explicit palettes, add seasonal freshness to away and third
             if slot == 2:
-                away_cycle = (season + cid * 2) % 4
-                if away_cycle == 1 and _lum(base_style.get("body", (200, 200, 200))) > 150 and _dist(secondary, primary) > 70:
-                    # Inverted accent/secondary body in alternate cycles
-                    pass
+                away_cycle = s_off % 4
+                if away_cycle == 1:
+                    if _lum(base_style.get("body", (250, 250, 252))) > 180:
+                        base_style["body"] = (22, 26, 36)
+                        base_style["shorts"] = (22, 26, 36)
+                        base_style["socks"] = (22, 26, 36)
+                        base_style["collar"] = primary
+                    else:
+                        base_style["body"] = (250, 250, 252)
+                        base_style["shorts"] = primary if _lum(primary) < 130 else (250, 250, 252)
+                        base_style["socks"] = (250, 250, 252)
+                        base_style["collar"] = primary
                 elif away_cycle == 2:
-                    # Haute couture desert sand luxury edition
                     base_style["body"] = (235, 228, 215) if _lum(primary) < 140 else (55, 62, 68)
                     base_style["shorts"] = base_style["body"]
                     base_style["socks"] = base_style["body"]
                     base_style["collar"] = primary
+                elif away_cycle == 3:
+                    if _dist(accent, primary) > 80 and _lum(accent) > 40:
+                        base_style["body"] = accent
+                        base_style["shorts"] = primary
+                        base_style["socks"] = accent
+                        base_style["collar"] = primary
+                    else:
+                        base_style["body"] = (24, 28, 38)
+                        base_style["shorts"] = (24, 28, 38)
+                        base_style["socks"] = (24, 28, 38)
+                        base_style["collar"] = secondary
             elif slot == 3:
-                third_cycle = (season + cid * 3) % 4
+                third_cycle = s_off % 4
                 if third_cycle == 1:
-                    # Regal Jewel tone (Bordeaux Wine or Emerald)
                     jewel = (75, 20, 42) if (cid + season) % 2 == 0 else (16, 68, 50)
                     base_style["body"] = jewel
                     base_style["shorts"] = jewel
                     base_style["socks"] = jewel
                     base_style["collar"] = (220, 180, 70)
                 elif third_cycle == 2:
-                    # Arctic Platinum streetwear
                     base_style["body"] = (232, 236, 242)
                     base_style["shorts"] = (18, 20, 26)
                     base_style["socks"] = (232, 236, 242)
                     base_style["collar"] = (18, 20, 26)
+                elif third_cycle == 3:
+                    base_style["body"] = (20, 24, 34)
+                    base_style["second"] = (0, 220, 200) if (cid % 2 == 0) else (255, 75, 120)
+                    base_style["shorts"] = (20, 24, 34)
+                    base_style["socks"] = (20, 24, 34)
+                    base_style["collar"] = base_style["second"]
+
+        if _lum(base_style.get("body", primary)) < 128:
+            base_style.pop("sponsor_dark", None)
 
         if "supplier" not in base_style:
             base_style["supplier"] = supplier
@@ -1060,28 +1209,41 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
         if slot == 1:
             if "alt_shorts" in base_style:
                 sh_choices = base_style["alt_shorts"]
-                sh_idx = (season + (cid % 2)) % len(sh_choices)
+                sh_idx = s_off % len(sh_choices)
                 base_style["shorts"] = sh_choices[sh_idx]
             elif _lum(base_style.get("body", primary)) < 140 and _lum(base_style.get("second", secondary)) > 150:
-                # Alternate between classic contrast shorts and modern monochrome shorts
-                if (season + cid) % 2 == 1:
+                if s_off % 2 == 1:
                     base_style["shorts"] = base_style.get("second", secondary)
             if "alt_socks" in base_style:
                 so_choices = base_style["alt_socks"]
-                so_idx = (season + (cid % 3)) % len(so_choices)
+                so_idx = s_off % len(so_choices)
                 base_style["socks"] = so_choices[so_idx]
 
         pool = base_style.pop("patterns", None)
         if pool:
-            if not sponsor:
-                base_style["pattern"] = pool[0]
+            # Linear pattern cycle across seasons
+            p_idx = s_off % len(pool)
+            base_style["pattern"] = pool[p_idx]
+
+        # Tailoring trims for bespoke clubs
+        if "cuff_tip" not in base_style:
+            base_style["cuff_tip"] = base_style.get("third") or base_style.get("second")
+        if "collar_tip" not in base_style:
+            base_style["collar_tip"] = base_style.get("third") if (salt_val % 2) else base_style.get("collar")
+        if "shorts_style" not in base_style:
+            base_style["shorts_style"] = ["side_stripe", "solid", "hem_tape", "side_stripe"][(salt_val // 7) % 4]
+            base_style["shorts_accent"] = base_style.get("second")
+        if "socks_style" not in base_style:
+            base_style["socks_style"] = ["turnover_hoop", "calf_band", "turnover_hoop", "solid"][(salt_val // 11) % 4]
+            base_style["socks_accent"] = base_style.get("second")
+            base_style["socks_tip"] = base_style.get("third")
+        if "sleeve_style" not in base_style:
+            if cid == 101 and slot == 1:
+                base_style["sleeve_style"] = "raglan"
             else:
-                if pool[0] == "plain":
-                    choices = [x for x in pool if x != "plain"] or pool
-                else:
-                    choices = pool
-                idx = (season + _sponsor_hash(sponsor)) % len(choices)
-                base_style["pattern"] = choices[idx]
+                base_style["sleeve_style"] = ["solid", "tipped", "shoulder_stripe", "tipped"][(salt_val // 13) % 4]
+        base_style["var"] = salt_val % 3
+        base_style["width_step"] = (salt_val // 3) % 8
         return base_style
 
     # 2. Dynamic Classification & Procedural Multi-Season Evolution for all other 550+ clubs
@@ -1091,49 +1253,63 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
         # HOME KIT: Respect iconic identity, elevate with luxury tailoring & seasonal rotation
         if archetype == "STRIPES":
             pool = POOL_STRIPES
-            pattern = pool[salt_val % len(pool)]
         elif archetype == "HOOPS":
             pool = POOL_HOOPS
-            pattern = pool[salt_val % len(pool)]
         elif archetype == "SASH":
             pool = POOL_SASH
-            pattern = pool[salt_val % len(pool)]
+        elif archetype == "CHESTBAND":
+            pool = POOL_CHESTBAND
+        elif archetype == "HALF_AND_HALF":
+            pool = POOL_HALF_HALF
+        elif archetype == "PINSTRIPES":
+            pool = POOL_PINSTRIPES
         else:
             pool = POOL_LUXURY_JACQUARD
-            pattern = pool[salt_val % len(pool)]
 
-        # Alternating shorts: classic contrast vs modern monochrome
+        # Advance pattern deterministically by season so consecutive years NEVER match
+        cycle = s_off
+        pattern = pool[cycle % len(pool)]
+
+        # Alternating shorts: Contrast vs Monochrome
         if _lum(primary) < 140 and _lum(secondary) > 150:
-            shorts_col = secondary if (season + cid) % 2 == 0 else primary
+            shorts_col = secondary if (cycle % 2 == 1) else primary
         else:
             shorts_col = secondary if _lum(primary) < 140 else primary
 
-        # Alternating socks & collar
-        socks_col = primary if (season + cid) % 3 != 1 else secondary
-        collar_col = secondary if (season + cid) % 3 != 2 else (accent if _dist(accent, primary) > 70 else secondary)
+        socks_col = primary if (cycle % 3 != 1) else secondary
+        collar_col = secondary if (cycle % 3 != 2) else (accent if _dist(accent, primary) > 70 else secondary)
 
         return {
             "body": primary,
             "second": secondary,
             "third": accent,
             "pattern": pattern,
+            "var": salt_val % 3,
+            "width_step": (salt_val // 3) % 8,
             "sleeve": primary,
+            "sleeve_style": ["solid", "tipped", "shoulder_stripe", "tipped"][(salt_val // 13) % 4],
             "shorts": shorts_col,
+            "shorts_style": ["solid", "side_stripe", "hem_tape", "side_stripe"][(salt_val // 7) % 4],
+            "shorts_accent": secondary if shorts_col == primary else primary,
             "socks": socks_col,
+            "socks_style": ["solid", "turnover_hoop", "calf_band", "turnover_hoop"][(salt_val // 11) % 4],
+            "socks_accent": secondary,
+            "socks_tip": accent,
             "collar": collar_col,
+            "collar_tip": accent if (salt_val % 2) else collar_col,
             "cuff": secondary,
+            "cuff_tip": accent if (salt_val % 3 == 0) else secondary,
             "gradient": 0,
             "supplier": supplier,
         }
 
     elif slot == 2:
-        # AWAY KIT: 4-Year Rotational Cycle across all clubs
-        cycle = (season + cid * 2) % 4
-        pool = POOL_AWAY_GEOMETRIC
-        pattern = pool[salt_val % len(pool)]
+        # AWAY KIT: Modern kinetic geometry & 4-year distinct colorway cycle
+        cycle = s_off % 4
+        choices = POOL_AWAY_GEOMETRIC
+        pattern = choices[(s_off * 3 + cid % 5) % len(choices)]
 
         if cycle == 0:
-            # Cycle 0: Crisp Pure Inversion (White/Light base with Primary & Accent trim)
             away_body = (250, 250, 252) if _lum(primary) < 160 else (20, 24, 32)
             away_second = primary
             away_third = accent
@@ -1141,7 +1317,6 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
             away_socks = (250, 250, 252)
             away_collar = primary
         elif cycle == 1:
-            # Cycle 1: Club Accent Heritage (Vibrant Secondary/Accent Base)
             if _dist(accent, primary) > 80 and _dist(accent, secondary) > 60 and _lum(accent) > 40:
                 away_body = accent
                 away_second = primary
@@ -1156,7 +1331,6 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
             away_socks = away_body
             away_collar = away_second
         elif cycle == 2:
-            # Cycle 2: Haute Couture / Desert Sand / Slate Minimalist Luxury
             away_body = (235, 228, 215) if _lum(primary) < 140 else (55, 62, 68)
             away_second = primary
             away_third = (210, 175, 75)
@@ -1164,7 +1338,6 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
             away_socks = away_body
             away_collar = primary
         else:
-            # Cycle 3: Deep Midnight / Charcoal Inversion
             away_body = (22, 26, 36)
             away_second = primary if _lum(primary) > 70 else accent
             away_third = secondary
@@ -1177,70 +1350,57 @@ def get_club_style(club: Dict[str, Any], slot: int, season: int, sponsor: Option
             "second": away_second,
             "third": away_third,
             "pattern": pattern,
+            "var": salt_val % 3,
+            "width_step": (salt_val // 3) % 8,
             "sleeve": away_body,
+            "sleeve_style": ["tipped", "raglan", "shoulder_stripe", "solid"][(salt_val // 9) % 4],
             "shorts": away_shorts,
+            "shorts_style": ["side_stripe", "solid", "hem_tape", "side_stripe"][(salt_val // 5) % 4],
+            "shorts_accent": away_second,
             "socks": away_socks,
+            "socks_style": ["calf_band", "turnover_hoop", "solid", "calf_band"][(salt_val // 7) % 4],
+            "socks_accent": away_second,
+            "socks_tip": away_third,
             "collar": away_collar,
+            "collar_tip": away_third,
             "cuff": away_second,
+            "cuff_tip": away_third,
             "gradient": 1 if salt_val % 2 else 0,
             "supplier": supplier,
         }
 
     else:
-        # THIRD KIT: 4-Year Streetwear & Lifestyle Culture Cycle across all clubs
-        cycle = (season + cid * 3) % 4
-        pool = POOL_THIRD_STREETWEAR
-        pattern = pool[salt_val % len(pool)]
+        # THIRD KIT: High-Fashion Streetwear & Lifestyle Culture (8 Mood Collections)
+        cycle = s_off % 8
+        third_body, third_second, third_third = generate_streetwear_palette(club, cycle + cid * 3)
+        choices = POOL_THIRD_STREETWEAR
+        pattern = choices[(s_off * 5 + cid % 7) % len(choices)]
 
-        if cycle == 0:
-            # Noir Luxury: Obsidian/Charcoal with Metallic Gold
-            third_body = (18, 20, 26)
-            third_second = (220, 180, 70) if _dist(accent, (18, 20, 26)) < 80 else accent
-            third_third = primary
-            third_shorts = (18, 20, 26)
-            third_socks = (18, 20, 26)
-            third_collar = third_second
-        elif cycle == 1:
-            # Regal Jewel Tones (Bordeaux Wine, Emerald Forest, or Royal Sapphire)
-            jewel_type = (cid + season) % 3
-            if jewel_type == 0:
-                third_body = (75, 20, 42)    # Regal Bordeaux Wine
-            elif jewel_type == 1:
-                third_body = (16, 68, 50)    # Deep Emerald Forest
-            else:
-                third_body = (18, 42, 110)   # Imperial Royal Sapphire
-            third_second = (220, 180, 70) if _lum(third_body) < 80 else (250, 250, 252)
-            third_third = accent
-            third_shorts = third_body
-            third_socks = third_body
-            third_collar = third_second
-        elif cycle == 2:
-            # Arctic Platinum / Light Bone Streetwear
-            third_body = (232, 236, 242)
-            third_second = (18, 20, 26)
-            third_third = primary
-            third_shorts = (18, 20, 26)
-            third_socks = (232, 236, 242)
-            third_collar = (18, 20, 26)
-        else:
-            # Radiant Kinetic Energy / Cyber Neon Accent
-            third_body = (20, 24, 34)
-            third_second = (0, 220, 200) if salt_val % 2 == 0 else (255, 75, 120)
-            third_third = secondary
-            third_shorts = (20, 24, 34)
-            third_socks = (20, 24, 34)
-            third_collar = third_second
+        third_shorts = third_body if (salt_val % 4 != 0) else third_second
+        third_socks = third_body if (salt_val % 2 == 0) else third_second
+        third_collar = third_second
+        third_cuff = third_second
 
         return {
             "body": third_body,
             "second": third_second,
             "third": third_third,
             "pattern": pattern,
+            "var": salt_val % 3,
+            "width_step": (salt_val // 3) % 8,
             "sleeve": third_body,
+            "sleeve_style": ["tipped", "shoulder_stripe", "tipped", "raglan"][(salt_val // 5) % 4],
             "shorts": third_shorts,
+            "shorts_style": ["side_stripe", "hem_tape", "side_stripe", "solid"][(salt_val // 3) % 4],
+            "shorts_accent": third_second if third_shorts == third_body else third_third,
             "socks": third_socks,
+            "socks_style": ["turnover_hoop", "calf_band", "turnover_hoop", "solid"][(salt_val // 7) % 4],
+            "socks_accent": third_second if third_socks == third_body else third_third,
+            "socks_tip": third_third,
             "collar": third_collar,
-            "cuff": third_second,
-            "gradient": 1,
+            "collar_tip": third_third,
+            "cuff": third_cuff,
+            "cuff_tip": third_third,
+            "gradient": [0, 1, 2, 3][(salt_val // 2) % 4],
             "supplier": supplier,
         }
