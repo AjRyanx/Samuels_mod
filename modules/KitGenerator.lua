@@ -334,7 +334,9 @@ local function sync_career_identity(tid, y, raw)
   if not tid or tid <= 0 then return end
   local sig = '00000000'
   if raw and #raw >= 12 then
-    sig = string.format('%08x', hash(raw))
+    -- raw[1..4] holds the calendar date (which advances daily).
+    -- raw[5..12] holds the stable career struct / identity bits.
+    sig = string.format('%08x', hash(raw:sub(5, 12)))
   else
     sig = string.format('%04d', y or 2027)
   end
@@ -435,31 +437,93 @@ local function club_source_label()
   return CLUB_SOURCE_LABEL[club_source()] or tostring(club_source())
 end
 
--- The game's own team -> kit-folder map, used only to put a readable name on the
--- office card (the ids are what matter to the generator).
+-- The game's own team -> kit-folder map, used to put a readable name on the
+-- office card and to resolve authentic GDB kits during Master League menus.
+local GDB_MAP_LOADED = false
+local GDB_MAP = {}
 local MAP_NAMES = nil
+
+local function load_gdb_map()
+  if GDB_MAP_LOADED then return end
+  GDB_MAP_LOADED = true
+  local f = io.open(sider_path('content/kits/map.txt'), 'r')
+  if not f then return end
+  MAP_NAMES = MAP_NAMES or {}
+  for line in f:lines() do
+    local clean = line:gsub('#.*', '')
+    local tid, folder = clean:match('^%s*(%d+)%s*,%s*"([^"]*)"')
+    if not tid then tid, folder = clean:match('^%s*(%d+)%s*,%s*(%S+)') end
+    tid = tonumber(tid)
+    if tid and folder and #folder > 0 then
+      folder = folder:gsub('^%s+', ''):gsub('%s+$', '')
+      folder = folder:gsub('[\\/]+$', '')
+      if #folder > 0 then
+        GDB_MAP[tid] = folder
+        local name = folder:match('([^\\/]+)$') or folder
+        if #name > 0 then MAP_NAMES[tid] = name end
+      end
+    end
+  end
+  f:close()
+end
+
 local function club_display_name(cid)
   cid = tonumber(cid) or club_id()
   if not cid then return 'not detected' end
-  if not MAP_NAMES then
-    MAP_NAMES = {}
-    local f = io.open(sider_path('content/kits/map.txt'), 'r')
-    if f then
-      for line in f:lines() do
-        local clean = line:gsub('#.*', '')
-        local tid, folder = clean:match('^%s*(%d+)%s*,%s*"([^"]*)"')
-        if not tid then tid, folder = clean:match('^%s*(%d+)%s*,%s*(%S+)') end
-        tid = tonumber(tid)
-        if tid and folder and #folder > 0 then
-          local name = folder:gsub('[\\/]+$', '')
-          name = name:match('([^\\/]+)$') or name
-          if #name > 0 then MAP_NAMES[tid] = name end
-        end
-      end
-      f:close()
+  if not GDB_MAP_LOADED then load_gdb_map() end
+  return (MAP_NAMES and MAP_NAMES[cid]) or ('Club #' .. tostring(cid))
+end
+
+local function resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
+  if not GDB_MAP_LOADED then load_gdb_map() end
+  local folder = GDB_MAP[tid]
+  if not folder then return nil end
+
+  slot = tonumber(slot) or 1
+  slot_type = slot_type or "p"
+  target_suffix = target_suffix or ""
+
+  local norm_folder = folder:gsub('\\', '/')
+
+  -- 1. Try exact slot (e.g. p1, p2, g1, etc.) with standard 4-digit formatting
+  local rel = string.format("content/kits/%s/%s%d/u%04d%s%d%s.ftex", norm_folder, slot_type, slot, tid, slot_type, slot, target_suffix)
+  local full = (DIR .. rel):gsub('/', '\\')
+  local f = io.open(full, "rb")
+  if f then
+    f:close()
+    return rel
+  end
+
+  -- Try without leading zero padding (for rare teams with <4 digit IDs)
+  local rel_raw = string.format("content/kits/%s/%s%d/u%d%s%d%s.ftex", norm_folder, slot_type, slot, tid, slot_type, slot, target_suffix)
+  local full_raw = (DIR .. rel_raw):gsub('/', '\\')
+  local f_raw = io.open(full_raw, "rb")
+  if f_raw then
+    f_raw:close()
+    return rel_raw
+  end
+
+  -- 2. If requesting a font/number suffix for secondary slots (p2, p3, g2) and not found,
+  -- check slot 1 font (standard PES kitserver fallback)
+  if target_suffix ~= "" and slot > 1 then
+    local rel_fb = string.format("content/kits/%s/%s1/u%04d%s1%s.ftex", norm_folder, slot_type, tid, slot_type, target_suffix)
+    local full_fb = (DIR .. rel_fb):gsub('/', '\\')
+    local f_fb = io.open(full_fb, "rb")
+    if f_fb then
+      f_fb:close()
+      return rel_fb
+    end
+
+    local rel_fb_raw = string.format("content/kits/%s/%s1/u%d%s1%s.ftex", norm_folder, slot_type, tid, slot_type, target_suffix)
+    local full_fb_raw = (DIR .. rel_fb_raw):gsub('/', '\\')
+    local f_fb_raw = io.open(full_fb_raw, "rb")
+    if f_fb_raw then
+      f_fb_raw:close()
+      return rel_fb_raw
     end
   end
-  return MAP_NAMES[cid] or ('Club #' .. tostring(cid))
+
+  return nil
 end
 
 -- read the club's kit colours straight out of the game.  ctx.kits.get answers
@@ -990,9 +1054,9 @@ local function ensure_season_deal(season)
     local ckey = cid .. ':' .. season
     if CFG.ENABLE_KITS and not CLEAN[ckey] then
       CLEAN[ckey] = true
-      local stamp = os.date('%Y%m%d%H%M%S')
-      append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s|%s',
-        cid, season, stamp, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER))
+      local req_id = string.format('clean-%d-%d', cid, season)
+      append_line('kit_request.txt', string.format('%s|%d|%d|||%s|%s',
+        req_id, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
       L('no deal for season ' .. tostring(season) ..
         ': requested the clean kit for club #' .. tostring(cid))
     end
@@ -1001,11 +1065,10 @@ local function ensure_season_deal(season)
   local rkey = DEAL.club .. ':' .. season
   if CFG.ENABLE_KITS and not REQ_SEASONS[rkey] then
     REQ_SEASONS[rkey] = true
-    local stamp = os.date('%Y%m%d%H%M%S')
-    local req_id = string.format('rebuild-%d-%s-%d-t%s', DEAL.club, DEAL.brand, season, stamp)
+    local req_id = string.format('rebuild-%d-%s-%d', DEAL.club, DEAL.brand, season)
     append_line('kit_request.txt', string.format('%s|%d|%d|%s|%s|%s|%s',
       req_id, DEAL.club, season, DEAL.brand, DEAL.tier or '',
-      os.date('%Y-%m-%d %H:%M:%S'), CAREER))
+      os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
     L('deal active: requested a fresh kit for season ' .. tostring(season))
   end
   if not CFG.ENABLE_SPONSORSHIP then return end
@@ -1035,6 +1098,12 @@ local function refresh_date(ctx)
     SEASON = (mo >= 6) and (y + 1) or y
     if prev ~= SEASON then
       L(string.format('season %d  (game date %04d-%02d-%02d)', SEASON, y, mo, d))
+      if CFG.ENABLE_KITS and prev and prev > 0 then
+        local req_id = string.format('season-%d', SEASON)
+        append_line('kit_request.txt', string.format('%s|0|%d|all||%s|%s',
+          req_id, SEASON, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
+        L('season rollover: queued AI dynamic kit update for season ' .. tostring(SEASON))
+      end
     end
   end
   if ctx then detect_club(ctx) end
@@ -1513,6 +1582,7 @@ function m.make_key(ctx, filename)
   end
 
   local cid = club_id()
+  local needs_authentic = false
   -- If this is the user's club, enforce user storyline opt-in (authentic until sponsor signed)
   if cid and cid > 0 and tid == cid then
     local has_career_deal = (DEAL and DEAL.club == cid)
@@ -1523,12 +1593,14 @@ function m.make_key(ctx, filename)
       if f then f:close(); has_career_profile = true end
     end
     local is_opted_in = has_career_deal or has_career_profile or (OPTED_IN and OPTED_IN[cid] and not (CAREER and CAREER:find('^ml_')))
-    if not is_opted_in then return nil end
+    if not is_opted_in then
+      needs_authentic = true
+    end
   else
     -- AI clubs: wear original authentic kits in Season 1; dynamic kits kick in from Season 2 onwards
     local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
     if SEASON < start_season then
-      return nil
+      needs_authentic = true
     end
   end
 
@@ -1548,6 +1620,20 @@ function m.make_key(ctx, filename)
 
   local target_suffix = suffix_map[suffix or ""]
   if not target_suffix then return nil end
+
+  -- If authentic kit is required (Season 1 AI, or un-opted user club), resolve from GDB kits
+  if needs_authentic then
+    local gdb_path = resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
+    if gdb_path then
+      if target_suffix == "" then
+        L(string.format('serving authentic GDB kit (ML cold-boot resolver): %s -> %s', filename, gdb_path))
+      else
+        L(string.format('serving authentic GDB font (ML cold-boot resolver): %s -> %s', filename, gdb_path))
+      end
+      return gdb_path
+    end
+    return nil
+  end
 
   local rel_path = nil
 
@@ -1581,12 +1667,20 @@ function m.make_key(ctx, filename)
       L(string.format('serving dynamic contrasting font (ML mode): %s -> %s', filename, rel_path))
     end
     return rel_path
+  else
+    -- Fallback to authentic GDB kit if dynamic kit file is unexpectedly missing
+    local gdb_fb = resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
+    if gdb_fb then
+      L(string.format('serving authentic GDB fallback (dynamic kit missing): %s -> %s', filename, gdb_fb))
+      return gdb_fb
+    end
   end
   return nil
 end
 
 function m.get_filepath(ctx, filename, key)
-  if key and (string.find(key, "content/KitGenerator/", 1, true) or string.find(key, "content\\KitGenerator\\", 1, true)) then
+  if key and (string.find(key, "content/KitGenerator/", 1, true) or string.find(key, "content\\KitGenerator\\", 1, true)
+           or string.find(key, "content/kits/", 1, true) or string.find(key, "content\\kits\\", 1, true)) then
     local full = ((DIR .. key):gsub('/', '\\'))
     L(string.format('serving kit file: %s', full))
     return full
@@ -1628,6 +1722,7 @@ function m.init(ctx)
   load_deal()
   load_opted_in()
   load_paid()
+  load_gdb_map()
   install_date_reader()
   -- install_budget_hook and start_watcher deferred to display_frame / set_teams
   -- to guarantee game process and loader locks are fully initialized first
@@ -1777,6 +1872,17 @@ end
 function m.debug_set_flag(name, value)
   CFG[name] = value
   return CFG[name]
+end
+
+function m.debug_reload_gdb_map()
+  GDB_MAP_LOADED = false
+  GDB_MAP = {}
+  MAP_NAMES = nil
+  load_gdb_map()
+end
+
+function m.debug_resolve_authentic_gdb_kit(tid, slot_type, slot, suffix)
+  return resolve_authentic_gdb_kit(tid, slot_type, slot, suffix)
 end
 
 return m

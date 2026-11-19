@@ -186,88 +186,86 @@ def pick_ai_sponsor(club: Dict[str, Any], season: int, brands: List[str]) -> str
     return rng.choice(brands)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Pre-generate Master League kits for all clubs.")
-    parser.add_argument("--season", type=int, default=2027, help="Master League season year (e.g. 2027)")
-    parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 4, 8), help="CPU worker processes")
-    parser.add_argument("--slots", type=str, default="1,2,3,g1,g2", help="Kit slots to build (default: 1,2,3,g1,g2)")
-    parser.add_argument("--skip-existing", action="store_true", help="Skip clubs whose kit .ftex files already exist")
-    parser.add_argument("--clubs", type=Path, default=ROOT / "generator" / "clubs.csv", help="Path to clubs.csv")
-    parser.add_argument("--outdir", type=Path, default=DEFAULT_ACTIVE, help="Target active kit directory")
-    parser.add_argument("--base-ftex", type=Path, default=DEFAULT_BASE, help="Template .ftex with valid PES kit header")
-    parser.add_argument("--logo-dir", type=Path, default=None, help="Directory containing sponsor brand logos")
-    parser.add_argument("--badge-dir", type=Path, default=None, help="Directory containing club crest badges")
-    parser.add_argument("--limit", type=int, default=None, help="Process only the first N clubs")
-    parser.add_argument("--team", type=int, default=None, help="Process only a single club ID")
-    args = parser.parse_args()
+def generate_all_kits(
+    season: int = 2027,
+    sider_dir: Optional[Path] = None,
+    workers: Optional[int] = None,
+    slots: str = "1,2,3,g1,g2",
+    skip_existing: bool = False,
+    team: Optional[int] = None,
+    limit: Optional[int] = None,
+    outdir: Optional[Path] = None,
+    clubs_path: Optional[Path] = None,
+    base_ftex_path: Optional[Path] = None,
+    logo_dir_path: Optional[Path] = None,
+    badge_dir_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    outdir = Path(outdir or DEFAULT_ACTIVE)
+    sider_dir = Path(sider_dir or outdir.parent.parent.parent)
+    base_ftex = Path(base_ftex_path or DEFAULT_BASE)
+    clubs_file = Path(clubs_path or ROOT / "generator" / "clubs.csv")
+    workers = workers or min(os.cpu_count() or 4, 8)
 
-    sider_dir = args.outdir.parent.parent.parent
-    if not args.base_ftex.is_file():
-        # Fallback search if DEFAULT_BASE does not exist
+    if not base_ftex.is_file():
         candidates = list(sider_dir.glob("content/kits/**/p1/*.ftex"))
         if candidates:
-            args.base_ftex = candidates[0]
+            base_ftex = candidates[0]
         else:
-            sys.exit(f"Base .ftex template not found: {args.base_ftex}")
+            raise FileNotFoundError(f"Base .ftex template not found: {base_ftex}")
 
-    if args.logo_dir is None:
+    if logo_dir_path is None:
         cand1 = sider_dir / "content" / "KitGenerator" / "logos"
         cand2 = ROOT / "content" / "KitGenerator" / "logos"
-        args.logo_dir = cand1 if cand1.is_dir() else cand2
+        logo_dir_path = cand1 if cand1.is_dir() else cand2
 
-    if args.badge_dir is None:
-        args.badge_dir = args.logo_dir.parent / "badges"
+    if badge_dir_path is None:
+        badge_dir_path = logo_dir_path.parent / "badges"
 
     brands = sorted({
         p.stem.replace("_white", "")
-        for p in args.logo_dir.glob("*.png")
+        for p in logo_dir_path.glob("*.png")
         if not p.stem.startswith("_")
     })
     if not brands:
-        sys.exit(f"No sponsor brand logos found in {args.logo_dir}")
+        raise RuntimeError(f"No sponsor brand logos found in {logo_dir_path}")
 
-    clubs = kit_gen.load_clubs(args.clubs)
-    if args.team is not None:
-        clubs = [c for c in clubs if c["id"] == args.team]
-    if args.limit is not None:
-        clubs = clubs[:args.limit]
+    clubs = kit_gen.load_clubs(clubs_file)
+    if team is not None:
+        clubs = [c for c in clubs if c["id"] == team]
+    if limit is not None:
+        clubs = clubs[:limit]
 
-    args.outdir.mkdir(parents=True, exist_ok=True)
+    outdir.mkdir(parents=True, exist_ok=True)
     user_cid, user_sponsor, is_opted_in = load_user_club_info(sider_dir)
 
     print(f"================================================================================")
-    print(f" GLOBAL PRE-GENERATION: MASTER LEAGUE WORLD (Season {args.season})")
+    print(f" GLOBAL PRE-GENERATION: MASTER LEAGUE WORLD (Season {season})")
     print(f"================================================================================")
     print(f" Total Clubs In Scope   : {len(clubs)}")
-    print(f" CPU Worker Processes   : {args.workers}")
+    print(f" CPU Worker Processes   : {workers}")
     print(f" Sponsor Brand Library  : {len(brands)} brands")
-    selected_slots = parse_slots(args.slots)
-    print(f" Target Output Directory: {args.outdir}")
+    selected_slots = parse_slots(slots)
+    print(f" Target Output Directory: {outdir}")
     print(f" Kit Slots in Scope     : {', '.join(str(s) for s in selected_slots)}")
-    print(f" Base Header Template   : {args.base_ftex.name}")
-    print(f" Skip Existing Files    : {'YES' if args.skip_existing else 'NO'}")
+    print(f" Base Header Template   : {base_ftex.name}")
+    print(f" Skip Existing Files    : {'YES' if skip_existing else 'NO'}")
     if user_cid:
         print(f" Human Managed Club     : #{user_cid} (Opted-in: {is_opted_in}, Sponsor: {user_sponsor or 'None'})")
     print(f"================================================================================")
 
-    # Prepare task list with sponsor assignment
     tasks = []
     skipped_user_club = False
     for club in clubs:
         cid = club["id"]
-        if cid == user_cid:
-            if not is_opted_in:
-                # Human player has not opted into mod sponsors yet: protect authentic kits!
-                skipped_user_club = True
-                continue
-            sponsor = user_sponsor
-        else:
-            sponsor = pick_ai_sponsor(club, args.season, brands)
-
-        tasks.append((club, args.season, sponsor, str(args.outdir), args.skip_existing, selected_slots))
+        # Human club is handled independently by the career watcher - never overwrite
+        if user_cid and cid == user_cid:
+            skipped_user_club = True
+            continue
+        sponsor = pick_ai_sponsor(club, season, brands)
+        tasks.append((club, season, sponsor, str(outdir), skip_existing, selected_slots))
 
     if skipped_user_club:
-        print(f" [*] Human club #{user_cid} is preserved authentic (storyline opt-in not triggered).")
+        print(f" [*] Human club #{user_cid} is preserved (isolated career profile protected).")
 
     t_start = time.time()
     total_generated = 0
@@ -275,8 +273,8 @@ def main():
     completed = 0
     total_tasks = len(tasks)
 
-    init_args = (str(args.base_ftex), str(args.logo_dir), str(args.badge_dir))
-    with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=init_args) as executor:
+    init_args = (str(base_ftex), str(logo_dir_path), str(badge_dir_path))
+    with ProcessPoolExecutor(max_workers=workers, initializer=_init_worker, initargs=init_args) as executor:
         futures = {
             executor.submit(_render_club_task, c, s, sp, out, skip, sl): c["id"]
             for (c, s, sp, out, skip, sl) in tasks
@@ -297,15 +295,52 @@ def main():
             else:
                 total_generated += cnt
                 dur = res.get("time", 0.0)
-                print(f" [{completed:3d}/{total_tasks}] #{cid:04d} {name:<24} | Sponsor: {sp:<12} | {cnt} kits ({dur:.2f}s)")
+                if completed % 10 == 0 or completed == total_tasks:
+                    print(f" [{completed:3d}/{total_tasks}] #{cid:04d} {name:<24} | Sponsor: {sp:<12} | {cnt} kits ({dur:.2f}s)")
 
     elapsed = time.time() - t_start
     print(f"================================================================================")
     print(f" COMPLETED IN {elapsed:.1f}s ({elapsed/60:.2f} mins)")
     print(f" Total Kits Generated : {total_generated}")
     print(f" Total Clubs Cached   : {total_skipped}")
-    print(f" Active Files in Dir  : {len(list(args.outdir.glob('*.ftex')))}")
+    print(f" Active Files in Dir  : {len(list(outdir.glob('*.ftex')))}")
     print(f"================================================================================")
+    return {
+        "season": season,
+        "generated": total_generated,
+        "skipped": total_skipped,
+        "elapsed": elapsed
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Pre-generate Master League kits for all clubs.")
+    parser.add_argument("--season", type=int, default=2027, help="Master League season year (e.g. 2027)")
+    parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 4, 8), help="CPU worker processes")
+    parser.add_argument("--slots", type=str, default="1,2,3,g1,g2", help="Kit slots to build (default: 1,2,3,g1,g2)")
+    parser.add_argument("--skip-existing", action="store_true", help="Skip clubs whose kit .ftex files already exist")
+    parser.add_argument("--clubs", type=Path, default=ROOT / "generator" / "clubs.csv", help="Path to clubs.csv")
+    parser.add_argument("--outdir", type=Path, default=DEFAULT_ACTIVE, help="Target active kit directory")
+    parser.add_argument("--base-ftex", type=Path, default=DEFAULT_BASE, help="Template .ftex with valid PES kit header")
+    parser.add_argument("--logo-dir", type=Path, default=None, help="Directory containing sponsor brand logos")
+    parser.add_argument("--badge-dir", type=Path, default=None, help="Directory containing club crest badges")
+    parser.add_argument("--limit", type=int, default=None, help="Process only the first N clubs")
+    parser.add_argument("--team", type=int, default=None, help="Process only a single club ID")
+    args = parser.parse_args()
+
+    generate_all_kits(
+        season=args.season,
+        workers=args.workers,
+        slots=args.slots,
+        skip_existing=args.skip_existing,
+        team=args.team,
+        limit=args.limit,
+        outdir=args.outdir,
+        clubs_path=args.clubs,
+        base_ftex_path=args.base_ftex,
+        logo_dir_path=args.logo_dir,
+        badge_dir_path=args.badge_dir,
+    )
 
 
 if __name__ == "__main__":

@@ -31,6 +31,7 @@ Usage
 import argparse
 import contextlib
 import os
+import shutil
 import socket
 import sys
 import time
@@ -294,10 +295,15 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         req = _parse_request(line)
         if not req or req["offer"] in seen:
             continue
-        _log("signed: offer=%s club=%d season=%d sponsor=%s"
+        _log("processing request: offer=%s club=%d season=%d sponsor=%s"
              % (req["offer"], req["club_id"], req["season"], req["brand"]), logfile)
         try:
-            rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
+            if req["club_id"] == 0 or req["brand"] == "all" or req["offer"].startswith("season-"):
+                _log("season rollover: refreshing AI dynamic kits for season %d" % req["season"], logfile)
+                import build_all_clubs
+                build_all_clubs.generate_all_kits(season=req["season"], sider_dir=Path(sider))
+            else:
+                rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
         except Exception as exc:                      # noqa: BLE001 - keep watching
             _log("  ERROR building %s: %s: %s"
                  % (req["offer"], type(exc).__name__, exc), logfile)

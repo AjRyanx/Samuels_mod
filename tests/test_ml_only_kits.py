@@ -222,5 +222,78 @@ key_chelsea_exh = M.make_key(exh_ctx, "u0102p1.ftex")
 assert key_chelsea_exh is None, f"Expected authentic kit in Exhibition for Chelsea, got {key_chelsea_exh}"
 print("PASS 16D: Exhibition match strictly preserves authentic kit for Chelsea across all saves")
 
+# 17. Authentic GDB Fallback Resolver for Cold-Boot Master League Menus
+# When entering ML on cold boot (before playing a match or visiting Edit Mode),
+# PES requests u<tid>p<slot>.ftex.
+# Previously, returning nil caused the game to fall back to default CPK kits.
+# With the GDB fallback resolver, KitGenerator maps the team via content/kits/map.txt
+# and directly serves the authentic GDB texture!
+gdb_dir = tmp / "content" / "kits"
+gdb_dir.mkdir(parents=True, exist_ok=True)
+map_content = """# VirtuaRED kits map
+101, "Premier League\\Arsenal"
+108, "LaLiga EA SPORTS\\Barcelona"
+"""
+(gdb_dir / "map.txt").write_text(map_content)
+
+arsenal_p1 = gdb_dir / "Premier League" / "Arsenal" / "p1"
+arsenal_p1.mkdir(parents=True, exist_ok=True)
+(arsenal_p1 / "u0101p1.ftex").write_bytes(b"AUTHENTIC_GDB_ARSENAL_P1")
+(arsenal_p1 / "u0101p1_back.ftex").write_bytes(b"AUTHENTIC_GDB_ARSENAL_P1_BACK")
+
+arsenal_g1 = gdb_dir / "Premier League" / "Arsenal" / "g1"
+arsenal_g1.mkdir(parents=True, exist_ok=True)
+(arsenal_g1 / "u0101g1.ftex").write_bytes(b"AUTHENTIC_GDB_ARSENAL_G1")
+
+M.debug_reload_gdb_map()
+
+# 17A: Un-opted club in ML cold-boot menu resolves authentic GDB kit
+M.set_home_team_for_kits(ctx, 101, 0)
+M.debug_set_club(101) # Manage Arsenal
+M.debug_clear_opted_in() # Un-opted (no sponsor deal signed yet)
+M.debug_set_date(2026, 8, 1)
+
+key_arsenal_ml = M.make_key(ml_ctx, "u0101p1.ftex")
+expected_gdb_key = "content/kits/Premier League/Arsenal/p1/u0101p1.ftex"
+assert key_arsenal_ml == expected_gdb_key, f"Expected authentic GDB kit key {expected_gdb_key}, got {key_arsenal_ml}"
+print("PASS 17A: Cold boot ML menu resolves authentic GDB kit for un-opted club:", key_arsenal_ml)
+
+# 17B: Authentic GDB back number font resolved in ML cold-boot menu
+key_arsenal_font = M.make_key(ml_ctx, "u0101p1_back.ftex")
+expected_gdb_font = "content/kits/Premier League/Arsenal/p1/u0101p1_back.ftex"
+assert key_arsenal_font == expected_gdb_font, f"Expected authentic GDB font {expected_gdb_font}, got {key_arsenal_font}"
+print("PASS 17B: Cold boot ML menu resolves authentic GDB font:", key_arsenal_font)
+
+# 17C: Authentic GDB GK kit resolved in ML cold-boot menu
+key_arsenal_gk = M.make_key(ml_ctx, "u0101g1.ftex")
+expected_gdb_gk = "content/kits/Premier League/Arsenal/g1/u0101g1.ftex"
+assert key_arsenal_gk == expected_gdb_gk, f"Expected authentic GDB GK kit {expected_gdb_gk}, got {key_arsenal_gk}"
+print("PASS 17C: Cold boot ML menu resolves authentic GDB GK kit:", key_arsenal_gk)
+
+# 17D: In Exhibition matches, authentic GDB resolver strictly yields nil (Kitserver handles exhibition)
+key_arsenal_exh = M.make_key(exh_ctx, "u0101p1.ftex")
+assert key_arsenal_exh is None, f"Expected nil in Exhibition match, got {key_arsenal_exh}"
+print("PASS 17D: Exhibition matches strictly yield nil (authentic Kitserver unaffected)")
+
+# 17E: In Edit mode, authentic GDB resolver strictly yields nil (Edit mode unaffected)
+M.set_home_team_for_kits(ctx, 101, 1) # Edit mode
+key_arsenal_edit = M.make_key(ctx, "u0101p1.ftex")
+assert key_arsenal_edit is None, f"Expected nil in Edit mode, got {key_arsenal_edit}"
+print("PASS 17E: Edit mode strictly yields nil (authentic Kitserver unaffected)")
+M.set_home_team_for_kits(ctx, 101, 0) # Exit edit mode
+
+# 17F: get_filepath resolves GDB authentic kit path to exact disk location
+fp_gdb = M.get_filepath(ml_ctx, "u0101p1.ftex", key_arsenal_ml)
+expected_fp_gdb = str(arsenal_p1 / "u0101p1.ftex").replace("/", "\\")
+assert fp_gdb == expected_fp_gdb, f"Expected {expected_fp_gdb}, got {fp_gdb}"
+print("PASS 17F: get_filepath resolves authentic GDB kit path on disk correctly:", fp_gdb)
+
+# 17G: Missing dynamic kit fallback in ML serves authentic GDB kit instead of CPK defaults
+M.debug_set_deal("aneno", 101, 2027, 60000000, 1, 0) # Opt-in Arsenal
+# Active dynamic kit for Arsenal is NOT in active/, so it falls back to authentic GDB
+key_arsenal_missing_dyn = M.make_key(ml_ctx, "u0101p1.ftex")
+assert key_arsenal_missing_dyn == expected_gdb_key, f"Expected authentic GDB fallback when dynamic kit missing, got {key_arsenal_missing_dyn}"
+print("PASS 17G: Missing dynamic kit gracefully falls back to authentic GDB kit:", key_arsenal_missing_dyn)
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")
