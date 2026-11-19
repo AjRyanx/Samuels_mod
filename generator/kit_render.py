@@ -178,12 +178,12 @@ def render_kit(design, out_png, masks=None):
     if d.get("badge"):
         bg_item = _prepare_stamp_item(d["badge"], *kit_regions.CLUB_BADGE,
                                       white=d.get("badge_white"),
-                                      max_w=82, max_h=85)
+                                      max_w=135, max_h=135, defringe=False)
     sup_item = None
     if d.get("supplier"):
         sup_item = _prepare_stamp_item(d["supplier"], *kit_regions.KIT_SUPPLIER,
                                        white=d.get("supplier_white"),
-                                       max_w=92, max_h=48)
+                                       max_w=120, max_h=65, defringe=True)
 
     # Validate against masks["body_front"] UV region and prevent inter-stamp collisions
     stamps_adj = kit_regions.validate_and_adjust_stamps(
@@ -230,7 +230,7 @@ def _defringe_white(logo):
     return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
 
-def _prepare_stamp_item(logo_path, cx, cy, area, white=False, dark=None, plate=None, max_w=None, max_h=None):
+def _prepare_stamp_item(logo_path, cx, cy, area, white=False, dark=None, plate=None, max_w=None, max_h=None, defringe=True):
     """Load, defringe, tint and measure a logo before validation and placement."""
     if not logo_path or not Path(logo_path).is_file():
         return None
@@ -238,7 +238,8 @@ def _prepare_stamp_item(logo_path, cx, cy, area, white=False, dark=None, plate=N
     bbox = logo.getbbox()
     if bbox:
         logo = logo.crop(bbox)
-    logo = _defringe_white(logo)
+    if defringe:
+        logo = _defringe_white(logo)
     if white:
         logo = _flatten_white(logo)
     elif dark:

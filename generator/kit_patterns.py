@@ -1010,6 +1010,39 @@ def f_centerband(p, d, img, mode="plain", band=0.14, vband=0.0):
             _line(d, [(0, y0 + k * 3), (p.w, y0 + k * 3)], p.third, 1, 120)
     elif mode == "vband":
         _rect(d, [p.w * 0.5 - 0.08 * p.w, 0, p.w * 0.5 + 0.08 * p.w, p.h], p.second)
+    elif mode == "hechter":
+        cx = p.w * 0.5
+        hw = p.w * 0.12
+        pw = max(3, int(p.w * 0.018))
+        _rect(d, [cx - hw, 0, cx + hw, p.h], p.second)
+        _rect(d, [cx - hw - pw, 0, cx - hw, p.h], p.third)
+        _rect(d, [cx + hw, 0, cx + hw + pw, p.h], p.third)
+    elif mode == "hechter_slim":
+        cx = p.w * 0.5
+        hw = p.w * 0.075
+        pw = max(3, int(p.w * 0.014))
+        _rect(d, [cx - hw, 0, cx + hw, p.h], p.second)
+        _rect(d, [cx - hw - pw, 0, cx - hw, p.h], p.third)
+        _rect(d, [cx + hw, 0, cx + hw + pw, p.h], p.third)
+    elif mode == "hechter_brush":
+        cx = p.w * 0.5
+        hw = p.w * 0.11
+        pw = max(3, int(p.w * 0.016))
+        _rect(d, [cx - hw, 0, cx + hw, p.h], p.second)
+        _rect(d, [cx - hw - pw, 0, cx - hw, p.h], p.third)
+        _rect(d, [cx + hw, 0, cx + hw + pw, p.h], p.third)
+        for y in range(0, int(p.h), 12):
+            if (y // 12) % 3 == 0:
+                _rect(d, [cx - hw, y, cx + hw, y + 2], p.body, a=60)
+    elif mode == "hechter_gradient":
+        cx = p.w * 0.5
+        hw = p.w * 0.11
+        pw = max(3, int(p.w * 0.016))
+        for y in range(0, int(p.h), 4):
+            alpha = int(255 * (1.0 - 0.35 * (y / p.h)))
+            _rect(d, [cx - hw, y, cx + hw, y + 4], p.second, a=alpha)
+            _rect(d, [cx - hw - pw, y, cx - hw, y + 4], p.third, a=alpha)
+            _rect(d, [cx + hw, y, cx + hw + pw, y + 4], p.third, a=alpha)
     else:
         y0 = p.h * (0.30 + 0.05 * (p.var % 3))
         _rect(d, [0, y0, p.w, y0 + band * p.h], p.second)
@@ -1831,6 +1864,10 @@ _reg("202", "Tiger / Zebra Organic Stripes", "Cultural", f_animal, mode="tiger")
 _reg("203", "Leopard Rosette Tonal", "Cultural", f_animal, mode="leopard")
 _reg("204", "Snake / Dragon Scale", "Cultural", f_scales)
 _reg("205", "Feather Camouflage", "Cultural", f_feathers)
+_reg("206", "Iconic Daniel Hechter Center Stripe", "Classics", f_centerband, mode="hechter")
+_reg("207", "Modern Slim Hechter Stripe", "Classics", f_centerband, mode="hechter_slim")
+_reg("208", "Contemporary Brush Hechter Stripe", "Classics", f_centerband, mode="hechter_brush")
+_reg("209", "Gradient Fade Hechter Stripe", "Classics", f_centerband, mode="hechter_gradient")
 
 
 # =========================================================================== #

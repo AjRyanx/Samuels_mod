@@ -549,29 +549,31 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
         },
     },
 
-    # PSG
+    # PSG (Paris Saint-Germain)
     114: {
-        1: {  # Home: Iconic Hechter central vertical red stripe framed by white on midnight navy
+        1: {  # Home: Iconic Daniel Hechter central vertical red stripe framed by white on midnight navy
             "body": (15, 25, 55), "second": (210, 20, 35), "third": (250, 250, 252),
-            "patterns": ["094", "086", "098", "085-E", "041-E"],
+            "patterns": ["206", "207", "208", "209"],
             "sleeve": (15, 25, 55), "shorts": (15, 25, 55),
-            "socks": (15, 25, 55), "collar": (210, 20, 35),
-            "cuff": (250, 250, 252),
+            "socks": (15, 25, 55), "collar": (15, 25, 55),
+            "cuff": (210, 20, 35),
             "gradient": 0, "supplier": "nike",
         },
-        2: {  # Away: Crisp pure white with gradient Hechter stripe
+        2: {  # Away: Crisp Parisian pure white with iconic Hechter central navy stripe framed by red
             "body": (250, 250, 252), "second": (15, 25, 55), "third": (210, 20, 35),
-            "patterns": ["094", "086", "082", "041-E"],
+            "patterns": ["206", "207", "208"],
             "sleeve": (250, 250, 252), "shorts": (250, 250, 252),
             "socks": (250, 250, 252), "collar": (15, 25, 55),
+            "cuff": (210, 20, 35),
             "gradient": 0, "supplier": "nike",
         },
-        3: {  # Third: Jordan Collab streetwear - elephant print / earth tones / soft pink
-            "body": (45, 42, 40), "second": (235, 170, 180), "third": (250, 250, 252),
-            "patterns": ["044-B", "041-E", "004", "168-E", "042"],
-            "sleeve": (45, 42, 40), "shorts": (45, 42, 40),
-            "socks": (235, 170, 180), "collar": (235, 170, 180),
-            "gradient": 1, "supplier": "nike",
+        3: {  # Third: Jordan Paris Nocturne - Stealth Matte Black / Dark Obsidian with Crimson & Gold Accents
+            "body": (18, 20, 26), "second": (215, 30, 45), "third": (220, 180, 70),
+            "patterns": ["207", "090", "110", "124"],
+            "sleeve": (18, 20, 26), "shorts": (18, 20, 26),
+            "socks": (18, 20, 26), "collar": (18, 20, 26),
+            "cuff": (215, 30, 45),
+            "gradient": 0, "supplier": "nike",
         },
     },
 
