@@ -222,11 +222,16 @@ def f_slashes(p, d, img, step=70, thick=16, angles=(35, 55), a=255):
 
 
 def f_bauhaus(p, d, img):
+    """Refined modernist architectural geometric framing with calm chest sponsor zone."""
     w, h = p.w, p.h
-    _rect(d, [w * 0.06, h * 0.08, w * 0.40, h * 0.40], p.second)
-    _ell(d, [w * 0.48, h * 0.12, w * 0.90, h * 0.52], p.third)
-    _poly(d, [(w * 0.12, h * 0.92), (w * 0.52, h * 0.92), (w * 0.32, h * 0.56)], p.second)
-    _rect(d, [w * 0.58, h * 0.54, w * 0.92, h * 0.88], p.third)
+    # Tonal modernist diagonal accents outside sponsor zone
+    _poly(d, [(0, 0), (w * 0.35, 0), (0, h * 0.26)], p.second, 50)
+    _poly(d, [(w, 0), (w * 0.65, 0), (w, h * 0.26)], p.third, 45)
+    _poly(d, [(0, h), (w * 0.45, h), (0, h * 0.62)], p.third, 50)
+    _poly(d, [(w, h), (w * 0.55, h), (w, h * 0.62)], p.second, 50)
+    # Sleek 1px architectural alignment lines
+    _line(d, [(0, h * 0.26), (w, h * 0.26)], p.second, 1.0, 65)
+    _line(d, [(0, h * 0.62), (w, h * 0.62)], p.third, 1.0, 65)
 
 
 def f_diamonds(p, d, img, cw=96, ch=66, gap=16, compress=True):
@@ -328,13 +333,19 @@ def f_arrows(p, d, img, bands=6, s=64, lean=0.5):
 
 
 def f_pillars(p, d, img, jitter=0.4, angle=14):
-    r = p.rng
-    x = -10
-    while x < p.w:
-        w = r.uniform(0.07, 0.15) * p.w
-        top = r.uniform(0.12, 0.55) * p.h
-        _poly(d, [(x, p.h), (x + w, p.h), (x + w + angle, top), (x + angle, top)], p.second)
-        x += w + r.uniform(0.03, 0.08) * p.w * (1 + jitter)
+    """Architectural vertical fluted columns with tonal gradient and calm chest zone."""
+    step = p.w / 9.0
+    for i in range(9):
+        x = i * step + step * 0.2
+        w = step * 0.6
+        # Top segment (shoulders/collar)
+        _rect(d, [x, 0, x + w, p.h * 0.26], p.second, 55)
+        _line(d, [(x, 0), (x, p.h * 0.26)], p.third, 1.5, 80)
+        _line(d, [(x + w, 0), (x + w, p.h * 0.26)], p.third, 1.5, 80)
+        # Bottom segment (torso hem)
+        _rect(d, [x, p.h * 0.60, x + w, p.h], p.second, 55)
+        _line(d, [(x, p.h * 0.60), (x, p.h)], p.third, 1.5, 80)
+        _line(d, [(x + w, p.h * 0.60), (x + w, p.h)], p.third, 1.5, 80)
 
 
 def f_radial(p, d, img, arms=20, r0=30, r1=260, spread=7, cx=0.5, cy=0.42):
@@ -360,13 +371,16 @@ def f_zigzag(p, d, img, x0=20, amp=22, period=60, thick=14, step=60):
 
 
 def f_cubist(p, d, img, n=22):
+    """Refined tonal architectural low-poly facets with calm chest sponsor zone."""
     r = p.rng
     for _ in range(n):
         cx, cy = r.uniform(0, p.w), r.uniform(0, p.h)
-        s = r.uniform(0.10, 0.28) * p.w
-        _poly(d, [(cx, cy), (cx + s, cy + r.uniform(-30, 30)),
-                  (cx + r.uniform(-30, 60), cy + s)],
-              _shade(p.second, r.uniform(0.7, 1.2)), 220)
+        if 0.28 * p.h < cy < 0.58 * p.h:
+            continue
+        s = r.uniform(0.06, 0.16) * p.w
+        _poly(d, [(cx, cy), (cx + s, cy + r.uniform(-15, 15)),
+                  (cx + r.uniform(-15, 30), cy + s)],
+              _shade(p.second, r.uniform(0.85, 1.15)), 45)
 
 
 def f_stars4(p, d, img, s=48, r=12, a=45):
@@ -784,9 +798,16 @@ def f_vstripes(p, d, img, count=9, width=0.5, mode="plain", color=None, fade=0.0
                 _dot(d, x + w * 0.5, k, rad, color, 255)
             continue
         if mode == "brush":
-            for k in range(0, int(p.h), 7):
-                jx = r.uniform(-w * 0.25, w * 0.25)
-                _rect(d, [x + jx, k, x + jx + w, k + 5], color, 235)
+            # Authentic artistic painted vertical brushstroke with soft feathered edges & calm sponsor zone
+            for k in range(0, int(p.h), 12):
+                if 0.28 * p.h < k < 0.56 * p.h:
+                    continue
+                # Main continuous vertical stroke band
+                _rect(d, [x + w * 0.15, k, x + w * 0.85, k + 12], color, 220)
+                # Soft vertical dry-brush bristle streaks along edges
+                for bristle in range(4):
+                    bx = x + w * (0.05 + bristle * 0.28) + r.uniform(-2, 2)
+                    _line(d, [(bx, k), (bx, k + 12)], color, w=1.5, a=r.randint(90, 180))
             continue
         if mode == "taper":
             # Elegant athletic vertical pinstripe with subtle variable width
@@ -1289,62 +1310,70 @@ def f_mesh(p, d, img, step=26):
 #  Category 5 - Architectural, Cultural & Bespoke Motifs (166-205)
 # =========================================================================== #
 def f_citymap(p, d, img, mode="streets"):
+    """Authentic urban cartography and diagonal transit routes with calm sponsor zone (no dots/clutter)."""
     r = p.rng
     if mode == "streets":
-        for _ in range(26):
+        for _ in range(18):
             x, y = r.uniform(0, p.w), r.uniform(0, p.h)
             pts = [(x, y)]
-            for _ in range(r.randint(2, 5)):
+            for _ in range(r.randint(2, 4)):
                 if r.random() < 0.5:
-                    x += r.choice([-1, 1]) * r.uniform(30, 90)
+                    x += r.choice([-1, 1]) * r.uniform(25, 60)
                 else:
-                    y += r.choice([-1, 1]) * r.uniform(30, 90)
-                pts.append((x, y))
-            _line(d, pts, p.second, 3, 190)
-        _line(d, [(0, p.h * 0.7), (p.w, p.h * 0.4)], p.third, 8, 200)
+                    y += r.choice([-1, 1]) * r.uniform(25, 60)
+                if not (0.28 * p.h < y < 0.58 * p.h):
+                    pts.append((x, y))
+            if len(pts) > 1:
+                _line(d, pts, p.second, 1.2, 50)
     elif mode == "transit":
-        cols = [p.second, p.third, p.mid]
+        cols = [p.second, p.third, p.second]
         for k in range(4):
-            y = p.h * (0.2 + k * 0.2)
+            y = p.h * (0.12 + k * 0.22)
+            if 0.26 * p.h < y < 0.60 * p.h:
+                continue
             pts = [(0, y)]
             x = 0
             while x < p.w:
-                x += r.uniform(60, 120)
+                x += r.uniform(60, 110)
+                y_next = y + r.choice([-1, 1]) * r.uniform(15, 35)
                 pts.append((x, y))
-                y += r.choice([-1, 1]) * r.uniform(20, 50)
-                pts.append((x, y))
-            _line(d, pts, cols[k % 3], 5, 220)
-            for i in range(0, len(pts), 2):
-                _dot(d, pts[i][0], pts[i][1], 4, p.body, 240)
+                pts.append((x, y_next))
+                y = y_next
+            _line(d, pts, cols[k % 3], 1.5, 60)
     elif mode == "skyline":
-        y0 = p.h * 0.72
+        # Subtle architectural pinstripe contour along bottom hem only
+        y0 = p.h * 0.82
         x = 0
         while x < p.w:
-            w = r.uniform(24, 60)
-            h = r.uniform(0.06, 0.30) * p.h
-            _rect(d, [x, y0 - h, x + w, p.h], p.second, 210)
-            x += w + r.uniform(2, 10)
+            w = r.uniform(20, 45)
+            h = r.uniform(0.04, 0.12) * p.h
+            _rect(d, [x, y0 - h, x + w, p.h], p.second, 50)
+            _line(d, [(x, y0 - h), (x + w, y0 - h)], p.third, 1.0, 75)
+            x += w + r.uniform(2, 6)
 
 
 def f_truss(p, d, img, mode="roof", step=70):
+    """Sleek architectural stadium roof truss & cathedral ribs with calm chest sponsor zone."""
     r = p.rng
     if mode == "roof":
         for iy, y in enumerate(range(0, int(p.h) + step, step)):
+            if 0.28 * p.h < y < 0.58 * p.h:
+                continue
             for ix, x in enumerate(range(0, int(p.w) + step, step)):
-                _line(d, [(x, y), (x + step, y + step)], p.second, 3, 200)
-                _line(d, [(x + step, y), (x, y + step)], p.second, 3, 200)
-                _line(d, [(x, y + step), (x + step, y + step)], p.third, 2, 180)
+                _line(d, [(x, y), (x + step, y + step)], p.second, 1.2, 55)
+                _line(d, [(x + step, y), (x, y + step)], p.second, 1.2, 55)
+                _line(d, [(x, y + step), (x + step, y + step)], p.third, 1.0, 45)
     elif mode == "vault":
         for k in range(-3, 7):
             x = k * step
-            _line(d, [(x, p.h), (p.w / 2, 0)], p.second, 3, 180)
-            _line(d, [(x, p.h), (p.w / 2, 0)], p.third, 1, 120)
+            _line(d, [(x, p.h), (p.w / 2, 0)], p.second, 1.2, 50)
+            _line(d, [(x, p.h), (p.w / 2, 0)], p.third, 1.0, 40)
     elif mode == "cables":
         top = p.h * 0.15
         for k in range(14):
             x = k * (p.w / 13)
-            _line(d, [(x, p.h), (p.w * 0.5, top)], p.second, 2, 190)
-        _line(d, [(0, top), (p.w, top)], p.third, 4, 220)
+            _line(d, [(x, p.h), (p.w * 0.5, top)], p.second, 1.0, 50)
+        _line(d, [(0, top), (p.w, top)], p.third, 1.5, 60)
 
 
 def f_artdeco(p, d, img, mode="fan", step=60):
@@ -1390,31 +1419,20 @@ def f_tile(p, d, img, s=48, shape="star"):
 
 
 def f_rosewin(p, d, img, mode="rose", cx=0.5, cy=0.4):
-    cx, cy = p.w * cx, p.h * cy
-    if mode == "rose":
-        for k in range(1, 9):
-            _ring(d, cx, cy, k * 26, p.second, 3, 210)
-        for k in range(12):
-            a = math.radians(k * 30)
-            _line(d, [(cx, cy), (cx + 220 * math.cos(a), cy + 220 * math.sin(a))], p.second, 2, 190)
-    elif mode == "compass":
-        for k in range(8):
-            a = math.radians(k * 45)
-            ln = 200 if k % 2 == 0 else 120
-            _poly(d, [(cx + ln * math.cos(a), cy + ln * math.sin(a)),
-                      (cx + 14 * math.cos(a + 1.7), cy + 14 * math.sin(a + 1.7)),
-                      (cx + 14 * math.cos(a - 1.7), cy + 14 * math.sin(a - 1.7))],
-                  p.second if k % 2 == 0 else p.third, 220)
-        _ring(d, cx, cy, 26, p.second, 3, 220)
-    elif mode == "gears":
-        for k in range(6):
-            gx = 40 + (k % 3) * 160
-            gy = 60 + (k // 3) * 180
-            _ring(d, gx, gy, 40, p.second, 4, 210)
-            for j in range(10):
-                a = math.radians(j * 36)
-                _line(d, [(gx + 40 * math.cos(a), gy + 40 * math.sin(a)),
-                          (gx + 52 * math.cos(a), gy + 52 * math.sin(a))], p.second, 4, 210)
+    """Refined Gothic rosette and circular geometric guilloche jacquard with calm chest zone."""
+    step = 72.0
+    for y in range(0, int(p.h), int(step)):
+        if 0.26 * p.h < y < 0.60 * p.h:
+            continue
+        for x in range(0, int(p.w), int(step)):
+            cx_tile, cy_tile = x + step * 0.5, y + step * 0.5
+            _ring(d, cx_tile, cy_tile, step * 0.38, p.second, 1.2, 55)
+            _ring(d, cx_tile, cy_tile, step * 0.20, p.third, 1.0, 45)
+            for j in range(8):
+                a = math.radians(j * 45)
+                _line(d, [(cx_tile, cy_tile),
+                          (cx_tile + step * 0.38 * math.cos(a), cy_tile + step * 0.38 * math.sin(a))],
+                      p.second, 1.0, 45)
 
 
 def f_hound(p, d, img, s=64):
@@ -1468,18 +1486,27 @@ def f_monogram(p, d, img, s=80, mode="letters"):
 
 
 def f_celtic(p, d, img, mode="knot"):
+    """Refined Celtic interlaced knotwork and Greek key meander jacquard with calm chest zone."""
     if mode == "knot":
-        for i in range(-1, int(p.w / 90) + 2):
-            x = i * 90
-            for k in range(4):
-                _ring(d, x + 45, k * 130 + 65, 30, p.second, 5, 210)
-                _ring(d, x + 45, k * 130 + 65, 18, p.third, 4, 200)
+        step = 64.0
+        for y in range(0, int(p.h), int(step)):
+            if 0.26 * p.h < y < 0.60 * p.h:
+                continue
+            for x in range(0, int(p.w), int(step)):
+                cx, cy = x + step * 0.5, y + step * 0.5
+                _ring(d, cx, cy, step * 0.35, p.second, 1.2, 55)
+                _ring(d, cx, cy, step * 0.20, p.third, 1.0, 45)
+                _line(d, [(cx - step * 0.35, cy), (cx + step * 0.35, cy)], p.third, 1.0, 45)
+                _line(d, [(cx, cy - step * 0.35), (cx, cy + step * 0.35)], p.third, 1.0, 45)
     elif mode == "greekkey":
-        for y in range(0, int(p.h), 70):
-            for x in range(0, int(p.w), 70):
-                pts = [(x, y + 55), (x, y + 15), (x + 55, y + 15), (x + 55, y + 40),
-                       (x + 20, y + 40), (x + 20, y + 30)]
-                _line(d, pts, p.second, 5, 220)
+        step = 56
+        for y in range(0, int(p.h), step):
+            if 0.26 * p.h < y < 0.60 * p.h:
+                continue
+            for x in range(0, int(p.w), step):
+                pts = [(x, y + 44), (x, y + 12), (x + 44, y + 12), (x + 44, y + 32),
+                       (x + 16, y + 32), (x + 16, y + 24)]
+                _line(d, pts, p.second, 1.5, 60)
 
 
 def f_seigaiha(p, d, img, rad=44):
@@ -1526,18 +1553,22 @@ def f_guilloche(p, d, img, mode="spiro", rings=26):
 
 
 def f_camo2(p, d, img, n=26, soft=True):
+    """Subtle atmospheric streetwear tonal camouflage with calm chest sponsor zone."""
     r = p.rng
     cols = [p.second, p.third, p.mid]
     for i in range(n):
         cx, cy = r.uniform(0, p.w), r.uniform(0, p.h)
-        rad = r.uniform(0.08, 0.20) * p.w
-        pts = [(cx + rad * math.cos(2 * math.pi * k / 12) * r.uniform(0.6, 1.3),
-                cy + rad * math.sin(2 * math.pi * k / 12) * r.uniform(0.6, 1.3))
+        if 0.28 * p.h < cy < 0.58 * p.h:
+            continue
+        rad = r.uniform(0.06, 0.15) * p.w
+        pts = [(cx + rad * math.cos(2 * math.pi * k / 12) * r.uniform(0.7, 1.2),
+                cy + rad * math.sin(2 * math.pi * k / 12) * r.uniform(0.7, 1.2))
                for k in range(12)]
-        _poly(d, pts, cols[i % 3], 210)
+        _poly(d, pts, cols[i % 3], 45)
 
 
 def f_animal(p, d, img, mode="tiger", n=18):
+    """Subtle modern tonal animal print streetwear jacquard with calm chest sponsor zone."""
     r = p.rng
     if mode == "tiger":
         for _ in range(n):
@@ -1546,13 +1577,17 @@ def f_animal(p, d, img, mode="tiger", n=18):
             pts = []
             y = y0
             while y < p.h:
-                pts.append((x + math.sin(y / p.h * math.pi * 2 + x) * 20, y))
-                y += 20
-            _line(d, pts, p.second, r.randint(4, 12), 220)
+                if not (0.28 * p.h < y < 0.58 * p.h):
+                    pts.append((x + math.sin(y / p.h * math.pi * 2 + x) * 12, y))
+                y += 18
+            if len(pts) > 1:
+                _line(d, pts, p.second, 2.0, 50)
     else:
         for _ in range(n * 2):
             cx, cy = r.uniform(0, p.w), r.uniform(0, p.h)
-            _dot(d, cx, cy, r.uniform(4, 12), p.second, 200)
+            if not (0.28 * p.h < cy < 0.58 * p.h):
+                _ring(d, cx, cy, r.uniform(4, 9), p.second, 1.2, 50)
+                _dot(d, cx, cy, 1.2, p.third, 40)
 
 
 def f_scales(p, d, img, s=46):
