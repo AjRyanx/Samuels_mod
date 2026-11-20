@@ -52,6 +52,22 @@ CHEST_SPONSOR = (1024, 1310, 36000)
 CLUB_BADGE = (1145, 1150, 6000)
 KIT_SUPPLIER = (905, 1150, 3600)
 
+# Shorts leg anchors:
+# Island 1 (UV left, x: 31..602, y: 1535..1968): Player's right leg. Club crest sits on lower front.
+# Island 2 (UV right, x: 1446..2015, y: 1535..1968): Player's left leg. Supplier logo sits on lower front.
+SHORTS_BADGE = (460, 1845, 4200)
+SHORTS_SUPPLIER = (1580, 1845, 2400)
+
+# Lower jocktag / authenticity foil stamp (bottom-right of front torso / player's left hem):
+JOCKTAG_ANCHOR = (1270, 1835, 1400)
+
+# Left sleeve sponsor anchor:
+# In PES 2021 UV atlas (2048x2048), Component 2 of uv_masks/sleeves.png (x: 1350..2047, y: 105..679)
+# represents the player's Left Sleeve (where commercial sleeve sponsors reside in real leagues).
+# Center at (1750, 385) with target area 12000 px^2, oriented with +6.5 degree wrap angle.
+SLEEVE_SPONSOR_LEFT = (1750, 385, 12000)
+SLEEVE_WRAP_ANGLE = 6.5
+
 # --- front / back panel boxes (for reference / debug) ---------------------- #
 FRONT_BOX = (660, 952, 1390, 1888)
 BACK_BOX = (660, 16, 1390, 952)
@@ -139,10 +155,12 @@ def boxes_intersect(b1, b2, margin=8):
     return True
 
 
-def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None, min_gap=12, margin=8):
-    """Runtime UV validation and auto-adjustment for front-panel stamps.
+def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
+                               shorts_badge=None, shorts_supplier=None, jocktag=None,
+                               sleeve_sponsor=None, min_gap=12, margin=8):
+    """Runtime UV validation and auto-adjustment for kit stamps.
     
-    Input items (sponsor, badge, supplier) should be dicts:
+    Input items should be dicts:
       {
         'cx': int, 'cy': int, 'w': int, 'h': int,
         'alpha': 2D np.ndarray (optional),
@@ -150,8 +168,8 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None, m
       }
       
     Validates:
-      1. Complete containment inside masks['body_front'], avoiding neck/collar holes
-         and side seam bleeds.
+      1. Complete containment inside masks['body_front'] (chest logos & jocktag),
+         masks['shorts'] (shorts badge & shorts supplier), and masks['sleeve'] (sleeve sponsor).
       2. Inter-stamp clearances: sponsor must not overlap badge or supplier.
          Badge and supplier must not overlap each other.
          
@@ -160,6 +178,7 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None, m
       - Nudges and proportionally scales down stamps that would clip seams or necklines.
     """
     bf = masks.get("body_front") if masks else None
+    sh = masks.get("shorts") if masks else None
     res = {}
     adjustments = []
 
@@ -268,6 +287,145 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None, m
         if res["sponsor"]["adjusted"]:
             adjustments.append(f"sponsor: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
 
+    # 3. Process Jocktag (lower shirt hem)
+    if jocktag:
+        cur_w, cur_h = jocktag["w"], jocktag["h"]
+        cur_cx, cur_cy = jocktag["cx"], jocktag["cy"]
+        alpha = jocktag.get("alpha")
+        orig_w, orig_h = cur_w, cur_h
+        orig_cx, orig_cy = cur_cx, cur_cy
+
+        if bf is not None:
+            for _ in range(10):
+                x0 = int(cur_cx - cur_w / 2)
+                y0 = int(cur_cy - cur_h / 2)
+                x1 = x0 + cur_w
+                y1 = y0 + cur_h
+                if check_stamp_containment(bf, x0, y0, x1, y1, alpha=alpha, margin=margin):
+                    break
+                if cur_cx > 1320:
+                    cur_cx -= 4
+                if cur_cy > 1860:
+                    cur_cy -= 4
+                cur_w = max(16, int(cur_w * 0.95))
+                cur_h = max(16, int(cur_h * 0.95))
+
+        res["jocktag"] = {
+            "cx": cur_cx, "cy": cur_cy, "w": cur_w, "h": cur_h,
+            "x": int(cur_cx - cur_w / 2), "y": int(cur_cy - cur_h / 2),
+            "adjusted": (cur_w != orig_w or cur_h != orig_h or cur_cx != orig_cx or cur_cy != orig_cy)
+        }
+        if res["jocktag"]["adjusted"]:
+            adjustments.append(f"jocktag: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
+
+    # 4. Process Shorts Badge (Right leg)
+    if shorts_badge:
+        cur_w, cur_h = shorts_badge["w"], shorts_badge["h"]
+        cur_cx, cur_cy = shorts_badge["cx"], shorts_badge["cy"]
+        alpha = shorts_badge.get("alpha")
+        orig_w, orig_h = cur_w, cur_h
+        orig_cx, orig_cy = cur_cx, cur_cy
+
+        if sh is not None:
+            for _ in range(10):
+                x0 = int(cur_cx - cur_w / 2)
+                y0 = int(cur_cy - cur_h / 2)
+                x1 = x0 + cur_w
+                y1 = y0 + cur_h
+                if check_stamp_containment(sh, x0, y0, x1, y1, alpha=alpha, margin=margin):
+                    break
+                if cur_cx < 400:
+                    cur_cx += 4
+                elif cur_cx > 520:
+                    cur_cx -= 4
+                if cur_cy > 1880:
+                    cur_cy -= 4
+                elif cur_cy < 1780:
+                    cur_cy += 4
+                cur_w = max(16, int(cur_w * 0.95))
+                cur_h = max(16, int(cur_h * 0.95))
+
+        res["shorts_badge"] = {
+            "cx": cur_cx, "cy": cur_cy, "w": cur_w, "h": cur_h,
+            "x": int(cur_cx - cur_w / 2), "y": int(cur_cy - cur_h / 2),
+            "adjusted": (cur_w != orig_w or cur_h != orig_h or cur_cx != orig_cx or cur_cy != orig_cy)
+        }
+        if res["shorts_badge"]["adjusted"]:
+            adjustments.append(f"shorts_badge: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
+
+    # 5. Process Shorts Supplier (Left leg)
+    if shorts_supplier:
+        cur_w, cur_h = shorts_supplier["w"], shorts_supplier["h"]
+        cur_cx, cur_cy = shorts_supplier["cx"], shorts_supplier["cy"]
+        alpha = shorts_supplier.get("alpha")
+        orig_w, orig_h = cur_w, cur_h
+        orig_cx, orig_cy = cur_cx, cur_cy
+
+        if sh is not None:
+            for _ in range(10):
+                x0 = int(cur_cx - cur_w / 2)
+                y0 = int(cur_cy - cur_h / 2)
+                x1 = x0 + cur_w
+                y1 = y0 + cur_h
+                if check_stamp_containment(sh, x0, y0, x1, y1, alpha=alpha, margin=margin):
+                    break
+                if cur_cx < 1500:
+                    cur_cx += 4
+                elif cur_cx > 1650:
+                    cur_cx -= 4
+                if cur_cy > 1880:
+                    cur_cy -= 4
+                elif cur_cy < 1780:
+                    cur_cy += 4
+                cur_w = max(16, int(cur_w * 0.95))
+                cur_h = max(16, int(cur_h * 0.95))
+
+        res["shorts_supplier"] = {
+            "cx": cur_cx, "cy": cur_cy, "w": cur_w, "h": cur_h,
+            "x": int(cur_cx - cur_w / 2), "y": int(cur_cy - cur_h / 2),
+            "adjusted": (cur_w != orig_w or cur_h != orig_h or cur_cx != orig_cx or cur_cy != orig_cy)
+        }
+        if res["shorts_supplier"]["adjusted"]:
+            adjustments.append(f"shorts_supplier: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
+
+    # 6. Process Sleeve Sponsor (Left sleeve UV island: Component 2)
+    sl = masks.get("sleeve") if masks else None
+    if sleeve_sponsor:
+        cur_w, cur_h = sleeve_sponsor["w"], sleeve_sponsor["h"]
+        cur_cx, cur_cy = sleeve_sponsor["cx"], sleeve_sponsor["cy"]
+        alpha = sleeve_sponsor.get("alpha")
+        orig_w, orig_h = cur_w, cur_h
+        orig_cx, orig_cy = cur_cx, cur_cy
+        angle = sleeve_sponsor.get("angle", SLEEVE_WRAP_ANGLE)
+
+        if sl is not None:
+            for _ in range(10):
+                x0 = int(cur_cx - cur_w / 2)
+                y0 = int(cur_cy - cur_h / 2)
+                x1 = x0 + cur_w
+                y1 = y0 + cur_h
+                if check_stamp_containment(sl, x0, y0, x1, y1, alpha=alpha, margin=margin):
+                    break
+                if cur_cx < 1650:
+                    cur_cx += 4
+                elif cur_cx > 1850:
+                    cur_cx -= 4
+                if cur_cy < 300:
+                    cur_cy += 4
+                elif cur_cy > 460:
+                    cur_cy -= 4
+                cur_w = max(16, int(cur_w * 0.95))
+                cur_h = max(16, int(cur_h * 0.95))
+
+        res["sleeve_sponsor"] = {
+            "cx": cur_cx, "cy": cur_cy, "w": cur_w, "h": cur_h,
+            "x": int(cur_cx - cur_w / 2), "y": int(cur_cy - cur_h / 2),
+            "angle": angle,
+            "adjusted": (cur_w != orig_w or cur_h != orig_h or cur_cx != orig_cx or cur_cy != orig_cy)
+        }
+        if res["sleeve_sponsor"]["adjusted"]:
+            adjustments.append(f"sleeve_sponsor: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
+
     res["valid"] = True
     res["adjustments"] = adjustments
     return res
@@ -327,5 +485,6 @@ if __name__ == "__main__":
     print("  front panel:", FRONT_BOX)
     print("  back  panel:", BACK_BOX)
     print("  sponsor anchor:", CHEST_SPONSOR, " badge:", CLUB_BADGE, " supplier:", KIT_SUPPLIER)
+    print("  shorts badge:", SHORTS_BADGE, " shorts supplier:", SHORTS_SUPPLIER, " jocktag:", JOCKTAG_ANCHOR)
     debug_map(masks, out)
     print("wrote", out)

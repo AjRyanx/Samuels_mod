@@ -97,12 +97,16 @@ def pack_atlas(atlas_png, out_ftex, template):
 
 def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1", "g2"),
               install=False, game_root=DEFAULT_GAME_ROOT, quiet=False, sponsor=None,
-              logo_dir=None, badge_dir=None, badge=None):
+              logo_dir=None, badge_dir=None, badge=None, sleeve_sponsor=None):
     """Render + pack a club's kit set (outfield and goalkeeper). Returns [(slot, atlas, ftex, design)].
 
     When `sponsor` is given (a brand name from content/KitGenerator/logos), the
     kits are regenerated with that sponsor's logo on the chest and a fresh design
     drawn from the club's on-brand pattern pool.
+
+    `sleeve_sponsor` overrides the left sleeve secondary sponsor mark
+    (e.g. visit_rwanda, hp, dxc, okx). If omitted, an authentic or premier sleeve
+    sponsor is dynamically assigned based on club DNA.
 
     `logo_dir` overrides where the sponsor logos live (defaults to this mod's
     own content/KitGenerator/logos).  A deployed watcher points it at the game's
@@ -141,7 +145,8 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
     rendered = kit_render.render_kit_set(club, season, outdir, logo_dir,
                                          masks=masks, sponsor=sponsor,
                                          badge_dir=badge_dir, badge=badge,
-                                         slots=norm_slots)
+                                         slots=norm_slots,
+                                         sleeve_sponsor=sleeve_sponsor)
     active_dir = Path(game_root) / ACTIVE_SUBDIR if install else None
     if active_dir:
         active_dir.mkdir(parents=True, exist_ok=True)
@@ -224,6 +229,9 @@ def main(argv=None):
     p.add_argument("--sponsor", default=None,
                    help="signed sponsor brand (logo file stem, e.g. spotify, fly_emirates); "
                         "regenerates the kits with that sponsor and a fresh design")
+    p.add_argument("--sleeve-sponsor", default=None,
+                   help="sleeve sponsor brand (e.g. visit_rwanda, hp, dxc, okx); "
+                        "if omitted, dynamically assigned based on club DNA")
     p.add_argument("--logos", default=None,
                    help="folder holding the sponsor logo PNGs (default: this mod's "
                         "content/KitGenerator/logos)")
@@ -244,14 +252,16 @@ def main(argv=None):
                         base_ftex=args.base, slots=_parse_slots(args.slots),
                         install=args.install, game_root=args.game_root,
                         quiet=args.quiet, sponsor=args.sponsor,
-                        logo_dir=args.logos, badge_dir=args.badges, badge=args.badge)
+                        logo_dir=args.logos, badge_dir=args.badges, badge=args.badge,
+                        sleeve_sponsor=args.sleeve_sponsor)
 
     print()
     for slot, atlas, ftex, d in results:
         label = {1: "home (p1)", 2: "away (p2)", 3: "third (p3)", "g1": "gk1 (g1)", "g2": "gk2 (g2)"}.get(slot, f"slot {slot}")
         print(f"{label:12s}: {Path(ftex).name}  pattern={d['pattern']} "
               f"body={d['body']} sleeve={d['sleeve']} shorts={d['shorts']} "
-              f"socks={d['socks']} collar={d['collar']} sponsor={d['_brand']}")
+              f"socks={d['socks']} collar={d['collar']} sponsor={d['_brand']} "
+              f"sleeve_sponsor={Path(str(d.get('sleeve_sponsor', 'none'))).stem}")
     return 0
 
 

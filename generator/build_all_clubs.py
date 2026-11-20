@@ -204,6 +204,7 @@ def generate_all_kits(
     slots: str = "1,g1",
     skip_existing: bool = False,
     team: Optional[int] = None,
+    team_ids: Optional[List[int]] = None,
     limit: Optional[int] = None,
     outdir: Optional[Path] = None,
     clubs_path: Optional[Path] = None,
@@ -244,6 +245,20 @@ def generate_all_kits(
     clubs = kit_gen.load_clubs(clubs_file)
     if team is not None:
         clubs = [c for c in clubs if c["id"] == team]
+    if team_ids is not None:
+        target_ids = set(team_ids)
+        existing_cids = {c["id"] for c in clubs}
+        # If any requested IDs are not in clubs.csv, load them via build_kit._load_club
+        for tid in target_ids:
+            if tid not in existing_cids:
+                try:
+                    import build_kit
+                    loaded = build_kit._load_club(tid, sider_dir)
+                    if loaded:
+                        clubs.append(loaded)
+                except Exception:
+                    pass
+        clubs = [c for c in clubs if c["id"] in target_ids]
     if limit is not None:
         clubs = clubs[:limit]
 
@@ -332,6 +347,75 @@ def generate_all_kits(
     }
 
 
+def generate_club_kits(
+    club_id: int,
+    season: int = 2027,
+    sider_dir: Optional[Path] = None,
+    slots: str = "1,2,3,g1,g2",
+    skip_existing: bool = False,
+    sponsor: Optional[str] = None,
+    outdir: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Generate all or missing kit slots for a single club (e.g. JIT scheduled opponent)."""
+    import build_kit
+    sider_dir = Path(sider_dir or DEFAULT_GAME_ROOT / "SiderAddons")
+    active_dir = Path(outdir or sider_dir / "content" / "KitGenerator" / "active")
+    active_dir.mkdir(parents=True, exist_ok=True)
+    club = build_kit._load_club(club_id, sider_dir)
+    logos = sider_dir / "content" / "KitGenerator" / "logos"
+    if not logos.is_dir():
+        logos = ROOT / "content" / "KitGenerator" / "logos"
+    badges = sider_dir / "content" / "KitGenerator" / "badges"
+    if not badges.is_dir():
+        badges = ROOT / "content" / "KitGenerator" / "badges"
+
+    if not sponsor or sponsor == "all":
+        brands = sorted({
+            p.stem.replace("_white", "")
+            for p in logos.glob("*.png")
+            if not p.stem.startswith("_")
+        })
+        sponsor = pick_ai_sponsor(club, season, brands) if brands else None
+
+    staging_dir = sider_dir / "content" / "KitGenerator" / "staging"
+    out_staging = staging_dir / f"season_{season}"
+    out_staging.mkdir(parents=True, exist_ok=True)
+
+    selected_slots = parse_slots(slots)
+    if skip_existing:
+        needed_slots = []
+        for s in selected_slots:
+            scode = f"p{s}" if isinstance(s, int) else str(s)
+            tf = active_dir / f"u{club_id:04d}{scode}.ftex"
+            if not tf.is_file() or tf.stat().st_size <= 1000:
+                needed_slots.append(s)
+        selected_slots = tuple(needed_slots)
+
+    if not selected_slots:
+        return {"id": club_id, "sponsor": sponsor, "count": 0, "skipped": True}
+
+    base_ftex = DEFAULT_BASE
+    if not base_ftex.is_file():
+        candidates = list(sider_dir.glob("content/kits/**/p1/*.ftex"))
+        if candidates:
+            base_ftex = candidates[0]
+
+    results = build_kit.build_set(
+        club,
+        season,
+        out_staging,
+        base_ftex=base_ftex,
+        install=True,
+        game_root=sider_dir.parent,
+        quiet=True,
+        sponsor=sponsor,
+        logo_dir=logos,
+        badge_dir=badges,
+        slots=selected_slots,
+    )
+    return {"id": club_id, "sponsor": sponsor, "count": len(results), "skipped": False}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pre-generate Master League kits for all clubs.")
     parser.add_argument("--season", type=int, default=2027, help="Master League season year (e.g. 2027)")
@@ -347,15 +431,25 @@ def main():
     parser.add_argument("--badge-dir", type=Path, default=None, help="Directory containing club crest badges")
     parser.add_argument("--limit", type=int, default=None, help="Process only the first N clubs")
     parser.add_argument("--team", type=int, default=None, help="Process only a single club ID")
+    parser.add_argument("--team-ids", type=str, default=None, help="Comma-separated list of team IDs to generate")
+    parser.add_argument("--league-of", type=int, default=None, help="Generate kits for all clubs in the league of this club ID")
     args = parser.parse_args()
 
     slots_to_build = "1,2,3,g1,g2" if args.power else args.slots
+    team_ids = None
+    if args.team_ids:
+        team_ids = [int(x.strip()) for x in args.team_ids.split(",") if x.strip().isdigit()]
+    elif args.league_of:
+        sider_dir = args.outdir.parent.parent.parent if args.outdir else DEFAULT_GAME_ROOT / "SiderAddons"
+        team_ids = kit_dna.get_league_teams(args.league_of, sider_dir=sider_dir)
+
     generate_all_kits(
         season=args.season,
         workers=args.workers,
         slots=slots_to_build,
         skip_existing=args.skip_existing,
         team=args.team,
+        team_ids=team_ids,
         limit=args.limit,
         outdir=args.outdir,
         clubs_path=args.clubs,

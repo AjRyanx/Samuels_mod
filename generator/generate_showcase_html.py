@@ -500,6 +500,59 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             line-height: 1.4;
         }
 
+        /* Top Nav */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-brand {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-badge {
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            text-transform: uppercase;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .nav-link:hover {
+            color: var(--text-main);
+            background: var(--surface);
+            border-color: var(--border);
+        }
+        .nav-link.active {
+            color: var(--accent);
+            background: rgba(56, 189, 248, 0.08);
+            border-color: rgba(56, 189, 248, 0.25);
+        }
+
         /* Footer */
         .footer {
             margin-top: 48px;
@@ -513,6 +566,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
     <div class="container">
+        <!-- Top Nav -->
+        <nav class="top-nav">
+            <div class="nav-brand">
+                <span>PES 2021 Kit Mod</span>
+                <span class="nav-badge">Master League</span>
+            </div>
+            <div class="nav-links">
+                <a href="sponsors_showcase.html" class="nav-link active">Chest Sponsors (177)</a>
+                <a href="sleeve_sponsors_showcase.html" class="nav-link">Sleeve Sponsors (24)</a>
+            </div>
+        </nav>
+
         <!-- Header -->
         <header class="header">
             <div class="header-left">

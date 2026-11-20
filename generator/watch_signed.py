@@ -292,41 +292,111 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     if not lines:
         return 0
 
-    # Human managed club requests ALWAYS have top priority over bulk season rollovers
+    # Priority Queue: User club > JIT scheduled opponents > User league > Bulk rollover
     user_requests = []
+    jit_requests = []
+    league_requests = []
     rollover_requests = []
     active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
     for line in lines:
         req = _parse_request(line)
         if not req:
             continue
+        is_jit = req["offer"].startswith("jit-") or req.get("tier") == "jit"
+        is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
+        is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
+
         if req["offer"] in seen:
             if req["club_id"] > 0:
-                target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
-                career_id = req.get("career_id")
-                career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
-                if target_ftex.is_file() and (career_ftex is None or career_ftex.is_file()):
+                if is_jit:
+                    target_ftex = active_dir / f"u{req['club_id']:04d}p2.ftex"
+                    if target_ftex.is_file() and target_ftex.stat().st_size > 1000:
+                        continue
+                elif is_league:
                     continue
+                else:
+                    target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
+                    career_id = req.get("career_id")
+                    career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
+                    if target_ftex.is_file() and (career_ftex is None or career_ftex.is_file()):
+                        continue
             else:
                 continue
-        if req["club_id"] == 0 or req["brand"] == "all" or req["offer"].startswith("season-"):
+
+        if is_jit:
+            jit_requests.append(req)
+        elif is_league:
+            league_requests.append(req)
+        elif is_rollover:
             rollover_requests.append(req)
         else:
             user_requests.append(req)
 
-    pending_queue = user_requests + rollover_requests
+    pending_queue = user_requests + jit_requests + league_requests + rollover_requests
     done = 0
     for req in pending_queue:
         _log("processing request: offer=%s club=%d season=%d sponsor=%s"
              % (req["offer"], req["club_id"], req["season"], req["brand"]), logfile)
         try:
-            if req["club_id"] == 0 or req["brand"] == "all" or req["offer"].startswith("season-"):
-                mode = (req.get("tier") or "balanced").lower()
-                slots = "1,2,3,g1,g2" if mode == "power" else "1,g1"
-                _log("season rollover: refreshing AI dynamic kits for season %d (mode=%s, slots=%s)"
-                     % (req["season"], mode, slots), logfile)
+            is_jit = req["offer"].startswith("jit-") or req.get("tier") == "jit"
+            is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
+            is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
+
+            if is_jit:
+                _log("JIT opponent request: generating kits for scheduled club #%d (season %d)"
+                     % (req["club_id"], req["season"]), logfile)
                 import build_all_clubs
-                build_all_clubs.generate_all_kits(season=req["season"], sider_dir=Path(sider), slots=slots)
+                build_all_clubs.generate_club_kits(
+                    club_id=req["club_id"],
+                    season=req["season"],
+                    sider_dir=Path(sider),
+                    slots="1,2,3,g1,g2",
+                    skip_existing=False,
+                )
+            elif is_league:
+                import kit_dna
+                import build_all_clubs
+                league_cids = kit_dna.get_league_teams(req["club_id"], sider_dir=sider)
+                _log("league background generation: refreshing kits for %d clubs in league of club #%d (season %d)"
+                     % (len(league_cids), req["club_id"], req["season"]), logfile)
+                build_all_clubs.generate_all_kits(
+                    season=req["season"],
+                    sider_dir=Path(sider),
+                    slots="1,2,3,g1,g2",
+                    skip_existing=True,
+                    team_ids=league_cids,
+                    low_priority=True,
+                )
+            elif is_rollover:
+                mode = (req.get("tier") or "balanced").lower()
+                import build_all_clubs
+                if mode == "power":
+                    _log("season rollover: refreshing all clubs with full 5 slots (mode=power)", logfile)
+                    build_all_clubs.generate_all_kits(season=req["season"], sider_dir=Path(sider), slots="1,2,3,g1,g2")
+                else:
+                    _log("season rollover [priority 2]: refreshing scoutable baseline (mode=balanced, slots=1,g1)", logfile)
+                    build_all_clubs.generate_all_kits(
+                        season=req["season"],
+                        sider_dir=Path(sider),
+                        slots="1,g1",
+                        skip_existing=True,
+                        low_priority=True,
+                    )
+                    # Next in priority tree: user's league background generation
+                    user_cid, _, _ = build_all_clubs.load_user_club_info(Path(sider))
+                    if user_cid:
+                        import kit_dna
+                        league_cids = kit_dna.get_league_teams(user_cid, sider_dir=sider)
+                        _log("season rollover [priority 3]: generating full kits for user's league (%d clubs)"
+                             % len(league_cids), logfile)
+                        build_all_clubs.generate_all_kits(
+                            season=req["season"],
+                            sider_dir=Path(sider),
+                            slots="1,2,3,g1,g2",
+                            skip_existing=True,
+                            team_ids=league_cids,
+                            low_priority=True,
+                        )
             else:
                 rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
         except Exception as exc:                      # noqa: BLE001 - keep watching

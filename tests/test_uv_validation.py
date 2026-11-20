@@ -70,6 +70,38 @@ def test_uv_containment_and_adjustment():
     assert not kit_regions.boxes_intersect(b_box, s_box, margin=12)
     print("PASS: Badge and supplier collision resolved.")
 
+    # 5. Shorts Stamps & Jocktag Containment Test
+    sh = masks["shorts"]
+    sh_badge_std = {"cx": kit_regions.SHORTS_BADGE[0], "cy": kit_regions.SHORTS_BADGE[1], "w": 65, "h": 65}
+    sh_supplier_std = {"cx": kit_regions.SHORTS_SUPPLIER[0], "cy": kit_regions.SHORTS_SUPPLIER[1], "w": 65, "h": 38}
+    jocktag_std = {"cx": kit_regions.JOCKTAG_ANCHOR[0], "cy": kit_regions.JOCKTAG_ANCHOR[1], "w": 50, "h": 26}
+
+    res_shorts = kit_regions.validate_and_adjust_stamps(
+        masks, shorts_badge=sh_badge_std, shorts_supplier=sh_supplier_std, jocktag=jocktag_std
+    )
+    assert res_shorts["valid"] is True
+    assert not res_shorts["shorts_badge"]["adjusted"], "Standard shorts badge should not require adjustment"
+    assert not res_shorts["shorts_supplier"]["adjusted"], "Standard shorts supplier should not require adjustment"
+    assert not res_shorts["jocktag"]["adjusted"], "Standard jocktag should not require adjustment"
+
+    # Verify containment directly on masks
+    assert kit_regions.check_stamp_containment(
+        sh, res_shorts["shorts_badge"]["x"], res_shorts["shorts_badge"]["y"],
+        res_shorts["shorts_badge"]["x"] + res_shorts["shorts_badge"]["w"],
+        res_shorts["shorts_badge"]["y"] + res_shorts["shorts_badge"]["h"], margin=4
+    )
+    assert kit_regions.check_stamp_containment(
+        sh, res_shorts["shorts_supplier"]["x"], res_shorts["shorts_supplier"]["y"],
+        res_shorts["shorts_supplier"]["x"] + res_shorts["shorts_supplier"]["w"],
+        res_shorts["shorts_supplier"]["y"] + res_shorts["shorts_supplier"]["h"], margin=4
+    )
+    assert kit_regions.check_stamp_containment(
+        bf, res_shorts["jocktag"]["x"], res_shorts["jocktag"]["y"],
+        res_shorts["jocktag"]["x"] + res_shorts["jocktag"]["w"],
+        res_shorts["jocktag"]["y"] + res_shorts["jocktag"]["h"], margin=4
+    )
+    print("PASS: Shorts badge, shorts supplier, and lower hem jocktag containment verified.")
+
 if __name__ == "__main__":
     test_uv_containment_and_adjustment()
     print("ALL UV VALIDATION TESTS PASSED!")

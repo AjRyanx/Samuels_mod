@@ -88,6 +88,12 @@ DEFAULT_DESIGN = {
     "pattern_mask": "full",       # "full", "front_only", "chest_only", "sash_only", "sleeves_only"
     "tile_scale": 1.0,            # 0.5 (micro-weave 2x2), 1.0 (standard), 2.0 (macro streetwear art)
     "finish": "standard",         # "standard", "liquid_gold", "chrome_silver", "copper_bronze", "blackout", "whiteout", "cyber_neon"
+    "jocktag": True,              # True = render authentic engineered jocktag at lower shirt hem
+    "shorts_badge": True,         # True = render club crest on right shorts leg
+    "shorts_supplier": True,      # True = render supplier logo on left shorts leg
+    "sleeve_sponsor": None,       # path to a PNG logo or key (player's left sleeve)
+    "sleeve_sponsor_angle": 6.5,  # wrap angle slope along sleeve (default: 6.5 degrees)
+    "sleeve_sponsor_white": False,# True = flatten sleeve logo to white
 }
 
 
@@ -766,6 +772,15 @@ def render_kit(design, out_png, masks=None):
 
         atlas.alpha_composite(img, (x, y))
 
+    # 6. Shorts branding (Right leg club badge, Left leg supplier mark)
+    _render_shorts_branding(atlas, d, masks)
+
+    # 7. Lower shirt hem authenticity jocktag
+    _render_jocktag(atlas, d, masks)
+
+    # 8. Sleeve secondary sponsor (Left sleeve UV island: Component 2)
+    _render_sleeve_sponsor(atlas, d, masks)
+
     if out_png:
         atlas.save(out_png)
         return out_png
@@ -860,6 +875,235 @@ def _flatten_color(logo, color):
     return Image.fromarray(a, "RGBA")
 
 
+def _render_jocktag(atlas, d, masks):
+    """Render authentic engineered hologram / woven metallic jocktag at lower shirt hem."""
+    if not d.get("jocktag", True):
+        return
+
+    bf = masks.get("body_front")
+    if bf is None:
+        return
+
+    w, h = 50, 26
+    cx, cy = kit_regions.JOCKTAG_ANCHOR[0], kit_regions.JOCKTAG_ANCHOR[1]
+
+    # Validate against body_front
+    tag_item = {"cx": cx, "cy": cy, "w": w, "h": h}
+    adj = kit_regions.validate_and_adjust_stamps(masks, jocktag=tag_item).get("jocktag")
+    if adj:
+        cx, cy = adj["cx"], adj["cy"]
+        w, h = adj["w"], adj["h"]
+    x0, y0 = int(cx - w / 2), int(cy - h / 2)
+
+    finish = d.get("finish", "standard")
+
+    if finish == "liquid_gold":
+        bg_col = (42, 36, 20, 245)
+        border_col = (212, 175, 55, 255)
+        holo_col = (245, 215, 110, 220)
+        text_col = (220, 190, 80, 240)
+    elif finish == "chrome_silver":
+        bg_col = (30, 32, 38, 245)
+        border_col = (195, 205, 215, 255)
+        holo_col = (230, 240, 250, 220)
+        text_col = (210, 220, 230, 240)
+    elif finish == "copper_bronze":
+        bg_col = (40, 28, 22, 245)
+        border_col = (190, 120, 60, 255)
+        holo_col = (235, 160, 100, 220)
+        text_col = (215, 140, 80, 240)
+    else:
+        bg_col = (20, 22, 26, 240)
+        border_col = (160, 165, 175, 230)
+        holo_col = (210, 215, 225, 200)
+        text_col = (175, 180, 190, 230)
+
+    tag_img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(tag_img)
+
+    # 1. Rounded rectangle outer body
+    draw.rounded_rectangle([0, 0, w - 1, h - 1], radius=3, fill=bg_col, outline=border_col, width=1)
+
+    # 2. Vertical holographic security strip on left side (x: 4..10)
+    for hy in range(3, h - 3):
+        lum_mod = int(25 * math.sin(hy * 1.5))
+        strip_c = (
+            min(255, max(0, holo_col[0] + lum_mod)),
+            min(255, max(0, holo_col[1] + lum_mod)),
+            min(255, max(0, holo_col[2] + lum_mod)),
+            holo_col[3]
+        )
+        draw.line([(4, hy), (10, hy)], fill=strip_c, width=1)
+
+    # 3. Geometric micro-lines simulating authenticity chip
+    draw.line([(15, 7), (w - 6, 7)], fill=text_col, width=1)
+    draw.line([(15, 12), (w - 12, 12)], fill=(text_col[0], text_col[1], text_col[2], int(text_col[3] * 0.7)), width=1)
+    draw.line([(15, 17), (w - 8, 17)], fill=(text_col[0], text_col[1], text_col[2], int(text_col[3] * 0.5)), width=1)
+
+    # 4. Tiny metallic authentic dot watermark in bottom-right corner
+    draw.ellipse([w - 9, h - 9, w - 5, h - 5], fill=border_col)
+
+    # Composite onto atlas strictly within body_front
+    tag_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    tag_layer.paste(tag_img, (x0, y0), tag_img)
+    _composite_layer(atlas, tag_layer, bf)
+
+
+def _render_shorts_branding(atlas, d, masks):
+    """Render authentic club crest on right leg and supplier mark on left leg of shorts."""
+    shorts_mask = masks.get("shorts")
+    if shorts_mask is None:
+        return
+
+    # 1. Shorts Club Badge (Right leg)
+    if d.get("shorts_badge", True) and d.get("badge"):
+        badge_white = d.get("badge_white", False)
+        bg_item = _prepare_stamp_item(
+            d["badge"], *kit_regions.SHORTS_BADGE,
+            white=badge_white,
+            max_w=68, max_h=68, defringe=False
+        )
+        if bg_item:
+            adj = kit_regions.validate_and_adjust_stamps(
+                masks, shorts_badge=bg_item
+            ).get("shorts_badge")
+            if adj:
+                cur_w, cur_h = adj["w"], adj["h"]
+                img = bg_item["img"]
+                if (cur_w, cur_h) != img.size:
+                    img = img.resize((cur_w, cur_h), Image.LANCZOS)
+
+                stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+                stamp_layer.paste(img, (adj["x"], adj["y"]), img)
+                _composite_layer(atlas, stamp_layer, shorts_mask)
+
+    # 2. Shorts Supplier Logo (Left leg)
+    if d.get("shorts_supplier", True) and d.get("supplier"):
+        shorts_base = d.get("shorts") or d["body"]
+        l_sh = _col_lum(shorts_base)
+
+        sup_col = d.get("supplier_color")
+        if sup_col:
+            l_sc = _col_lum(sup_col)
+            if (max(l_sh, l_sc) + 12.5) / (min(l_sh, l_sc) + 12.5) < 2.0:
+                sup_col = (245, 245, 245) if l_sh < 128 else (20, 25, 35)
+        else:
+            cand_acc = d.get("shorts_accent") or d.get("second")
+            if cand_acc:
+                l_acc = _col_lum(cand_acc)
+                if (max(l_sh, l_acc) + 12.5) / (min(l_sh, l_acc) + 12.5) >= 2.2:
+                    sup_col = cand_acc
+                else:
+                    sup_col = (245, 245, 245) if l_sh < 128 else (20, 25, 35)
+            else:
+                sup_col = (245, 245, 245) if l_sh < 128 else (20, 25, 35)
+
+        sup_white = (sup_col == (245, 245, 245) or d.get("supplier_white", False))
+        sup_item = _prepare_stamp_item(
+            d["supplier"], *kit_regions.SHORTS_SUPPLIER,
+            white=sup_white if not sup_col or sup_col == (245, 245, 245) else False,
+            dark=sup_col if not sup_white else None,
+            max_w=68, max_h=38, defringe=True
+        )
+        if sup_item:
+            adj = kit_regions.validate_and_adjust_stamps(
+                masks, shorts_supplier=sup_item
+            ).get("shorts_supplier")
+            if adj:
+                cur_w, cur_h = adj["w"], adj["h"]
+                img = sup_item["img"]
+                if (cur_w, cur_h) != img.size:
+                    img = img.resize((cur_w, cur_h), Image.LANCZOS)
+
+                stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+                stamp_layer.paste(img, (adj["x"], adj["y"]), img)
+                _composite_layer(atlas, stamp_layer, shorts_mask)
+
+
+def _render_sleeve_sponsor(atlas, d, masks):
+    """Anchor secondary sponsor logo on Left Sleeve UV island oriented along sleeve wrap angle."""
+    sleeve_sp = d.get("sleeve_sponsor")
+    if not sleeve_sp:
+        return
+
+    # Resolve logo file path
+    p = Path(sleeve_sp)
+    if not p.is_file():
+        # Check standard sleeve logos directories
+        candidates = [
+            Path(__file__).resolve().parent / "sleeve_logos" / f"{sleeve_sp}.png",
+            Path(__file__).resolve().parent.parent / "content" / "KitGenerator" / "sleeve_logos" / f"{sleeve_sp}.png",
+            Path(__file__).resolve().parent / "sleeve_logos" / f"{sleeve_sp}_white.png",
+            Path(__file__).resolve().parent.parent / "content" / "KitGenerator" / "sleeve_logos" / f"{sleeve_sp}_white.png",
+        ]
+        found = False
+        for cand in candidates:
+            if cand.is_file():
+                p = cand
+                found = True
+                break
+        if not found:
+            return
+
+    # Sample canvas background under sleeve sponsor region to guarantee WCAG high contrast
+    # Left sleeve anchor center: (1750, 385)
+    sample_arr = np.array(atlas)[340:430, 1690:1810, :3]
+    sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
+    bg_lum = float(np.mean(sample_lums))
+
+    if bg_lum < 130 or d.get("sleeve_sponsor_white"):
+        # Dark sleeve fabric: pick white variant
+        if not p.stem.endswith("_white"):
+            cand_w = p.parent / f"{p.stem}_white.png"
+            if cand_w.is_file():
+                p = cand_w
+    else:
+        # Light sleeve fabric: pick color variant
+        if p.stem.endswith("_white"):
+            cand_c = p.parent / f"{p.stem[:-6]}.png"
+            if cand_c.is_file():
+                p = cand_c
+
+    # Prepare stamp item
+    cx, cy, area = kit_regions.SLEEVE_SPONSOR_LEFT
+    wrap_angle = float(d.get("sleeve_sponsor_angle", kit_regions.SLEEVE_WRAP_ANGLE))
+    item = _prepare_stamp_item(str(p), cx, cy, area, max_w=180, max_h=80, defringe=True)
+    if not item:
+        return
+
+    # Validate against masks['sleeve']
+    item["angle"] = wrap_angle
+    adj = kit_regions.validate_and_adjust_stamps(masks, sleeve_sponsor=item).get("sleeve_sponsor")
+    if not adj:
+        return
+
+    cur_w, cur_h = adj["w"], adj["h"]
+    cx, cy = adj["cx"], adj["cy"]
+    img = item["img"]
+    if (cur_w, cur_h) != img.size:
+        img = img.resize((cur_w, cur_h), Image.LANCZOS)
+
+    # Rotate along sleeve wrap angle (positive degrees = clockwise for arm drape)
+    if abs(wrap_angle) > 0.01:
+        img_rot = img.rotate(-wrap_angle, resample=Image.BICUBIC, expand=True)
+    else:
+        img_rot = img
+
+    rw, rh = img_rot.size
+    rx = int(cx - rw / 2)
+    ry = int(cy - rh / 2)
+
+    # Stamp layer composite with sleeve mask clipping
+    stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    stamp_layer.paste(img_rot, (rx, ry), img_rot)
+
+    sleeve_mask = masks.get("sleeve") if masks else None
+    if sleeve_mask is not None:
+        _composite_layer(atlas, stamp_layer, sleeve_mask)
+    else:
+        atlas.alpha_composite(stamp_layer)
+
+
 # --------------------------------------------------------------------------- #
 #  generator -> design
 # --------------------------------------------------------------------------- #
@@ -900,7 +1144,7 @@ KIT_STYLE = kit_dna.BESPOKE_DNA
 
 
 def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=None,
-                     sponsor=None, badge_dir=None, badge=None):
+                     sponsor=None, badge_dir=None, badge=None, sleeve_sponsor=None):
     """Turn a club row + season + kit slot (1=home, 2=away, 3=third) into a design.
 
     The rolls are taken in the same order as kit_gen.preview() so the wrapped
@@ -986,6 +1230,9 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
 
     if st:
         design.update(st)
+
+    if sleeve_sponsor:
+        design["sleeve_sponsor"] = sleeve_sponsor
 
     # the chest logo is stamped only for a signed sponsor, and chosen from the
     # FINAL body colour so a dark kit gets the white logo variant
@@ -1086,21 +1333,35 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
                 d_dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(design["body"][:3], str_acc[:3])))
                 if d_dist > 50:
                     design["supplier_color"] = str_acc
+
+    # Secondary sleeve sponsor on player's left sleeve (e.g. visit_rwanda, hp, dxc, okx)
+    sleeve_sp = design.get("sleeve_sponsor")
+    if sleeve_sp:
+        sdir = Path(logo_dir).parent / "sleeve_logos" if logo_dir else (Path(__file__).resolve().parent / "sleeve_logos")
+        cand_sp = sdir / f"{sleeve_sp}.png"
+        cand_sp_w = sdir / f"{sleeve_sp}_white.png"
+        if cand_sp.is_file():
+            design["sleeve_sponsor"] = str(cand_sp)
+        elif cand_sp_w.is_file():
+            design["sleeve_sponsor"] = str(cand_sp_w)
+        elif (Path(__file__).resolve().parent / "sleeve_logos" / f"{sleeve_sp}.png").is_file():
+            design["sleeve_sponsor"] = str(Path(__file__).resolve().parent / "sleeve_logos" / f"{sleeve_sp}.png")
     return design
 
 
 def render_club(club, season, out_png, logo_dir, masks=None, brand_files=None, slot=1,
-                style=None, sponsor=None, badge_dir=None, badge=None):
+                style=None, sponsor=None, badge_dir=None, badge=None, sleeve_sponsor=None):
     """Render one club's generated kit for a season; returns (path_or_image, design)."""
     design = design_from_club(club, season, logo_dir, slot=slot,
                               brand_files=brand_files, style=style, sponsor=sponsor,
-                              badge_dir=badge_dir, badge=badge)
+                              badge_dir=badge_dir, badge=badge, sleeve_sponsor=sleeve_sponsor)
     res = render_kit(design, str(out_png) if out_png else None, masks=masks)
     return res, design
 
 
 def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
-                   sponsor=None, badge_dir=None, badge=None, slots=(1, 2, 3, "g1", "g2")):
+                   sponsor=None, badge_dir=None, badge=None, slots=(1, 2, 3, "g1", "g2"),
+                   sleeve_sponsor=None):
     """Render the full outfield and goalkeeper kit set for a club + season.
 
     Returns a list of (slot, atlas_png, preview_png, design).
@@ -1121,7 +1382,7 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
         atlas = outdir / f"u{team:04d}{slot_code}_atlas.png"
         _, design = render_club(club, season, atlas, logo_dir, masks=masks,
                                 brand_files=brand_files, slot=slot, sponsor=sponsor,
-                                badge_dir=badge_dir, badge=badge)
+                                badge_dir=badge_dir, badge=badge, sleeve_sponsor=sleeve_sponsor)
         preview = uv_contact_sheet(atlas, outdir / f"u{team:04d}{slot_code}_preview.png",
                                    masks=masks)
         mockup(design, club["name"], season,
@@ -1275,6 +1536,29 @@ def mockup(design, club_name, season, out_png):
         if design.get("sponsor_plate", False):
             d.rounded_rectangle([118, 160, 362, 236], radius=10, fill=body + (255,))
         canvas.alpha_composite(logo, (240 - logo.width // 2, 170))
+
+    if design.get("sleeve_sponsor"):
+        try:
+            sl_path = Path(design["sleeve_sponsor"])
+            if not sl_path.is_file():
+                cand = Path(__file__).resolve().parent / "sleeve_logos" / f"{sl_path.stem}.png"
+                if cand.is_file():
+                    sl_path = cand
+            if sl_path.is_file():
+                sl_logo = Image.open(sl_path).convert("RGBA")
+                canvas_arr = np.array(canvas)
+                sl_lum = _col_lum(canvas_arr[175, 395, :3])
+                if sl_lum < 130 or design.get("sleeve_sponsor_white"):
+                    cand_w = sl_path.parent / f"{sl_path.stem.replace('_white', '')}_white.png"
+                    if cand_w.is_file():
+                        sl_logo = Image.open(cand_w).convert("RGBA")
+                    else:
+                        sl_logo = _flatten_white(sl_logo)
+                sl_scale = min(36 / max(1, sl_logo.width), 20 / max(1, sl_logo.height))
+                sl_logo = sl_logo.resize((max(1, int(sl_logo.width * sl_scale)), max(1, int(sl_logo.height * sl_scale))), Image.LANCZOS)
+                canvas.alpha_composite(sl_logo, (395 - sl_logo.width // 2, 175 - sl_logo.height // 2))
+        except Exception:
+            pass
 
     # shorts / socks swatches along the bottom strip
     def swatch(x, colour, label, accent=None):

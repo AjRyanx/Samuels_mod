@@ -1090,6 +1090,50 @@ for _lkey, _tlist in LEAGUE_TEAMS.items():
 # Flat mapping backward compatibility
 LEAGUE_ROSTERS: Dict[int, int] = {cid: rank for cid, (_, rank) in CLUB_LEAGUE_MAP.items()}
 
+
+def get_league_teams(club_id: int, sider_dir: Optional[Any] = None) -> List[int]:
+    """Return all team IDs belonging to the same league as club_id."""
+    if sider_dir:
+        from pathlib import Path
+        sider_path = Path(sider_dir)
+        map_p = sider_path / "content" / "kits" / "map.txt"
+        if not map_p.is_file():
+            cand = sider_path / "SiderAddons" / "content" / "kits" / "map.txt"
+            if cand.is_file():
+                map_p = cand
+        if map_p.is_file():
+            try:
+                text = map_p.read_text(encoding="utf-8", errors="replace")
+                folder_map = {}
+                target_league = None
+                for line in text.splitlines():
+                    clean = line.split("#", 1)[0].strip()
+                    if "," not in clean:
+                        continue
+                    parts = clean.split(",", 1)
+                    tid_s, rest = parts[0].strip(), parts[1].strip()
+                    if not tid_s.isdigit():
+                        continue
+                    tid = int(tid_s)
+                    folder = rest.strip('"\' ')
+                    norm = folder.replace("/", "\\")
+                    league_name = norm.split("\\")[0] if "\\" in norm else norm
+                    folder_map[tid] = league_name
+                    if tid == club_id:
+                        target_league = league_name
+                if target_league:
+                    matched = [t for t, l in folder_map.items() if l.lower() == target_league.lower()]
+                    if matched:
+                        return sorted(matched)
+            except Exception:
+                pass
+
+    if club_id in CLUB_LEAGUE_MAP:
+        lkey, _ = CLUB_LEAGUE_MAP[club_id]
+        return list(LEAGUE_TEAMS.get(lkey, [club_id]))
+
+    return [club_id]
+
 _LEAGUE_PATTERN_CACHE: Dict[Tuple[str, str, int], Dict[int, str]] = {}
 
 def get_league_assigned_pattern(cid: int, slot: Any, season: int, default_pattern: str, pool: Optional[List[str]] = None) -> str:
@@ -1689,7 +1733,58 @@ def get_club_supplier(cid: int, name: str = "") -> str:
     return GENERIC_SUPPLIERS[idx]
 
 
-def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: Optional[str] = None) -> Dict[str, Any]:
+CLUB_SLEEVE_SPONSORS = {
+    # Premier League
+    100: "dxc",             # Manchester United
+    101: "visit_rwanda",    # Arsenal
+    102: "bingx",           # Chelsea
+    103: "expedia",         # Liverpool
+    104: "angry_birds",     # Everton classic
+    105: "noon",            # Fulham
+    106: "tinder",          # Southampton
+    107: "deel",            # Aston Villa
+    173: "okx",             # Manchester City
+    177: "angry_birds",     # Everton
+    178: "noon",            # Newcastle United
+    179: "kraken",          # Tottenham Hotspur
+
+    # La Liga
+    108: "ambilight",       # Barcelona
+    109: "hp",              # Real Madrid
+    110: "jd_sports",       # Sevilla
+    172: "aptos",           # Atletico Madrid
+
+    # Serie A
+    119: "ebay",            # Inter Milan
+    120: "cygames",         # Juventus
+    121: "msc_cruises",     # AC Milan
+
+    # Ligue 1
+    114: "goat",            # PSG
+    203: "snipes",          # Monaco
+
+    # Bundesliga
+    126: "gls",             # Borussia Dortmund
+}
+
+SLEEVE_SPONSOR_POOL = [
+    "visit_rwanda", "hp", "dxc", "okx", "expedia", "kraken",
+    "ambilight", "msc_cruises", "ebay", "bingx", "goat", "noon",
+    "gls", "cygames", "deel", "snipes", "aptos", "jd_sports",
+    "bitget", "tinder", "western_union", "hyundai", "kohler", "angry_birds"
+]
+
+def get_club_sleeve_sponsor(cid: int, season: int = 2026, sponsor: Optional[str] = None) -> str:
+    """Return authentic sleeve sponsor for club, or a deterministic premier brand."""
+    if cid in CLUB_SLEEVE_SPONSORS:
+        return CLUB_SLEEVE_SPONSORS[cid]
+    s_off = season - 2026
+    seed = _club_seed(cid, "sleeve", season, sponsor)
+    idx = (seed + s_off * 7) % len(SLEEVE_SPONSOR_POOL)
+    return SLEEVE_SPONSOR_POOL[idx]
+
+
+def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, sponsor: Optional[str] = None) -> Dict[str, Any]:
     """Return a complete, fashion-forward 2026/2027 styling dict for club + slot + season with dynamic multi-decade evolution."""
     cid = int(club.get("id") or club.get("team_id", 0))
     cname = str(club.get("name", ""))
@@ -2071,3 +2166,12 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
             "tile_scale": 1.0,
             "finish": finish_cand,
         }
+
+
+def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: Optional[str] = None) -> Dict[str, Any]:
+    """Return a complete, fashion-forward 2026/2027 styling dict with dynamically assigned sleeve sponsor."""
+    res = _get_club_style_impl(club, slot, season, sponsor)
+    cid = int(club.get("id") or club.get("team_id", 0))
+    if "sleeve_sponsor" not in res:
+        res["sleeve_sponsor"] = get_club_sleeve_sponsor(cid, season, sponsor)
+    return res

@@ -68,6 +68,7 @@ local OFFERS, SIGNED, BRANDS = {}, {}, {}
 local OPTED_IN = {}
 local DEAL = nil                      -- active multi-season deal (or nil)
 local REQ_SEASONS, PAID, WARNED, CLEAN = {}, {}, {}, {}
+local REQ_LEAGUE, JIT_REQUESTED = {}, {}
 local club_id, start_watcher, load_deal
 
 local DIR, CAREER, SEASON = '', 'unknown', 2027
@@ -1035,6 +1036,7 @@ local function ensure_season_deal(season)
     local old, brand = DEAL.club, DEAL.brand
     DEAL = nil
     REQ_SEASONS = {}
+    REQ_LEAGUE = {}
     save_deal()
     L('deal with ' .. tostring(brand) .. ' belongs to club #' .. tostring(old) ..
       ' - released (now following #' .. tostring(cid) .. ')')
@@ -1051,12 +1053,23 @@ local function ensure_season_deal(season)
     local brand, ended = DEAL.brand, deal_end()
     DEAL = nil
     REQ_SEASONS = {}
+    REQ_LEAGUE = {}
     save_deal()                       -- blanks active_deal.txt
     L('deal expired: ' .. tostring(brand) .. ' ended after season ' .. tostring(ended) ..
       ' - offers are open again')
   end
 
   if not cid then return end          -- club not detected yet: nothing to build
+
+  -- Queue background kit generation for the user club's league
+  local lkey = cid .. ':' .. season
+  if CFG.ENABLE_KITS and not REQ_LEAGUE[lkey] then
+    REQ_LEAGUE[lkey] = true
+    local req_id = string.format('league-%d-%d', cid, season)
+    append_line('kit_request.txt', string.format('%s|%d|%d|all|league|%s|%s',
+      req_id, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
+    L(string.format('user league: queued background kit generation for league of club #%d (season %d)', cid, season))
+  end
 
   if not deal_active(season) then
     -- No deal for this season: user team gets a sponsorless dynamic kit until a new deal is signed.
@@ -1515,6 +1528,34 @@ function m.key_down(ctx, vk)
   if handled and ctx then ctx.consumed = true end
 end
 
+local function ensure_opponent_kits(opp_id)
+  opp_id = tonumber(opp_id)
+  if not opp_id or opp_id <= 0 then return end
+  local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
+  local cid = club_id()
+  -- If AI club and in season 1, dynamic kits are not active for AI
+  if opp_id ~= cid and SEASON < start_season then return end
+  if not CFG.ENABLE_KITS then return end
+
+  -- Check if secondary kit (p2) exists in active directory
+  local p2_name = string.format("content/KitGenerator/active/u%04dp2.ftex", opp_id)
+  local full = (DIR .. p2_name):gsub('/', '\\')
+  local f = io.open(full, "rb") or io.open(DIR .. p2_name, "rb") or io.open(sider_path(p2_name), "rb")
+  if f then
+    f:close()
+    return -- already generated
+  end
+
+  local jkey = opp_id .. ':' .. SEASON
+  if not JIT_REQUESTED[jkey] then
+    JIT_REQUESTED[jkey] = true
+    local req_id = string.format('jit-%d-%d', opp_id, SEASON)
+    append_line('kit_request.txt', string.format('%s|%d|%d|all|jit|%s|%s',
+      req_id, opp_id, SEASON, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
+    L(string.format('calendar schedule: queued JIT kit generation for scheduled club #%d (season %d)', opp_id, SEASON))
+  end
+end
+
 -- Every match the game sets up tells us which two clubs are playing.  A career
 -- fixture is the strong signal (your club plays them all); a friendly
 -- (tournament_id 65535) is ignored so exhibition opponents cannot muddy the
@@ -1533,6 +1574,8 @@ function m.set_teams(ctx, home, away)
     record_match(home, away)
     fetch_colors(ctx, home)
     fetch_colors(ctx, away)
+    ensure_opponent_kits(home)
+    ensure_opponent_kits(away)
   else
     STATE.in_ml_flow = false
   end
@@ -1670,6 +1713,9 @@ function m.make_key(ctx, filename)
     return rel_path
   else
     -- Fallback to authentic GDB kit if dynamic kit file is unexpectedly missing
+    if not needs_authentic and target_suffix == "" and (slot > 1 or slot_type == "g") then
+      ensure_opponent_kits(tid)
+    end
     local gdb_fb = resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
     if gdb_fb then
       L(string.format('serving authentic GDB fallback (dynamic kit missing): %s -> %s', filename, gdb_fb))
@@ -1834,7 +1880,10 @@ end
 function m.debug_set_date(y, mo, d)
   STATE.year, STATE.month, STATE.day = y, mo, d
   STATE.date_ok = (y ~= nil)
-  if y then SEASON = (mo >= 6) and (y + 1) or y end
+  if y then
+    SEASON = (mo >= 6) and (y + 1) or y
+    ensure_season_deal(SEASON)
+  end
   return SEASON
 end
 
@@ -1892,6 +1941,15 @@ end
 
 function m.debug_resolve_authentic_gdb_kit(tid, slot_type, slot, suffix)
   return resolve_authentic_gdb_kit(tid, slot_type, slot, suffix)
+end
+
+function m.debug_ensure_opponent_kits(opp_id)
+  return ensure_opponent_kits(opp_id)
+end
+
+function m.debug_reset_jit_cache()
+  JIT_REQUESTED = {}
+  REQ_LEAGUE = {}
 end
 
 return m
