@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Physical Garment Detailing Engine - Visual Proof</title>
+<style>
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #58a6ff;
+  }
+  .subtitle {
+    font-size: 16px;
+    color: #8b949e;
+    margin-bottom: 28px;
+  }
+  .kit-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .kit-card h2 {
+    margin-top: 0;
+    font-size: 20px;
+    color: #f0f6fc;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 12px;
+  }
+  .crop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .crop-box {
+    background: #090d13;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .crop-tag {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #79c0ff;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .crop-box img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .crop-desc {
+    font-size: 13px;
+    color: #8b949e;
+    margin-top: 8px;
+    margin-bottom: 0;
+  }
+</style>
+</head>
+<body>
+  <h1>Garment Physical Detailing & 3D Tactile Engine</h1>
+  <div class="subtitle">Inspecting micro-knit textures, 3D silicone heat-press relief, flatlock stitching, inner neck tape, and supplier tech stamps across generated kits.</div>
+  
+    <div class="kit-card">
+      <h2>Arsenal 24/25 Aesthetic (HEAT.RDY + Raglan Seams)</h2>
+      <div class="crop-grid">
+        <div class="crop-box">
+          <span class="crop-tag">1. Micro-Knit Weave (Zoom x2)</span>
+          <img src="crops/arsenal_crop_texture.png" alt="Fabric Weave">
+          <p class="crop-desc">Diamond piqué knit grain with zero color drift.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">2. 3D Silicone Relief & Contact Shadow</span>
+          <img src="crops/arsenal_crop_relief.png" alt="3D Relief">
+          <p class="crop-desc">Dual-pass ambient occlusion + specular rim light.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">3. Flatlock Twin-Needle Seams</span>
+          <img src="crops/arsenal_crop_seam.png" alt="Flatlock Seams">
+          <p class="crop-desc">Interlocking thread loops along flank & raglan seams.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">4. Supplier Tech Mark</span>
+          <img src="crops/arsenal_crop_tech.png" alt="Tech Stamp">
+          <p class="crop-desc">Official player-issue stamp (ADIDAS tech).</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">5. Collar Inner Neck Tape</span>
+          <img src="crops/arsenal_crop_neck.png" alt="Inner Neck Tape">
+          <p class="crop-desc">Woven ribbon & authentic match issue sizing print.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="kit-card">
+      <h2>Man City 23/24 Aesthetic (ULTRAWEAVE + Lightning)</h2>
+      <div class="crop-grid">
+        <div class="crop-box">
+          <span class="crop-tag">1. Micro-Knit Weave (Zoom x2)</span>
+          <img src="crops/mancity_crop_texture.png" alt="Fabric Weave">
+          <p class="crop-desc">Diamond piqué knit grain with zero color drift.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">2. 3D Silicone Relief & Contact Shadow</span>
+          <img src="crops/mancity_crop_relief.png" alt="3D Relief">
+          <p class="crop-desc">Dual-pass ambient occlusion + specular rim light.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">3. Flatlock Twin-Needle Seams</span>
+          <img src="crops/mancity_crop_seam.png" alt="Flatlock Seams">
+          <p class="crop-desc">Interlocking thread loops along flank & raglan seams.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">4. Supplier Tech Mark</span>
+          <img src="crops/mancity_crop_tech.png" alt="Tech Stamp">
+          <p class="crop-desc">Official player-issue stamp (PUMA tech).</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">5. Collar Inner Neck Tape</span>
+          <img src="crops/mancity_crop_neck.png" alt="Inner Neck Tape">
+          <p class="crop-desc">Woven ribbon & authentic match issue sizing print.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="kit-card">
+      <h2>Barcelona 125th Aesthetic (DRI-FIT ADV + Blaugrana)</h2>
+      <div class="crop-grid">
+        <div class="crop-box">
+          <span class="crop-tag">1. Micro-Knit Weave (Zoom x2)</span>
+          <img src="crops/barca_crop_texture.png" alt="Fabric Weave">
+          <p class="crop-desc">Diamond piqué knit grain with zero color drift.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">2. 3D Silicone Relief & Contact Shadow</span>
+          <img src="crops/barca_crop_relief.png" alt="3D Relief">
+          <p class="crop-desc">Dual-pass ambient occlusion + specular rim light.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">3. Flatlock Twin-Needle Seams</span>
+          <img src="crops/barca_crop_seam.png" alt="Flatlock Seams">
+          <p class="crop-desc">Interlocking thread loops along flank & raglan seams.</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">4. Supplier Tech Mark</span>
+          <img src="crops/barca_crop_tech.png" alt="Tech Stamp">
+          <p class="crop-desc">Official player-issue stamp (NIKE tech).</p>
+        </div>
+        <div class="crop-box">
+          <span class="crop-tag">5. Collar Inner Neck Tape</span>
+          <img src="crops/barca_crop_neck.png" alt="Inner Neck Tape">
+          <p class="crop-desc">Woven ribbon & authentic match issue sizing print.</p>
+        </div>
+      </div>
+    </div>
+    
+</body>
+</html>

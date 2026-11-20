@@ -110,7 +110,7 @@ def _hexc(h):
 def _mask_img(mask):
     """numpy bool mask -> single-channel PIL mask (255 where True)."""
     import numpy as np
-    return Image.fromarray((mask * 255).astype("uint8"), "L")
+    return Image.fromarray((mask * 255).astype("uint8"))
 
 
 def _col_lum(c):
@@ -308,7 +308,7 @@ def _composite_layer(atlas, layer, mask=None):
     if mask is not None:
         arr = np.array(layer)
         arr[~mask] = 0
-        layer = Image.fromarray(arr, "RGBA")
+        layer = Image.fromarray(arr)
     atlas.alpha_composite(layer)
 
 
@@ -621,7 +621,7 @@ def _apply_engineered_collar(atlas, d, masks):
                        max(0, int(collar[2] * 0.88)), 160)
             arr = np.array(atlas)
             arr[y_c[ribs], x_c[ribs]] = rib_col
-            atlas.paste(Image.fromarray(arr, "RGBA"), (0, 0))
+            atlas.paste(Image.fromarray(arr), (0, 0))
 
 
 
@@ -629,7 +629,12 @@ def _apply_engineered_collar(atlas, d, masks):
 #  Authentic Garment Details, Seams, Micro-Textures & 3D Relief
 # --------------------------------------------------------------------------- #
 def _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, highlight_opacity=35, mask=None):
-    """Composite logo with subtle 3D contact shadow and specular rim light (silicone heat-press relief)."""
+    """Composite logo with authentic 3D silicone heat-press relief:
+    - Soft ambient occlusion shadow (+2, +relief_depth + 1)
+    - Crisp contact drop shadow (+1, +relief_depth)
+    - Top-left specular rim highlight (-1, -1)
+    - Top edge ambient specular reflection (0, -1)
+    """
     if img is None:
         return
     w, h = img.size
@@ -643,23 +648,41 @@ def _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, 
             atlas.alpha_composite(img, (x, y))
         return
 
-    # 1. Contact drop shadow (offset +1, +relief_depth)
+    layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+
+    # 1. Soft ambient occlusion shadow (+2, +relief_depth + 1)
+    amb_alpha = (alpha * (shadow_opacity * 0.45 / 255.0)).astype(np.uint8)
+    amb_arr = np.zeros((h, w, 4), dtype=np.uint8)
+    amb_arr[:, :, :3] = (10, 12, 16)
+    amb_arr[:, :, 3] = amb_alpha
+    amb_img = Image.fromarray(amb_arr)
+    layer.paste(amb_img, (x + 2, y + relief_depth + 1), amb_img)
+
+    # 2. Crisp contact drop shadow (+1, +relief_depth)
     sh_alpha = (alpha * (shadow_opacity / 255.0)).astype(np.uint8)
     shadow_arr = np.zeros((h, w, 4), dtype=np.uint8)
-    shadow_arr[:, :, :3] = (15, 15, 20)
+    shadow_arr[:, :, :3] = (12, 14, 20)
     shadow_arr[:, :, 3] = sh_alpha
-    shadow_img = Image.fromarray(shadow_arr, "RGBA")
+    shadow_img = Image.fromarray(shadow_arr)
+    layer.paste(shadow_img, (x + 1, y + relief_depth), shadow_img)
 
-    # 2. Specular top-edge rim highlight (offset -1, -1)
+    # 3. Specular top-edge rim highlight (-1, -1)
     hl_alpha = (alpha * (highlight_opacity / 255.0)).astype(np.uint8)
     hl_arr = np.zeros((h, w, 4), dtype=np.uint8)
     hl_arr[:, :, :3] = (255, 255, 255)
     hl_arr[:, :, 3] = hl_alpha
-    hl_img = Image.fromarray(hl_arr, "RGBA")
-
-    layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-    layer.paste(shadow_img, (x + 1, y + relief_depth), shadow_img)
+    hl_img = Image.fromarray(hl_arr)
     layer.paste(hl_img, (x - 1, y - 1), hl_img)
+
+    # 4. Ambient top edge specular reflection (0, -1)
+    top_alpha = (alpha * (highlight_opacity * 0.55 / 255.0)).astype(np.uint8)
+    top_arr = np.zeros((h, w, 4), dtype=np.uint8)
+    top_arr[:, :, :3] = (245, 250, 255)
+    top_arr[:, :, 3] = top_alpha
+    top_img = Image.fromarray(top_arr)
+    layer.paste(top_img, (x, y - 1), top_img)
+
+    # 5. Primary emblem
     layer.paste(img, (x, y), img)
 
     if mask is not None:
@@ -669,10 +692,17 @@ def _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, 
 
 
 def _apply_fabric_microtexture(atlas, d, masks):
-    """Apply authentic micro-knit textile weave across all garment fabric panels.
+    """Apply authentic multi-zone micro-knit textile weave across garment fabric panels.
 
-    Subtly modulates fabric luminance by +/- 2.5%, producing a rich, tactile,
+    Subtly modulates fabric luminance by +/- 2.5% to +/- 4.5%, producing a rich, tactile,
     matte athletic cloth appearance in 3D replays and close-ups without altering team colors.
+    Zones:
+    - Torso front & back: Micro-honeycomb / jacquard piqué knit grain
+    - Collar & Cuffs: High-density vertical elastic ribbing
+    - Flanks & Underarms: Laser-perforated breathable mesh grain
+    - Shorts: Athletic micro-twill weave
+    - Socks: Compression ribbed turnover knit
+    - Sleeves: Fine athletic polyester knit grain
     """
     if not d.get("fabric_texture", True):
         return
@@ -686,21 +716,110 @@ def _apply_fabric_microtexture(atlas, d, masks):
     if not np.any(fabric_mask):
         return
 
-    kernel_4x4 = np.array([
-        [ 3.0, -3.0,  2.0, -2.0],
-        [-2.0,  3.0, -3.0,  2.0],
-        [ 2.0, -2.0,  3.0, -3.0],
-        [-3.0,  2.0, -2.0,  3.0],
-    ], dtype=np.float32)
+    delta = np.zeros((ATLAS, ATLAS), dtype=np.float32)
 
-    weave_tile = np.tile(kernel_4x4, (ATLAS // 4, ATLAS // 4))
+    # 1. Torso: Engineered micro-honeycomb / jacquard piqué knit grain (6x6)
+    torso_m = np.zeros((ATLAS, ATLAS), dtype=bool)
+    for key in ("body_front", "body_back"):
+        m = masks.get(key)
+        if m is not None:
+            torso_m |= m
+    if np.any(torso_m):
+        k_torso = np.array([
+            [ 3.5, -2.5,  2.0, -3.5,  2.5, -2.0],
+            [-2.5,  3.5, -3.5,  2.0, -2.0,  2.5],
+            [ 2.0, -3.5,  3.5, -2.5,  2.5, -2.0],
+            [-3.5,  2.0, -2.5,  3.5, -2.0,  2.5],
+            [ 2.5, -2.0,  2.5, -2.0,  3.5, -3.5],
+            [-2.0,  2.5, -2.0,  2.5, -3.5,  3.5],
+        ], dtype=np.float32)
+        tile_torso = np.tile(k_torso, (ATLAS // 6 + 1, ATLAS // 6 + 1))[:ATLAS, :ATLAS]
+        delta[torso_m] = tile_torso[torso_m]
+
+    # 2. Collar & Cuffs: High-density vertical elastic ribbing (2x2)
+    collar_m = masks.get("collar")
+    if collar_m is not None and np.any(collar_m):
+        k_rib = np.array([
+            [ 4.5, -4.5],
+            [ 4.5, -4.5],
+        ], dtype=np.float32)
+        tile_rib = np.tile(k_rib, (ATLAS // 2, ATLAS // 2))
+        delta[collar_m] = tile_rib[collar_m]
+
+    # 3. Flanks & Underarms: Laser-perforated breathable mesh
+    flank_m = np.zeros((ATLAS, ATLAS), dtype=bool)
+    bf = masks.get("body_front")
+    if bf is not None:
+        flank_m[1100:1850, 674:725] = bf[1100:1850, 674:725]
+        flank_m[1100:1850, 1323:1374] = bf[1100:1850, 1323:1374]
+    if np.any(flank_m):
+        y_f, x_f = np.where(flank_m)
+        holes = ((y_f % 6 < 2) & (x_f % 6 < 2))
+        delta[y_f[holes], x_f[holes]] = -5.0
+
+    # 4. Shorts: Athletic micro-twill weave (4x4 diagonal)
+    shorts_m = masks.get("shorts")
+    if shorts_m is not None and np.any(shorts_m):
+        k_twill = np.array([
+            [ 3.0,  1.0, -2.5, -1.0],
+            [-1.0,  3.0,  1.0, -2.5],
+            [-2.5, -1.0,  3.0,  1.0],
+            [ 1.0, -2.5, -1.0,  3.0],
+        ], dtype=np.float32)
+        tile_twill = np.tile(k_twill, (ATLAS // 4, ATLAS // 4))
+        delta[shorts_m] = tile_twill[shorts_m]
+
+    # 5. Socks: Ribbed compression knit (4x2 horizontal ribs)
+    socks_m = masks.get("socks")
+    if socks_m is not None and np.any(socks_m):
+        k_socks = np.array([
+            [ 3.5,  3.5],
+            [ 3.5,  3.5],
+            [-3.5, -3.5],
+            [-3.5, -3.5],
+        ], dtype=np.float32)
+        tile_socks = np.tile(k_socks, (ATLAS // 4, ATLAS // 2))
+        delta[socks_m] = tile_socks[socks_m]
+
+    # 6. Sleeves: Fine athletic polyester knit grain (4x4)
+    sleeve_m = masks.get("sleeve")
+    if sleeve_m is not None and np.any(sleeve_m):
+        k_sleeve = np.array([
+            [ 2.8, -2.8,  2.0, -2.0],
+            [-2.0,  2.8, -2.8,  2.0],
+            [ 2.0, -2.0,  2.8, -2.8],
+            [-2.8,  2.0, -2.0,  2.8],
+        ], dtype=np.float32)
+        tile_sleeve = np.tile(k_sleeve, (ATLAS // 4, ATLAS // 4))
+        delta[sleeve_m] = tile_sleeve[sleeve_m]
 
     arr = np.array(atlas, dtype=np.float32)
     rgb = arr[:, :, :3]
-    rgb[fabric_mask] = np.clip(rgb[fabric_mask] + weave_tile[fabric_mask, None], 0, 255)
+    rgb[fabric_mask] = np.clip(rgb[fabric_mask] + delta[fabric_mask, None], 0, 255)
     arr[:, :, :3] = rgb
 
-    atlas.paste(Image.fromarray(arr.astype(np.uint8), "RGBA"), (0, 0))
+    atlas.paste(Image.fromarray(arr.astype(np.uint8)), (0, 0))
+
+
+def _draw_flatlock_seam(draw, pts, dark_stitch, light_stitch, stitch_len=4, gap_len=1):
+    """Draw authentic twin-needle flatlock chain stitching with thread loops and needle micro-holes."""
+    draw.line(pts, fill=dark_stitch, width=1)
+    if len(pts) == 2 and pts[0][0] == pts[1][0]:
+        x = pts[0][0]
+        y0, y1 = min(pts[0][1], pts[1][1]), max(pts[0][1], pts[1][1])
+        cycle = max(2, stitch_len + gap_len)
+        for y in range(y0, y1, cycle):
+            draw.line([(x, y), (x, min(y + stitch_len - 1, y1))], fill=light_stitch, width=1)
+            draw.line([(x + 1, y), (x + 1, min(y + stitch_len - 1, y1))], fill=light_stitch, width=1)
+    elif len(pts) == 2 and pts[0][1] == pts[1][1]:
+        y = pts[0][1]
+        x0, x1 = min(pts[0][0], pts[1][0]), max(pts[0][0], pts[1][0])
+        cycle = max(2, stitch_len + gap_len)
+        for x in range(x0, x1, cycle):
+            draw.line([(x, y), (min(x + stitch_len - 1, x1), y)], fill=light_stitch, width=1)
+            draw.line([(x, y + 1), (min(x + stitch_len - 1, x1), y + 1)], fill=light_stitch, width=1)
+    else:
+        draw.line(pts, fill=light_stitch, width=1)
 
 
 def _apply_construction_seams(atlas, d, masks):
@@ -710,7 +829,7 @@ def _apply_construction_seams(atlas, d, masks):
 
     body = tuple(d["body"])
     dark_stitch = (max(0, int(body[0] * 0.74)), max(0, int(body[1] * 0.74)), max(0, int(body[2] * 0.74)), 180)
-    light_stitch = (min(255, int(body[0] * 1.15) + 15), min(255, int(body[1] * 1.15) + 15), min(255, int(body[2] * 1.15) + 15), 120)
+    light_stitch = (min(255, int(body[0] * 1.15) + 15), min(255, int(body[1] * 1.15) + 15), min(255, int(body[2] * 1.15) + 15), 130)
 
     seam_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     draw = ImageDraw.Draw(seam_layer)
@@ -722,41 +841,35 @@ def _apply_construction_seams(atlas, d, masks):
 
     # 1. Torso flank side seams (front: y: 1180..1845, back: y: 280..900)
     for sx in (724, 1324):
-        draw.line([(sx, 1180), (sx, 1845)], fill=dark_stitch, width=1)
-        draw.line([(sx + 1, 1180), (sx + 1, 1845)], fill=light_stitch, width=1)
-        draw.line([(sx, 280), (sx, 900)], fill=dark_stitch, width=1)
-        draw.line([(sx + 1, 280), (sx + 1, 900)], fill=light_stitch, width=1)
+        _draw_flatlock_seam(draw, [(sx, 1180), (sx, 1845)], dark_stitch, light_stitch)
+        _draw_flatlock_seam(draw, [(sx, 280), (sx, 900)], dark_stitch, light_stitch)
 
     # 2. Raglan shoulder/armhole seams
-    draw.line([(870, 1020), (724, 1180)], fill=dark_stitch, width=1)
-    draw.line([(871, 1021), (725, 1181)], fill=light_stitch, width=1)
-    draw.line([(1178, 1020), (1324, 1180)], fill=dark_stitch, width=1)
-    draw.line([(1177, 1021), (1323, 1181)], fill=light_stitch, width=1)
+    _draw_flatlock_seam(draw, [(870, 1020), (724, 1180)], dark_stitch, light_stitch)
+    _draw_flatlock_seam(draw, [(1178, 1020), (1324, 1180)], dark_stitch, light_stitch)
 
-    draw.line([(870, 120), (724, 280)], fill=dark_stitch, width=1)
-    draw.line([(871, 121), (725, 281)], fill=light_stitch, width=1)
-    draw.line([(1178, 120), (1324, 280)], fill=dark_stitch, width=1)
-    draw.line([(1177, 121), (1323, 281)], fill=light_stitch, width=1)
+    _draw_flatlock_seam(draw, [(870, 120), (724, 280)], dark_stitch, light_stitch)
+    _draw_flatlock_seam(draw, [(1178, 120), (1324, 280)], dark_stitch, light_stitch)
 
     # 3. Twin-needle lower hem stitching
-    draw.line([(724, 1838), (1324, 1838)], fill=dark_stitch, width=1)
-    draw.line([(724, 1844), (1324, 1844)], fill=dark_stitch, width=1)
-    draw.line([(724, 896), (1324, 896)], fill=dark_stitch, width=1)
-    draw.line([(724, 902), (1324, 902)], fill=dark_stitch, width=1)
+    _draw_flatlock_seam(draw, [(724, 1838), (1324, 1838)], dark_stitch, light_stitch)
+    _draw_flatlock_seam(draw, [(724, 1844), (1324, 1844)], dark_stitch, light_stitch)
+    _draw_flatlock_seam(draw, [(724, 896), (1324, 896)], dark_stitch, light_stitch)
+    _draw_flatlock_seam(draw, [(724, 902), (1324, 902)], dark_stitch, light_stitch)
 
     # 4. Sleeve cuff twin-needle hem stitching
     if sleeve_m is not None:
-        draw.line([(40, 658), (640, 658)], fill=dark_stitch, width=1)
-        draw.line([(40, 663), (640, 663)], fill=dark_stitch, width=1)
-        draw.line([(1400, 658), (2000, 658)], fill=dark_stitch, width=1)
-        draw.line([(1400, 663), (2000, 663)], fill=dark_stitch, width=1)
+        _draw_flatlock_seam(draw, [(40, 658), (640, 658)], dark_stitch, light_stitch)
+        _draw_flatlock_seam(draw, [(40, 663), (640, 663)], dark_stitch, light_stitch)
+        _draw_flatlock_seam(draw, [(1400, 658), (2000, 658)], dark_stitch, light_stitch)
+        _draw_flatlock_seam(draw, [(1400, 663), (2000, 663)], dark_stitch, light_stitch)
 
     # 5. Shorts bottom leg hem stitching
     if shorts_m is not None:
-        draw.line([(45, 1932), (590, 1932)], fill=dark_stitch, width=1)
-        draw.line([(45, 1938), (590, 1938)], fill=dark_stitch, width=1)
-        draw.line([(1455, 1932), (2000, 1932)], fill=dark_stitch, width=1)
-        draw.line([(1455, 1938), (2000, 1938)], fill=dark_stitch, width=1)
+        _draw_flatlock_seam(draw, [(45, 1932), (590, 1932)], dark_stitch, light_stitch)
+        _draw_flatlock_seam(draw, [(45, 1938), (590, 1938)], dark_stitch, light_stitch)
+        _draw_flatlock_seam(draw, [(1455, 1932), (2000, 1932)], dark_stitch, light_stitch)
+        _draw_flatlock_seam(draw, [(1455, 1938), (2000, 1938)], dark_stitch, light_stitch)
 
     garment_mask = (bf | bb | sleeve_m | shorts_m) if bf is not None else None
     _composite_layer(atlas, seam_layer, garment_mask)
@@ -788,7 +901,7 @@ def _render_inner_neck_detail(atlas, d, masks):
 
     try:
         font = ImageFont.load_default()
-        draw.text((1002, 98), "AUTHENTIC", fill=label_col, font=font)
+        draw.text((994, 98), "AUTHENTIC MATCH", fill=label_col, font=font)
         draw.rectangle([1016, 114, 1032, 126], outline=label_col, width=1)
         draw.text((1021, 115), "M", fill=label_col, font=font)
     except Exception:
@@ -1111,7 +1224,7 @@ def _flatten_white(logo):
     a[:, :, 0] = 255
     a[:, :, 1] = 255
     a[:, :, 2] = 255
-    return Image.fromarray(a, "RGBA")
+    return Image.fromarray(a)
 
 
 def _flatten_color(logo, color):
@@ -1121,7 +1234,7 @@ def _flatten_color(logo, color):
     a[:, :, 0] = color[0]
     a[:, :, 1] = color[1]
     a[:, :, 2] = color[2]
-    return Image.fromarray(a, "RGBA")
+    return Image.fromarray(a)
 
 
 def _render_jocktag(atlas, d, masks):
