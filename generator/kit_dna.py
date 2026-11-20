@@ -830,9 +830,10 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
         },
         2: {
             "body": (195, 20, 30), "second": (20, 20, 25), "third": (250, 250, 252),
-            "patterns": ["081", "082", "088", "083"],
+            "patterns": ["081", "093", "088", "083"],
             "sleeve": (195, 20, 30), "shorts": (20, 20, 25),
             "socks": (195, 20, 30), "collar": (250, 250, 252),
+            "collar_style": "crew",
             "gradient": 0, "supplier": "adidas",
         },
         3: {
