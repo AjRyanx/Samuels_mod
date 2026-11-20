@@ -293,9 +293,10 @@ def resolve(club_id, sider=None, csv_row=None):
 
     folder = read_map(sider).get(club_id)
     if folder:
+        folder_norm = folder.replace("\\", "/").strip("/")
         if not name:
-            name = folder.replace("\\", "/").rstrip("/").split("/")[-1]
-        cfg = read_config_colors(sider / "content" / "kits" / folder / "p1" / "config.txt")
+            name = folder_norm.split("/")[-1]
+        cfg = read_config_colors(sider / "content" / "kits" / folder_norm / "p1" / "config.txt")
         for k, v in cfg.items():
             if not colors.get(k):
                 colors[k] = v                # the live game read wins over config.txt

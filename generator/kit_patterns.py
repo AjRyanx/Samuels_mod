@@ -165,19 +165,24 @@ def _grad_strip(d, p, col, vertical, steps=None, a=120):
 # =========================================================================== #
 #  Category 1 - Geometric & Angular Shards (001-045)
 # =========================================================================== #
-def f_shards(p, d, img, n=16, from_hem=True, asym=False):
+def f_shards(p, d, img, n=24, from_hem=True, asym=False):
+    """Refined architectural micro-facet geometric structure with calm chest sponsor zone."""
     r = p.rng
-    for _ in range(n):
-        bx = r.uniform(-0.1, 1.1) * p.w
-        if asym:
-            bx = r.uniform(-0.1, 0.75) * p.w
-        bh = r.uniform(0.3, 0.95) * p.h
-        bw = r.uniform(0.08, 0.30) * p.w
-        a = int(235 * (0.35 + 0.65 * bh / p.h))
-        if from_hem:
-            _poly(d, [(bx, p.h), (bx + bw, p.h), (bx + bw / 2, p.h - bh)], p.second, a)
-        else:
-            _poly(d, [(bx, 0), (bx + bw, 0), (bx + bw / 2, bh)], p.second, a)
+    step_y = p.h / 14.0
+    step_x = p.w / 10.0
+    for row in range(14):
+        y = row * step_y
+        # Keep chest sponsor zone calm (y between 30% and 55% of height)
+        if 0.30 * p.h < y < 0.55 * p.h:
+            continue
+        shift = (step_x * 0.5) if (row % 2 == 1) else 0.0
+        for col in range(-1, 11):
+            x = col * step_x + shift + r.uniform(-2, 2)
+            w = step_x * 0.85
+            h = step_y * 0.70
+            col_tone = p.second if r.random() < 0.75 else p.third
+            alpha = int(r.uniform(40, 110))
+            _poly(d, [(x, y), (x + w * 0.6, y), (x + w, y + h), (x + w * 0.4, y + h)], col_tone, alpha)
 
 
 def f_prism(p, d, img, n=18, w=90, gap=30, slant=120, a1=105, a2=80):
@@ -398,12 +403,14 @@ def f_beams(p, d, img, step=80, thick=3):
 
 
 def f_tangram(p, d, img):
-    s = min(p.w, p.h) * 0.27
-    _poly(d, [(40, 40), (40 + s, 40), (40, 40 + s)], p.second)
-    _poly(d, [(40 + s, 40), (40 + s, 40 + s), (40, 40 + s)], p.third)
-    _poly(d, [(260, 120), (380, 120), (380, 240), (260, 240)], p.second)
-    _poly(d, [(120, 300), (260, 300), (190, 430)], p.third)
-    _poly(d, [(300, 300), (440, 300), (440, 440)], p.second)
+    """Modern angular geometric interlocking tessellation."""
+    step = min(p.w, p.h) * 0.10
+    for y in range(0, int(p.h), int(step)):
+        for x in range(0, int(p.w), int(step)):
+            if (x // int(step) + y // int(step)) % 2 == 0:
+                _poly(d, [(x, y), (x + step, y), (x, y + step)], p.second, 70)
+            else:
+                _poly(d, [(x + step, y), (x + step, y + step), (x, y + step)], p.third, 70)
 
 
 def f_peaks(p, d, img, bands=4):
@@ -1437,21 +1444,27 @@ def f_artdeco(p, d, img, mode="fan", step=60):
                 _line(d, [(x + 30, y), (x + 30, y + 60)], p.third, 2, 170)
 
 
-def f_tile(p, d, img, s=70, shape="star"):
+def f_tile(p, d, img, s=48, shape="star"):
     def one(x, y, ix, iy):
         cx, cy = x + s / 2, y + s / 2
+        # Keep chest sponsor zone calm
+        if 0.28 * p.h < cy < 0.56 * p.h:
+            return
         if shape == "star":
-            _star(d, cx, cy, s * 0.42, p.second, 8, 0.45, math.pi / 8, 220)
+            # Delicate Portuguese Azulejo geometric micro-lattice (fine lines, no starburst wrapping paper)
+            _ring(d, cx, cy, s * 0.28, p.second, w=1.0, a=60)
+            _line(d, [(cx - s * 0.25, cy), (cx + s * 0.25, cy)], p.second, 1.0, 50)
+            _line(d, [(cx, cy - s * 0.25), (cx, cy + s * 0.25)], p.second, 1.0, 50)
+            _poly(d, [(cx - 2, cy), (cx, cy - 2), (cx + 2, cy), (cx, cy + 2)], p.third, 50)
         elif shape == "hex":
-            pts = [(cx + s * 0.42 * math.cos(math.radians(60 * k)),
-                    cy + s * 0.42 * math.sin(math.radians(60 * k))) for k in range(6)]
-            _poly(d, pts, p.second, 210)
+            pts = [(cx + s * 0.32 * math.cos(math.radians(60 * k)),
+                    cy + s * 0.32 * math.sin(math.radians(60 * k))) for k in range(6)]
+            _poly(d, pts, p.second, 90)
         elif shape == "square":
-            _rect(d, [x + 6, y + 6, x + s - 6, y + s - 6], p.second, 200)
+            _rect(d, [x + 4, y + 4, x + s - 4, y + s - 4], p.second, 90)
         elif shape == "snow":
-            _star(d, cx, cy, s * 0.40, p.second, 6, 0.5, 0, 220)
-            _line(d, [(cx - s * 0.4, cy), (cx + s * 0.4, cy)], p.third, 2, 190)
-            _line(d, [(cx, cy - s * 0.4), (cx, cy + s * 0.4)], p.third, 2, 190)
+            _line(d, [(cx - s * 0.25, cy), (cx + s * 0.25, cy)], p.third, 1.0, 60)
+            _line(d, [(cx, cy - s * 0.25), (cx, cy + s * 0.25)], p.third, 1.0, 60)
     _tiles(p, s, s, one)
 
 
@@ -1880,15 +1893,24 @@ _reg("209", "Gradient Fade Hechter Stripe", "Classics", f_centerband, mode="hech
 # =========================================================================== #
 #  Category: 2026/2027 Modern Football & Streetwear Culture (210-220)
 # =========================================================================== #
-def f_acid_wash(p, d, img, n=75, rmin=18, rmax=55, a=110):
-    """Organic cloudy mineral wash / tie-dye bleeds for streetwear collaboration kits."""
+def f_acid_wash(p, d, img, n=800, rmin=1.5, rmax=4.5, a=45):
+    """Organic cloudy mineral wash with soft vapor sweeps and fine micro-motes (no round pea blobs)."""
     r = p.rng
+    # Layer 1: Soft broad tonal cloud sweeps (using low alpha broad ellipses)
+    for _ in range(14):
+        cy = r.uniform(0.1, 0.9) * p.h
+        cx = r.uniform(0.1, 0.9) * p.w
+        bw = r.uniform(0.25, 0.55) * p.w
+        bh = r.uniform(0.06, 0.18) * p.h
+        col = p.second if r.random() < 0.6 else p.third
+        _ell(d, [cx - bw, cy - bh, cx + bw, cy + bh], col, a=18)
+    # Layer 2: High-density micro-grain texture
     for _ in range(n):
         cx = r.uniform(0, p.w)
         cy = r.uniform(0, p.h)
         rad = r.uniform(rmin, rmax)
         col = p.second if r.random() < 0.65 else p.third
-        alpha_val = r.randint(int(a * 0.4), a)
+        alpha_val = r.randint(15, a)
         _dot(d, cx, cy, rad, col, a=alpha_val)
 
 
@@ -1935,19 +1957,21 @@ def f_soundwaves(p, d, img, bars=32, max_h=0.35):
         _rect(d, [x, cy - bh, x + w_bar * 0.72, cy + bh], col, a=210)
 
 
-def f_couture_monogram(p, d, img, step=52):
-    """Luxury high-fashion repeating monogram with interlocking quatrefoil & diamonds."""
+def f_couture_monogram(p, d, img, step=28):
+    """Subtle luxury micro-jacquard weave with delicate tonal threads and calm sponsor zone."""
     ny = int(p.h / step) + 2
     nx = int(p.w / step) + 2
     for iy in range(ny):
         y = iy * step
+        # Keep chest sponsor zone calm (y between 28% and 56% of height)
+        if 0.28 * p.h < y < 0.56 * p.h:
+            continue
         off = (step / 2.0) if (iy % 2 == 1) else 0.0
         for ix in range(nx):
             x = ix * step + off
-            _star(d, x, y, step * 0.28, p.second, points=4, inner=0.38, rot=math.pi / 4, a=180)
-            _ring(d, x, y, step * 0.12, p.third, w=2, a=190)
-            _poly(d, [(x + step * 0.5, y - step * 0.1), (x + step * 0.6, y),
-                      (x + step * 0.5, y + step * 0.1), (x + step * 0.4, y)], p.second, a=140)
+            # Delicate micro-diamond pin-weave (tiny, subtle luxury texture - no chunky wallpaper stars)
+            _poly(d, [(x, y - 3), (x + 3, y), (x, y + 3), (x - 3, y)], p.second, a=35)
+            _dot(d, x + step * 0.5, y + step * 0.5, 1.2, p.third, a=30)
 
 
 def f_sashiko_stitch(p, d, img, step=38):

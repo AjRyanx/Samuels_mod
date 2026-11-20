@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M193" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#034694" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#034694" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M193">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M193)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M193)">
+<path d="M 75 60 L 81 52 L 87 56 L 83 64 L 89 70 L 83 74 L 77 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 60 L 133 52 L 139 56 L 135 64 L 141 70 L 135 74 L 129 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 60 L 185 52 L 191 56 L 187 64 L 193 70 L 187 74 L 181 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 60 L 237 52 L 243 56 L 239 64 L 245 70 L 239 74 L 233 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 112 L 81 104 L 87 108 L 83 116 L 89 122 L 83 126 L 77 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 112 L 133 104 L 139 108 L 135 116 L 141 122 L 135 126 L 129 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 112 L 185 104 L 191 108 L 187 116 L 193 122 L 187 126 L 181 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 112 L 237 104 L 243 108 L 239 116 L 245 122 L 239 126 L 233 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 164 L 81 156 L 87 160 L 83 168 L 89 174 L 83 178 L 77 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 164 L 133 156 L 139 160 L 135 168 L 141 174 L 135 178 L 129 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 164 L 185 156 L 191 160 L 187 168 L 193 174 L 187 178 L 181 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 164 L 237 156 L 243 160 L 239 168 L 245 174 L 239 178 L 233 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 216 L 81 208 L 87 212 L 83 220 L 89 226 L 83 230 L 77 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 216 L 133 208 L 139 212 L 135 220 L 141 226 L 135 230 L 129 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 216 L 185 208 L 191 212 L 187 220 L 193 226 L 187 230 L 181 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 216 L 237 208 L 243 212 L 239 220 L 245 226 L 239 230 L 233 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 268 L 81 260 L 87 264 L 83 272 L 89 278 L 83 282 L 77 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 268 L 133 260 L 139 264 L 135 272 L 141 278 L 135 282 L 129 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 268 L 185 260 L 191 264 L 187 272 L 193 278 L 187 282 L 181 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 268 L 237 260 L 243 264 L 239 272 L 245 278 L 239 282 L 233 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 320 L 81 312 L 87 316 L 83 324 L 89 330 L 83 334 L 77 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 320 L 133 312 L 139 316 L 135 324 L 141 330 L 135 334 L 129 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 320 L 185 312 L 191 316 L 187 324 L 193 330 L 187 334 L 181 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 320 L 237 312 L 243 316 L 239 324 L 245 330 L 239 334 L 233 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 372 L 81 364 L 87 368 L 83 376 L 89 382 L 83 386 L 77 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 372 L 133 364 L 139 368 L 135 376 L 141 382 L 135 386 L 129 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 372 L 185 364 L 191 368 L 187 376 L 193 382 L 187 386 L 181 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 372 L 237 364 L 243 368 L 239 376 L 245 382 L 239 386 L 233 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#034694" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#93C5FD" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#1D4ED8"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#93C5FD" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#034694" stroke="#1D4ED8" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#1D4ED8"/>
+<polygon points="104,114 114,102 124,114" fill="#93C5FD" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#1D4ED8" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>

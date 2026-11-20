@@ -295,10 +295,20 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     # Human managed club requests ALWAYS have top priority over bulk season rollovers
     user_requests = []
     rollover_requests = []
+    active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
     for line in lines:
         req = _parse_request(line)
-        if not req or req["offer"] in seen:
+        if not req:
             continue
+        if req["offer"] in seen:
+            if req["club_id"] > 0:
+                target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
+                career_id = req.get("career_id")
+                career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
+                if target_ftex.is_file() and (career_ftex is None or career_ftex.is_file()):
+                    continue
+            else:
+                continue
         if req["club_id"] == 0 or req["brand"] == "all" or req["offer"].startswith("season-"):
             rollover_requests.append(req)
         else:

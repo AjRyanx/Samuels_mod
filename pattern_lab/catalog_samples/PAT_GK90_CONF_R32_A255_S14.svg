@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<rect width="512" height="512" fill="#12161E"/>
+<line x1="256" y1="170" x2="486" y2="170" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="455" y2="285" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="371" y2="369" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="256" y2="400" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="141" y2="369" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="57" y2="285" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="26" y2="170" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="57" y2="55" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="141" y2="-29" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="256" y2="-60" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="371" y2="-29" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+<line x1="256" y1="170" x2="455" y2="55" stroke="#D4AF37" stroke-width="6" opacity="0.8"/>
+</svg>

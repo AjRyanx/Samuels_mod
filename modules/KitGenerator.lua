@@ -108,12 +108,22 @@ end
 -- the whole thing in backslashes: both Lua's io.open and the menu DLL's image
 -- loader then see one unambiguous native path.
 local function path(rel)
-  return (DIR .. 'content/KitGenerator/' .. rel):gsub('/', '\\')
+  local p = DIR .. 'content/KitGenerator/' .. rel
+  if package.config:sub(1, 1) == '\\' then
+    return p:gsub('/', '\\')
+  else
+    return p:gsub('\\', '/')
+  end
 end
 
 -- a path relative to SiderAddons itself (for files outside content/KitGenerator)
 local function sider_path(rel)
-  return (DIR .. rel):gsub('/', '\\')
+  local p = DIR .. rel
+  if package.config:sub(1, 1) == '\\' then
+    return p:gsub('/', '\\')
+  else
+    return p:gsub('\\', '/')
+  end
 end
 
 -- ===== low-level memory helpers ===========================================
@@ -205,8 +215,9 @@ end
 
 local function append_line(rel, text)
   local p = path(rel)
+  local posix_p = (DIR .. 'content/KitGenerator/' .. rel)
   for attempt = 1, 8 do
-    local f = io.open(p, 'a')
+    local f = io.open(p, 'a') or io.open(posix_p, 'a')
     if f then
       f:write(text .. '\n')
       f:flush()
@@ -221,8 +232,9 @@ end
 
 local function write_file(rel, text)
   local p = path(rel)
+  local posix_p = (DIR .. 'content/KitGenerator/' .. rel)
   for attempt = 1, 8 do
-    local f = io.open(p, 'w')
+    local f = io.open(p, 'w') or io.open(posix_p, 'w')
     if f then
       f:write(text)
       f:flush()
@@ -237,8 +249,9 @@ end
 
 local function read_lines(rel)
   local p = path(rel)
+  local posix_p = (DIR .. 'content/KitGenerator/' .. rel)
   for attempt = 1, 8 do
-    local out, f = {}, io.open(p, 'r')
+    local out, f = {}, io.open(p, 'r') or io.open(posix_p, 'r')
     if f then
       for line in f:lines() do out[#out + 1] = line end
       f:close()
@@ -447,7 +460,7 @@ local MAP_NAMES = nil
 local function load_gdb_map()
   if GDB_MAP_LOADED then return end
   GDB_MAP_LOADED = true
-  local f = io.open(sider_path('content/kits/map.txt'), 'r')
+  local f = io.open(sider_path('content/kits/map.txt'), 'r') or io.open(DIR .. 'content/kits/map.txt', 'r')
   if not f then return end
   MAP_NAMES = MAP_NAMES or {}
   for line in f:lines() do
@@ -489,7 +502,7 @@ local function resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
   -- 1. Try exact slot (e.g. p1, p2, g1, etc.) with standard 4-digit formatting
   local rel = string.format("content/kits/%s/%s%d/u%04d%s%d%s.ftex", norm_folder, slot_type, slot, tid, slot_type, slot, target_suffix)
   local full = (DIR .. rel):gsub('/', '\\')
-  local f = io.open(full, "rb")
+  local f = io.open(full, "rb") or io.open(DIR .. rel, "rb")
   if f then
     f:close()
     return rel
@@ -498,7 +511,7 @@ local function resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
   -- Try without leading zero padding (for rare teams with <4 digit IDs)
   local rel_raw = string.format("content/kits/%s/%s%d/u%d%s%d%s.ftex", norm_folder, slot_type, slot, tid, slot_type, slot, target_suffix)
   local full_raw = (DIR .. rel_raw):gsub('/', '\\')
-  local f_raw = io.open(full_raw, "rb")
+  local f_raw = io.open(full_raw, "rb") or io.open(DIR .. rel_raw, "rb")
   if f_raw then
     f_raw:close()
     return rel_raw
@@ -509,7 +522,7 @@ local function resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
   if target_suffix ~= "" and slot > 1 then
     local rel_fb = string.format("content/kits/%s/%s1/u%04d%s1%s.ftex", norm_folder, slot_type, tid, slot_type, target_suffix)
     local full_fb = (DIR .. rel_fb):gsub('/', '\\')
-    local f_fb = io.open(full_fb, "rb")
+    local f_fb = io.open(full_fb, "rb") or io.open(DIR .. rel_fb, "rb")
     if f_fb then
       f_fb:close()
       return rel_fb
@@ -517,7 +530,7 @@ local function resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
 
     local rel_fb_raw = string.format("content/kits/%s/%s1/u%d%s1%s.ftex", norm_folder, slot_type, tid, slot_type, target_suffix)
     local full_fb_raw = (DIR .. rel_fb_raw):gsub('/', '\\')
-    local f_fb_raw = io.open(full_fb_raw, "rb")
+    local f_fb_raw = io.open(full_fb_raw, "rb") or io.open(DIR .. rel_fb_raw, "rb")
     if f_fb_raw then
       f_fb_raw:close()
       return rel_fb_raw
@@ -1004,6 +1017,20 @@ local function paid_key(season)
   return string.format('%s:%d:%d:%s', CAREER, DEAL.club, season, DEAL.brand)
 end
 
+local function has_user_kit(cid)
+  if not cid or cid <= 0 then return false end
+  local name = string.format('u%04dp1.ftex', cid)
+  if CAREER and CAREER ~= 'unknown' then
+    local cp = path('careers/' .. CAREER .. '/' .. name)
+    local f = io.open(cp, 'rb') or io.open(DIR .. 'content/KitGenerator/careers/' .. CAREER .. '/' .. name, 'rb')
+    if f then f:close(); return true end
+  end
+  local ap = path('active/' .. name)
+  local f = io.open(ap, 'rb') or io.open(DIR .. 'content/KitGenerator/active/' .. name, 'rb')
+  if f then f:close(); return true end
+  return false
+end
+
 local function ensure_season_deal(season)
   season = season or SEASON or 2027
   -- Never act on a guessed season: at game load the calendar is not readable
@@ -1042,24 +1069,16 @@ local function ensure_season_deal(season)
   if not cid then return end          -- club not detected yet: nothing to build
 
   if not deal_active(season) then
-    -- No deal for this season:
-    -- Storyline Mode / Opt-In Guard:
-    -- If this club has never signed a mod sponsor deal, do not generate clean dynamic kits.
-    -- The club continues wearing its authentic licensed kit from Kitserver!
-    if not (OPTED_IN and OPTED_IN[cid]) then
-      return
-    end
-
-    -- If this club has previously signed a sponsor deal (opted in), make sure the club
-    -- is back in its clean, sponsor-less dynamic kit until a new deal is signed.
+    -- No deal for this season: user team gets a sponsorless dynamic kit until a new deal is signed.
     local ckey = cid .. ':' .. season
-    if CFG.ENABLE_KITS and not CLEAN[ckey] then
+    local kit_exists = has_user_kit(cid)
+    if CFG.ENABLE_KITS and (not CLEAN[ckey] or not kit_exists) then
       CLEAN[ckey] = true
-      local req_id = string.format('clean-%d-%d', cid, season)
+      local req_id = string.format('clean-%d-%d-t%s', cid, season, os.date('%Y%m%d%H%M%S'))
       append_line('kit_request.txt', string.format('%s|%d|%d|||%s|%s',
         req_id, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
       L('no deal for season ' .. tostring(season) ..
-        ': requested the clean kit for club #' .. tostring(cid))
+        ': requested sponsorless kit for user club #' .. tostring(cid))
     end
     return
   end
@@ -1108,7 +1127,7 @@ local function refresh_date(ctx)
       end
     end
   end
-  if ctx then detect_club(ctx) end
+  detect_club(ctx)
   ensure_season_deal(SEASON)
 end
 
@@ -1370,18 +1389,11 @@ local function build_office(ui, ctx)
 
   ui:section('Sponsor Offers', 'trophy', 'Season ' .. tostring(SEASON) .. '  -  ' .. plural(#list, 'offer'))
 
-  if not (OPTED_IN and OPTED_IN[cid]) then
-    ui:message('Storyline Mode: Club is wearing authentic default kits (no mod sponsor selected yet). Sign an offer below when you are ready to transition to dynamic kits.', 'info')
+  local kit_ready = has_user_kit(cid)
+  if kit_ready then
+    ui:message('Club is wearing a sponsorless dynamic kit while awaiting a sponsor agreement. Sign an offer below to add a sponsor logo.', 'ok')
   else
-    ui:cols(0.7)
-    ui:message('Club is wearing a sponsorless dynamic kit while awaiting a new sponsor agreement.', 'ok')
-    ui:nextcol()
-    ui:button('revert_auth', 'Revert to authentic kits', function()
-      OPTED_IN[cid] = nil
-      save_opted_in()
-      L('reverted club #' .. tostring(cid) .. ' to authentic default kits')
-    end, 'ghost', 'edit')
-    ui:endcols()
+    ui:message('Club dynamic kit is generating (sponsorless)... It will appear in your next match.', 'info')
   end
 
   if window_open then
@@ -1584,19 +1596,16 @@ function m.make_key(ctx, filename)
   end
 
   local cid = club_id()
+  if not cid or cid <= 0 then
+    cid = detect_club(ctx)
+  end
   local needs_authentic = false
-  -- If this is the user's club, enforce user storyline opt-in (authentic until sponsor signed)
   if cid and cid > 0 and tid == cid then
-    local has_career_deal = (DEAL and DEAL.club == cid)
-    local has_career_profile = false
-    if CAREER and CAREER ~= 'unknown' then
-      local cp = (DIR .. 'content/KitGenerator/careers/' .. CAREER):gsub('/', '\\')
-      local f = io.open(cp .. '\\u' .. string.format('%04d', cid) .. 'p1.ftex', 'rb')
-      if f then f:close(); has_career_profile = true end
-    end
-    local is_opted_in = has_career_deal or has_career_profile or (OPTED_IN and OPTED_IN[cid] and not (CAREER and CAREER:find('^ml_')))
-    if not is_opted_in then
-      needs_authentic = true
+    -- User's managed club: receives dynamic kit in Master League regardless of
+    -- whether a sponsor deal is signed (sponsorless until signed).
+    needs_authentic = false
+    if not STATE.date_ok or not has_user_kit(cid) then
+      refresh_date(ctx)
     end
   else
     -- AI clubs: wear original authentic kits in Season 1; dynamic kits kick in from Season 2 onwards
@@ -1643,7 +1652,7 @@ function m.make_key(ctx, filename)
   if cid and tid == cid and CAREER and CAREER ~= 'unknown' then
     local career_cand = string.format("content/KitGenerator/careers/%s/u%04d%s%d%s.ftex", CAREER, tid, slot_type, slot, target_suffix)
     local career_full = (DIR .. career_cand):gsub('/', '\\')
-    local cf = io.open(career_full, "rb")
+    local cf = io.open(career_full, "rb") or io.open(DIR .. career_cand, "rb")
     if cf then
       cf:close()
       rel_path = career_cand
@@ -1654,7 +1663,7 @@ function m.make_key(ctx, filename)
   if not rel_path then
     local global_cand = string.format("content/KitGenerator/active/u%04d%s%d%s.ftex", tid, slot_type, slot, target_suffix)
     local global_full = (DIR .. global_cand):gsub('/', '\\')
-    local gf = io.open(global_full, "rb")
+    local gf = io.open(global_full, "rb") or io.open(DIR .. global_cand, "rb")
     if gf then
       gf:close()
       rel_path = global_cand
@@ -1708,9 +1717,17 @@ start_watcher = function()
   L('kit watcher launched (pid ' .. tostring(pid) .. ', status ' .. tostring(res) .. ')')
 end
 
+local FRAME_COUNT = 0
 function m.display_frame(ctx)
   if not WATCHER_STARTED and CFG.START_PROCESS and CFG.ENABLE_KITS then
     start_watcher()
+  end
+  FRAME_COUNT = FRAME_COUNT + 1
+  if (FRAME_COUNT % 30 == 0) or not STATE.date_ok then
+    if is_in_ml(ctx) then
+      detect_club(ctx)
+      refresh_date(ctx)
+    end
   end
 end
 

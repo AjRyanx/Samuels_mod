@@ -12,6 +12,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+import pytest
 
 root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root / "generator"))
@@ -61,6 +62,8 @@ def test_gk_palette_clash_avoidance():
 
 def test_gk_render_and_build():
     """Test full render and build pipeline for g1 and g2 slots."""
+    if not Path(build_kit.DEFAULT_BASE).is_file():
+        pytest.skip("Base .ftex template not available in this environment")
     tmp = Path(tempfile.mkdtemp())
     try:
         clubs = kit_gen.load_clubs(root / "generator" / "clubs.csv")

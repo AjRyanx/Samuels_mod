@@ -33,3 +33,7 @@ backups/
 *.bak_*
 *.orig
 tests/visual_audit/
+
+# macOS
+.DS_Store
+*/.DS_Store

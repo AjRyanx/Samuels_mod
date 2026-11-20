@@ -1,0 +1,24 @@
+{
+  "total_patterns": 17304,
+  "unique_signatures": 17304,
+  "collision_rate": 0.0,
+  "distribution": {
+    "stripes": 1764,
+    "hoops": 546,
+    "sash": 1050,
+    "geometric": 240,
+    "jacquard": 810,
+    "goalkeeper": 2070,
+    "halves": 216,
+    "gradient": 240,
+    "motif": 10368
+  },
+  "sample_ids": [
+    "PAT_STRIPE_P20_D20_A0_NON",
+    "PAT_SASH_W150_A55_O-60_DUAL",
+    "PAT_GK_KINET_E26_S-35_V9",
+    "PAT_MOTIF_M066_S32_D125_A120",
+    "PAT_MOTIF_M146_S48_D80_A180",
+    "PAT_GK90_CONF_R32_A255_S14"
+  ]
+}

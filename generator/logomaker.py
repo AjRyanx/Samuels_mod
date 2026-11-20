@@ -8,13 +8,21 @@ E = 256          # emblem size in final px
 # The original font paths are Linux ones; on Windows we fall back to metric /
 # visual look-alikes so the same script runs anywhere.
 _FONT_FILES = {
-    'poppins': ['/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
-                r'C:\Windows\Fonts\GOTHICB.TTF', r'C:\Windows\Fonts\ariblk.ttf'],
-    'inter':   ['/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf',
-                r'C:\Windows\Fonts\segoeuib.ttf', r'C:\Windows\Fonts\arialbd.ttf'],
-    'advent':  ['/usr/share/texmf/fonts/opentype/public/tex-gyre/texgyreadventor-bold.otf',
-                r'C:\Windows\Fonts\bahnschrift.ttf', r'C:\Windows\Fonts\GOTHICB.TTF'],
-    'carlito': ['/usr/share/fonts/truetype/crosextra/Carlito-Bold.ttf',
+    'poppins': ['/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+                '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
+                r'C:\Windows\Fonts\GOTHICB.TTF', r'C:\Windows\Fonts\ariblk.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'],
+    'inter':   ['/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+                '/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf',
+                r'C:\Windows\Fonts\segoeuib.ttf', r'C:\Windows\Fonts\arialbd.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'],
+    'advent':  ['/System/Library/Fonts/Supplemental/DIN Alternate Bold.ttf',
+                '/System/Library/Fonts/Supplemental/Futura.ttc',
+                '/usr/share/texmf/fonts/opentype/public/tex-gyre/texgyreadventor-bold.otf',
+                r'C:\Windows\Fonts\bahnschrift.ttf', r'C:\Windows\Fonts\GOTHICB.TTF',
+                '/System/Library/Fonts/Supplemental/Arial Bold.ttf'],
+    'carlito': ['/System/Library/Fonts/Supplemental/Arial.ttf',
+                '/usr/share/fonts/truetype/crosextra/Carlito-Bold.ttf',
                 r'C:\Windows\Fonts\calibrib.ttf', r'C:\Windows\Fonts\arialbd.ttf'],
 }
 
@@ -23,6 +31,11 @@ def _font_path(name):
     for p in _FONT_FILES.get(name, []):
         if os.path.isfile(p):
             return p
+    for fallback in ['/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+                     r'C:\Windows\Fonts\arialbd.ttf',
+                     '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf']:
+        if os.path.isfile(fallback):
+            return fallback
     raise FileNotFoundError('no font file for %r' % name)
 
 
@@ -247,33 +260,38 @@ BRANDS = BRANDS + _extra_brands(116)
 
 if __name__ == '__main__':
     import sys
-    target = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('out')
+    try:
+        from sponsor_builder import BUILDERS, generate_all_sponsors
+    except ImportError:
+        from generator.sponsor_builder import BUILDERS, generate_all_sponsors
+
+    target = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('content/KitGenerator/logos')
     target.mkdir(parents=True, exist_ok=True)
-    added = []
-    for b in BRANDS:
-        for suffix, mono in (('', None), ('_white', (255, 255, 255))):
-            p = target / f'{b[0].lower()}{suffix}.png'
-            if p.exists():
-                continue                     # never overwrite an approved logo
-            lockup(b, mono=mono).save(p)
-            added.append(p.name)
-    # contact sheet: colour logos on light tiles, white logos on dark tiles.
-    # Written NEXT TO the logos folder (not inside it) so it is never mistaken
-    # for a brand logo.
+    
+    # 1. Generate all premier realistic sponsors
+    added = generate_all_sponsors(target)
+    
+    # 2. Generate contact sheet of all modern brand logos
+    all_brands = sorted(BUILDERS.keys())
     cols, tw, th = 4, 620, 200
-    rows = (len(BRANDS) + cols - 1) // cols
-    sheet = Image.new('RGB', (cols*tw, rows*th), (30, 30, 34))
-    for i, b in enumerate(BRANDS):
+    rows = (len(all_brands) + cols - 1) // cols
+    sheet = Image.new('RGB', (cols * tw, rows * th), (30, 30, 34))
+    
+    for i, brand in enumerate(all_brands):
         r, c = divmod(i, cols)
         dark = (i % 2 == 1)
-        bg = hexc(b[3]) if dark else (244, 244, 241)
+        bg = (20, 24, 33) if dark else (244, 244, 241)
         tile = Image.new('RGBA', (tw, th), bg + (255,))
-        lg = lockup(b, mono=(255, 255, 255) if dark else None)
-        s = min((tw-60)/lg.width, (th-50)/lg.height)
-        lg = lg.resize((max(1, int(lg.width*s)), max(1, int(lg.height*s))), Image.LANCZOS)
-        tile.alpha_composite(lg, ((tw-lg.width)//2, (th-lg.height)//2))
-        sheet.paste(tile.convert('RGB'), (c*tw, r*th))
-    sheet.save(target.parent / (target.name + '_sheet.png'))
-    print('brands', len(BRANDS), 'added', len(added), '->', target)
-    for n in added:
-        print('  +', n)
+        
+        logo_path = target / (f"{brand}_white.png" if dark else f"{brand}.png")
+        if logo_path.is_file():
+            lg = Image.open(logo_path).convert('RGBA')
+            s = min((tw - 60) / max(1, lg.width), (th - 50) / max(1, lg.height))
+            lg = lg.resize((max(1, int(lg.width * s)), max(1, int(lg.height * s))), Image.BILINEAR)
+            tile.alpha_composite(lg, ((tw - lg.width) // 2, (th - lg.height) // 2))
+            
+        sheet.paste(tile.convert('RGB'), (c * tw, r * th))
+        
+    sheet_path = target.parent / 'logos_sheet.png'
+    sheet.save(sheet_path)
+    print(f'Wrote contact sheet with {len(all_brands)} sponsors -> {sheet_path}')

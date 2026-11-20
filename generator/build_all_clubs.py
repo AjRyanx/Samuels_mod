@@ -269,9 +269,13 @@ def generate_all_kits(
     skipped_user_club = False
     for club in clubs:
         cid = club["id"]
-        # Human club is handled independently by the career watcher - never overwrite
+        # Human club is handled independently by the career watcher - preserve if kit already exists
         if user_cid and cid == user_cid:
-            skipped_user_club = True
+            p1_exists = (outdir / f"u{cid:04d}p1.ftex").is_file()
+            if p1_exists or skip_existing:
+                skipped_user_club = True
+                continue
+            tasks.append((club, season, user_sponsor, str(outdir), skip_existing, selected_slots))
             continue
         sponsor = pick_ai_sponsor(club, season, brands)
         tasks.append((club, season, sponsor, str(outdir), skip_existing, selected_slots))

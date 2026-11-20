@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Kit & Sponsor Mod — 147 Premier Sponsor Logos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #090B10;
+            --surface: #111520;
+            --surface-hover: #181F2F;
+            --border: #1F2839;
+            --accent: #38BDF8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --gold: #F59E0B;
+            --text-main: #F3F4F6;
+            --text-muted: #94A3B8;
+            --jersey-light: #F4F4F6;
+            --jersey-dark: #12151D;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            padding: 32px 24px;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1480px;
+            margin: 0 auto;
+        }
+        /* Header */
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 24px;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .header-left h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-left p {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-top: 6px;
+        }
+        .stats-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 13px;
+        }
+        .stats-pill strong {
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .badge-verified {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22C55E;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Controls */
+        .controls-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .search-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 260px;
+            background: #090B10;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .mode-toggles {
+            display: flex;
+            background: #090B10;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 4px;
+        }
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            background: var(--accent);
+            color: #090B10;
+        }
+        .category-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .filter-btn {
+            background: #090B10;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+        .filter-btn.active {
+            background: rgba(56, 189, 248, 0.12);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Grid */
+        .sponsors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 20px;
+        }
+        .sponsor-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .sponsor-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        /* Previews */
+        .preview-box {
+            position: relative;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 20px;
+            transition: background 0.25s;
+        }
+        .preview-box.view-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 0;
+            height: 170px;
+        }
+        .split-pane {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 12px;
+            position: relative;
+        }
+        .split-pane.light {
+            background: var(--jersey-light);
+            border-right: 1px solid rgba(0, 0, 0, 0.12);
+        }
+        .split-pane.dark {
+            background: var(--jersey-dark);
+        }
+        .pane-label {
+            position: absolute;
+            top: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .split-pane.light .pane-label {
+            left: 8px;
+            background: rgba(0, 0, 0, 0.08);
+            color: #555;
+        }
+        .split-pane.dark .pane-label {
+            right: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #aaa;
+        }
+        .logo-img {
+            max-width: 90%;
+            max-height: 85px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+            transition: transform 0.2s;
+        }
+        .logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Info Section */
+        .card-info {
+            padding: 16px 18px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #0E121A;
+            flex: 1;
+        }
+        .card-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+        .brand-key {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 5px;
+        }
+        .category-tag {
+            align-self: flex-start;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        .brand-desc {
+            font-size: 12px;
+            color: #8E9BAE;
+            line-height: 1.4;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>Dynamic Kit & Sponsor Mod</h1>
+                <p>Premier Real-World Sponsor Logo Library — Authentic Master League Sponsorships</p>
+            </div>
+            <div class="stats-pill">
+                <span><strong>147</strong> Sponsors</span>
+                <span>•</span>
+                <span><strong>294</strong> Logos (Color + White Silhouettes)</span>
+                <span>•</span>
+                <span class="badge-verified">4x Supersampled</span>
+            </div>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls-bar">
+            <div class="search-row">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search sponsor, industry, or key (e.g. Emirates, Betway, Barclays, Crypto)...">
+                <div class="mode-toggles">
+                    <button class="mode-btn active" data-mode="split">Split View (Both)</button>
+                    <button class="mode-btn" data-mode="light">Light Kits (Color)</button>
+                    <button class="mode-btn" data-mode="dark">Dark Kits (White)</button>
+                </div>
+            </div>
+            <div class="category-filters" id="categoryFilters">
+                <button class="filter-btn active" data-category="all">All Categories (147)</button>
+                <button class="filter-btn" data-category="Airlines & Tourism">Airlines & Tourism (16)</button>
+                <button class="filter-btn" data-category="Betting & Gaming">Betting & Gaming (20)</button>
+                <button class="filter-btn" data-category="Banking & Finance">Banking & Finance (20)</button>
+                <button class="filter-btn" data-category="Tech & Streaming">Tech & Streaming (22)</button>
+                <button class="filter-btn" data-category="Telecom & Mobile">Telecom & Mobile (12)</button>
+                <button class="filter-btn" data-category="Automotive & Tires">Automotive & Tires (18)</button>
+                <button class="filter-btn" data-category="Crypto & Web3">Crypto & Web3 (11)</button>
+                <button class="filter-btn" data-category="Energy & Industry">Energy & Industry (13)</button>
+                <button class="filter-btn" data-category="Insurance & Healthcare">Insurance & Healthcare (8)</button>
+                <button class="filter-btn" data-category="Beverages & Lifestyle">Beverages & Lifestyle (7)</button>
+            </div>
+        </div>
+
+        <!-- Sponsors Grid -->
+        <div class="sponsors-grid" id="sponsorsGrid">
+            <!-- Cards rendered dynamically -->
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Master League Dynamic Kit & Sponsor Mod for PES 2021 / SP Football Life 2027 (FL26/FL27). All sponsor logos conform strictly to PES chest printing UV specifications with automatic WCAG contrast inversion.</p>
+        </footer>
+    </div>
+
+    <script>
+        const sponsors = [{"key": "fly_emirates", "name": "Fly Emirates", "category": "Airlines & Tourism", "desc": "Arabic-inspired English calligraphy with curved flourish"}, {"key": "etihad", "name": "Etihad Airways", "category": "Airlines & Tourism", "desc": "Faceted champagne diamond crest + tracked typography"}, {"key": "qatar_air", "name": "Qatar Airways", "category": "Airlines & Tourism", "desc": "Burgundy oryx horn crest + modern clean serif"}, {"key": "singapore_air", "name": "Singapore Airlines", "category": "Airlines & Tourism", "desc": "Golden bird crest + bold navy wordmark"}, {"key": "turkish_air", "name": "Turkish Airlines", "category": "Airlines & Tourism", "desc": "Red circle flying goose emblem + modern sans"}, {"key": "lufthansa", "name": "Lufthansa", "category": "Airlines & Tourism", "desc": "Deep blue circle crane emblem + classic modern sans"}, {"key": "riyadh_air", "name": "Riyadh Air", "category": "Airlines & Tourism", "desc": "Lavender purple modern iridescent wing crest"}, {"key": "saudia", "name": "Saudia", "category": "Airlines & Tourism", "desc": "Emerald green palm tree & dual crossed swords"}, {"key": "virgin_atl", "name": "Virgin Atlantic", "category": "Airlines & Tourism", "desc": "Ruby red iconic cursive script flourish"}, {"key": "british_air", "name": "British Airways", "category": "Airlines & Tourism", "desc": "Royal blue & red speedmarque ribbon"}, {"key": "air_france", "name": "Air France", "category": "Airlines & Tourism", "desc": "Navy with sleek red accent bar"}, {"key": "qantas", "name": "Qantas", "category": "Airlines & Tourism", "desc": "Red flying kangaroo tail fin crest"}, {"key": "delta", "name": "Delta Air Lines", "category": "Airlines & Tourism", "desc": "Navy & red geometric widget triangle"}, {"key": "visit_rwanda", "name": "Visit Rwanda", "category": "Airlines & Tourism", "desc": "High-fashion tracked condensed sans stacked lockup"}, {"key": "visit_saudi", "name": "Visit Saudi", "category": "Airlines & Tourism", "desc": "Flowing turquoise & gold script lockup"}, {"key": "visit_dubai", "name": "Visit Dubai", "category": "Airlines & Tourism", "desc": "Multi-color fluid modern geometric lockup"}, {"key": "betway", "name": "Betway", "category": "Betting & Gaming", "desc": "Clean geometric heavy lowercase with vibrant lime dot"}, {"key": "stake", "name": "Stake", "category": "Betting & Gaming", "desc": "Sleek ultra-modern geometric italic font"}, {"key": "1xbet", "name": "1xBet", "category": "Betting & Gaming", "desc": "Dynamic sports betting angled slant container"}, {"key": "bet365", "name": "Bet365", "category": "Betting & Gaming", "desc": "Signature dark green stadium capsule with yellow/white type"}, {"key": "bwin", "name": "Bwin", "category": "Betting & Gaming", "desc": "Heavy bold lowercase with yellow dot on the 'i'"}, {"key": "unibet", "name": "Unibet", "category": "Betting & Gaming", "desc": "Deep forest green circle with white U crest"}, {"key": "dafabet", "name": "Dafabet", "category": "Betting & Gaming", "desc": "Crimson rounded shield badge + gold/white typography"}, {"key": "parimatch", "name": "Parimatch", "category": "Betting & Gaming", "desc": "Electric neon yellow dynamic parallelogram slant box"}, {"key": "888sport", "name": "888sport", "category": "Betting & Gaming", "desc": "Interlocking triple 8s in vibrant orange"}, {"key": "w88", "name": "W88", "category": "Betting & Gaming", "desc": "Golden coin crest with white W + bold navy typography"}, {"key": "mansion", "name": "Mansion", "category": "Betting & Gaming", "desc": "Crimson casino shield crest + gold typography"}, {"key": "betsson", "name": "Betsson", "category": "Betting & Gaming", "desc": "Clean Nordic geometric orange lowercase"}, {"key": "hollywoodbets", "name": "Hollywoodbets", "category": "Betting & Gaming", "desc": "Purple star emblem with gold trail"}, {"key": "bk8", "name": "BK8", "category": "Betting & Gaming", "desc": "Navy & orange sports shield crest"}, {"key": "betano", "name": "Betano", "category": "Betting & Gaming", "desc": "Fiery orange rounded athletic container"}, {"key": "sportingbet", "name": "Sportingbet", "category": "Betting & Gaming", "desc": "Royal blue & scarlet red dual-tone wordmark"}, {"key": "leovegas", "name": "LeoVegas", "category": "Betting & Gaming", "desc": "Stylized orange lion paw crest + modern typography"}, {"key": "betvictor", "name": "BetVictor", "category": "Betting & Gaming", "desc": "Sleek minimalist dark navy athletic lettering"}, {"key": "betfred", "name": "Betfred", "category": "Betting & Gaming", "desc": "Royal blue rounded athletic block with red accent"}, {"key": "draftkings", "name": "DraftKings", "category": "Betting & Gaming", "desc": "Forest green with golden crown crest"}, {"key": "barclays", "name": "Barclays", "category": "Banking & Finance", "desc": "Cyan spread-eagle heraldic crest + dark navy wordmark"}, {"key": "santander", "name": "Santander", "category": "Banking & Finance", "desc": "Bright red flame spark mark + modern clean rounded sans"}, {"key": "std_chartered", "name": "Standard Chartered", "category": "Banking & Finance", "desc": "Interlocking dual-helix ribbons (cyan & green)"}, {"key": "hsbc", "name": "HSBC", "category": "Banking & Finance", "desc": "Red & white tessellated geometric triangles"}, {"key": "ubs", "name": "UBS", "category": "Banking & Finance", "desc": "Three crossed keys crest + bold corporate lettering"}, {"key": "revolut", "name": "Revolut", "category": "Banking & Finance", "desc": "Ultra-clean modern minimalist fintech typography"}, {"key": "chase", "name": "Chase", "category": "Banking & Finance", "desc": "Chase blue octagonal geometric ring badge"}, {"key": "bnp_paribas", "name": "BNP Paribas", "category": "Banking & Finance", "desc": "Emerald green square star swirl + corporate typography"}, {"key": "deutsche_bank", "name": "Deutsche Bank", "category": "Banking & Finance", "desc": "Blue square with diagonal slash emblem"}, {"key": "caixabank", "name": "CaixaBank", "category": "Banking & Finance", "desc": "Blue & yellow Mir\u00f3 star figure crest"}, {"key": "intesa", "name": "Intesa Sanpaolo", "category": "Banking & Finance", "desc": "Deep green & orange interlocking arch bank crest"}, {"key": "ing", "name": "ING", "category": "Banking & Finance", "desc": "Vibrant orange lion silhouette crest"}, {"key": "bbva", "name": "BBVA", "category": "Banking & Finance", "desc": "Navy blue ascending modern letterforms"}, {"key": "soc_gen", "name": "Soci\u00e9t\u00e9 G\u00e9n\u00e9rale", "category": "Banking & Finance", "desc": "Scarlet & black split corporate square"}, {"key": "klarna", "name": "Klarna", "category": "Banking & Finance", "desc": "Soft rose pill badge container + lowercase modern sans"}, {"key": "paypal", "name": "PayPal", "category": "Banking & Finance", "desc": "Dual-blue overlapping double P monogram"}, {"key": "stripe", "name": "Stripe", "category": "Banking & Finance", "desc": "Violet slate sleek diagonal-cut modern fintech typography"}, {"key": "wise", "name": "Wise", "category": "Banking & Finance", "desc": "Forest green & neon lime fast-flag accent"}, {"key": "mastercard", "name": "Mastercard", "category": "Banking & Finance", "desc": "Interlocking scarlet & orange circles"}, {"key": "visa", "name": "Visa", "category": "Banking & Finance", "desc": "Dark navy with golden winged V italic lettering"}, {"key": "spotify", "name": "Spotify", "category": "Tech & Streaming", "desc": "Circular soundwaves icon + sleek modern sans"}, {"key": "teamviewer", "name": "TeamViewer", "category": "Tech & Streaming", "desc": "Electric blue circle with opposing arrows"}, {"key": "rakuten", "name": "Rakuten", "category": "Tech & Streaming", "desc": "Bold red wordmark + red underline chevron"}, {"key": "samsung", "name": "Samsung", "category": "Tech & Streaming", "desc": "Bold corporate navy sans"}, {"key": "sony", "name": "Sony", "category": "Tech & Streaming", "desc": "Iconic wide-tracked tech slab-serif"}, {"key": "nintendo", "name": "Nintendo", "category": "Tech & Streaming", "desc": "Red pill capsule container enclosing iconic rounded font"}, {"key": "google_pixel", "name": "Google Pixel", "category": "Tech & Streaming", "desc": "Multi-color G emblem + clean modern sans"}, {"key": "apple_tv", "name": "Apple TV+", "category": "Tech & Streaming", "desc": "Apple silhouette + minimalist modern typography"}, {"key": "amazon_prime", "name": "Amazon Prime", "category": "Tech & Streaming", "desc": "Electric blue lettering + curved yellow smile arrow"}, {"key": "snapdragon", "name": "Snapdragon", "category": "Tech & Streaming", "desc": "Glowing red/orange dragon flame sphere"}, {"key": "sharp", "name": "Sharp", "category": "Tech & Streaming", "desc": "Iconic bold red industrial serif"}, {"key": "jvc", "name": "JVC", "category": "Tech & Streaming", "desc": "Heavy bold condensed red geometric font"}, {"key": "philips", "name": "Philips", "category": "Tech & Streaming", "desc": "Royal blue shield stars-and-waves emblem"}, {"key": "panasonic", "name": "Panasonic", "category": "Tech & Streaming", "desc": "Classic blue industrial electronics sans"}, {"key": "tcl", "name": "TCL", "category": "Tech & Streaming", "desc": "Bright red dynamic angled typography"}, {"key": "hisense", "name": "Hisense", "category": "Tech & Streaming", "desc": "Modern cyan consumer electronics wordmark"}, {"key": "xbox", "name": "XBOX", "category": "Tech & Streaming", "desc": "Luminous green sphere X emblem + bold geometric font"}, {"key": "playstation", "name": "PlayStation", "category": "Tech & Streaming", "desc": "Iconic PS geometric lockup + bold modern text"}, {"key": "paramount", "name": "Paramount+", "category": "Tech & Streaming", "desc": "Mountain peak stars arc + bold modern typography"}, {"key": "dazn", "name": "DAZN", "category": "Tech & Streaming", "desc": "High-contrast heavy geometric sports streaming block"}, {"key": "intel", "name": "Intel", "category": "Tech & Streaming", "desc": "Electric blue modern tech dot-matrix font"}, {"key": "lenovo", "name": "Lenovo", "category": "Tech & Streaming", "desc": "Cyber red modern tech block"}, {"key": "vodafone", "name": "Vodafone", "category": "Telecom & Mobile", "desc": "Iconic red speech mark quotation droplet circle"}, {"key": "t_mobile", "name": "T-Mobile", "category": "Telecom & Mobile", "desc": "Magenta square dots \u00b7T\u00b7\u00b7\u00b7 + modern bold font"}, {"key": "o2", "name": "O2", "category": "Telecom & Mobile", "desc": "Deep blue floating glass oxygen bubbles"}, {"key": "orange", "name": "Orange", "category": "Telecom & Mobile", "desc": "Iconic vivid orange square + clean lowercase"}, {"key": "ee", "name": "EE", "category": "Telecom & Mobile", "desc": "Vibrant aqua & yellow dual circle tech dots"}, {"key": "movistar", "name": "Movistar", "category": "Telecom & Mobile", "desc": "Bright green ribbon M emblem + modern navy text"}, {"key": "telekom", "name": "Telekom", "category": "Telecom & Mobile", "desc": "Magenta digital grid square"}, {"key": "three", "name": "Three (3)", "category": "Telecom & Mobile", "desc": "Massive stylized iconic digit 3"}, {"key": "zain", "name": "Zain", "category": "Telecom & Mobile", "desc": "Teal & purple swirling ribbon crest"}, {"key": "stc", "name": "stc", "category": "Telecom & Mobile", "desc": "Deep purple & coral high-tech modern lowercase"}, {"key": "claro", "name": "Claro", "category": "Telecom & Mobile", "desc": "Red speech circle + modern white typography"}, {"key": "rogers", "name": "Rogers", "category": "Telecom & Mobile", "desc": "Crimson red mobius ribbon ring"}, {"key": "jeep", "name": "Jeep", "category": "Automotive & Tires", "desc": "Iconic heavy condensed bold rugged sans"}, {"key": "chevrolet", "name": "Chevrolet", "category": "Automotive & Tires", "desc": "Iconic golden bowtie crest + bold corporate lettering"}, {"key": "audi", "name": "Audi", "category": "Automotive & Tires", "desc": "Four interlocking slate/chrome rings"}, {"key": "mercedes", "name": "Mercedes-Benz", "category": "Automotive & Tires", "desc": "Three-pointed silver star in circle + elegant serif"}, {"key": "bmw", "name": "BMW", "category": "Automotive & Tires", "desc": "Royal blue & black roundel propeller emblem"}, {"key": "hyundai", "name": "Hyundai", "category": "Automotive & Tires", "desc": "Slanted oval H badge + modern bold wordmark"}, {"key": "pirelli", "name": "Pirelli", "category": "Automotive & Tires", "desc": "Iconic red long-roof P stretching across wordmark"}, {"key": "yokohama", "name": "Yokohama", "category": "Automotive & Tires", "desc": "Red angular Y crest + heavy bold black typography"}, {"key": "bridgestone", "name": "Bridgestone", "category": "Automotive & Tires", "desc": "Black & red keystone B emblem"}, {"key": "continental", "name": "Continental", "category": "Automotive & Tires", "desc": "Gold/orange galloping horse crest"}, {"key": "michelin", "name": "Michelin", "category": "Automotive & Tires", "desc": "Royal blue & yellow road crest + italic font"}, {"key": "honda", "name": "Honda", "category": "Automotive & Tires", "desc": "Pure red trapezoid H emblem + bold serif"}, {"key": "kia", "name": "Kia", "category": "Automotive & Tires", "desc": "Futuristic connected stroke modern wordmark"}, {"key": "nissan", "name": "Nissan", "category": "Automotive & Tires", "desc": "Chrome slate circle badge + bold modern sans"}, {"key": "alfa_romeo", "name": "Alfa Romeo", "category": "Automotive & Tires", "desc": "Red cross & green serpent heraldic crest"}, {"key": "castrol", "name": "Castrol", "category": "Automotive & Tires", "desc": "Forest green & red circular swoosh"}, {"key": "mobil1", "name": "Mobil 1", "category": "Automotive & Tires", "desc": "Royal blue Mobil + iconic red digit 1"}, {"key": "shell_helix", "name": "Shell Helix", "category": "Automotive & Tires", "desc": "Scallop yellow & red seashell + modern bold font"}, {"key": "crypto_com", "name": "Crypto.com", "category": "Crypto & Web3", "desc": "Deep navy hexagon shield with futuristic crest"}, {"key": "binance", "name": "Binance", "category": "Crypto & Web3", "desc": "Iconic golden geometric diamond mark with center rhombuses"}, {"key": "okx", "name": "OKX", "category": "Crypto & Web3", "desc": "Cyber-modern black/white square pixel matrix"}, {"key": "bybit", "name": "Bybit", "category": "Crypto & Web3", "desc": "Vivid orange & black diagonal slash wordmark"}, {"key": "coinbase", "name": "Coinbase", "category": "Crypto & Web3", "desc": "Coinbase blue roundel C glyph"}, {"key": "etoro", "name": "eToro", "category": "Crypto & Web3", "desc": "Vibrant green bull horns emblem"}, {"key": "kraken", "name": "Kraken", "category": "Crypto & Web3", "desc": "Deep purple tentacle geometry + bold modern wordmark"}, {"key": "bitget", "name": "Bitget", "category": "Crypto & Web3", "desc": "Cyan teal speed arrows + modern fintech sans"}, {"key": "kucoin", "name": "KuCoin", "category": "Crypto & Web3", "desc": "Jade teal geometric interlocking K"}, {"key": "tezos", "name": "Tezos", "category": "Crypto & Web3", "desc": "Classic blue mathematical fractal t monogram"}, {"key": "polkadot", "name": "Polkadot", "category": "Crypto & Web3", "desc": "Bright magenta multi-dot network glyph"}, {"key": "petronas", "name": "Petronas", "category": "Energy & Industry", "desc": "Emerald cyan faceted teardrop crest"}, {"key": "shell", "name": "Shell", "category": "Energy & Industry", "desc": "Scallop yellow & red seashell emblem"}, {"key": "total_energies", "name": "TotalEnergies", "category": "Energy & Industry", "desc": "Multi-color rainbow spiral ribbon"}, {"key": "aramco", "name": "Aramco", "category": "Energy & Industry", "desc": "Vivid cyan & green solar energy burst"}, {"key": "red_bull", "name": "Red Bull", "category": "Energy & Industry", "desc": "Golden sun with dual red charging bulls"}, {"key": "monster", "name": "Monster Energy", "category": "Energy & Industry", "desc": "Triple neon green claw scratch mark"}, {"key": "enel", "name": "Enel", "category": "Energy & Industry", "desc": "Rainbow gradient light wave"}, {"key": "repsol", "name": "Repsol", "category": "Energy & Industry", "desc": "Solar red & orange segmented horizon sun"}, {"key": "ineos", "name": "INEOS", "category": "Energy & Industry", "desc": "Dark navy minimalist industrial uppercase"}, {"key": "siemens", "name": "Siemens", "category": "Energy & Industry", "desc": "Petrol teal heavy corporate modern sans"}, {"key": "eni", "name": "Eni", "category": "Energy & Industry", "desc": "Black six-legged fire-breathing dog on yellow badge"}, {"key": "qatar_energy", "name": "QatarEnergy", "category": "Energy & Industry", "desc": "Dual teardrop gas/oil crest in blue/cyan"}, {"key": "bp", "name": "BP", "category": "Energy & Industry", "desc": "Green & yellow helios sunburst rosette"}, {"key": "allianz", "name": "Allianz", "category": "Insurance & Healthcare", "desc": "Navy blue circle containing three silver vertical bars"}, {"key": "aia", "name": "AIA", "category": "Insurance & Healthcare", "desc": "Crimson red sharp triple-peak mountain monogram"}, {"key": "axa", "name": "AXA", "category": "Insurance & Healthcare", "desc": "Dark navy with bright red slash accent"}, {"key": "zurich", "name": "Zurich", "category": "Insurance & Healthcare", "desc": "Zurich blue circle Z crest"}, {"key": "aviva", "name": "Aviva", "category": "Insurance & Healthcare", "desc": "Leaf green & yellow triangular prism monogram"}, {"key": "aig", "name": "AIG", "category": "Insurance & Healthcare", "desc": "Royal blue rounded square container + white letters"}, {"key": "generali", "name": "Generali", "category": "Insurance & Healthcare", "desc": "Venetian red winged lion crest"}, {"key": "sanitas", "name": "Sanitas", "category": "Insurance & Healthcare", "desc": "Medical cyan cross-plus crest"}, {"key": "carlsberg", "name": "Carlsberg", "category": "Beverages & Lifestyle", "desc": "Danish brewer green cursive script + hop leaf flourish"}, {"key": "heineken", "name": "Heineken", "category": "Beverages & Lifestyle", "desc": "Iconic red five-pointed star + brewer wordmark"}, {"key": "estrella", "name": "Estrella Galicia", "category": "Beverages & Lifestyle", "desc": "Spanish red & gold crowned star badge"}, {"key": "mahou", "name": "Mahou", "category": "Beverages & Lifestyle", "desc": "Crimson heraldic crown crest + vintage athletic script"}, {"key": "peroni", "name": "Peroni", "category": "Beverages & Lifestyle", "desc": "Italian ribbon crest + elegant modern serif"}, {"key": "budweiser", "name": "Budweiser", "category": "Beverages & Lifestyle", "desc": "Iconic red bowtie banner + classic script/sans"}, {"key": "pepsi", "name": "Pepsi", "category": "Beverages & Lifestyle", "desc": "Red/white/blue wave globe + modern rounded lowercase"}];
+        let currentMode = 'split';
+        let currentCategory = 'all';
+        let searchKeyword = '';
+
+        const grid = document.getElementById('sponsorsGrid');
+        const searchInput = document.getElementById('searchInput');
+        const categoryButtons = document.querySelectorAll('.filter-btn');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+
+        function renderCards() {
+            const filtered = sponsors.filter(s => {
+                const matchesCat = currentCategory === 'all' || s.category === currentCategory;
+                const matchesSearch = !searchKeyword || 
+                    s.name.toLowerCase().includes(searchKeyword) ||
+                    s.key.toLowerCase().includes(searchKeyword) ||
+                    s.category.toLowerCase().includes(searchKeyword) ||
+                    s.desc.toLowerCase().includes(searchKeyword);
+                return matchesCat && matchesSearch;
+            });
+
+            grid.innerHTML = filtered.map(s => {
+                let previewHtml = '';
+                if (currentMode === 'split') {
+                    previewHtml = `
+                        <div class="preview-box view-split">
+                            <div class="split-pane light">
+                                <span class="pane-label">Light Kit</span>
+                                <img src="content/KitGenerator/logos/${s.key}.png" alt="${s.name}" class="logo-img" loading="lazy">
+                            </div>
+                            <div class="split-pane dark">
+                                <span class="pane-label">Dark Kit</span>
+                                <img src="content/KitGenerator/logos/${s.key}_white.png" alt="${s.name} White" class="logo-img" loading="lazy">
+                            </div>
+                        </div>
+                    `;
+                } else if (currentMode === 'light') {
+                    previewHtml = `
+                        <div class="preview-box" style="background: var(--jersey-light);">
+                            <img src="content/KitGenerator/logos/${s.key}.png" alt="${s.name}" class="logo-img" loading="lazy">
+                        </div>
+                    `;
+                } else {
+                    previewHtml = `
+                        <div class="preview-box" style="background: var(--jersey-dark);">
+                            <img src="content/KitGenerator/logos/${s.key}_white.png" alt="${s.name} White" class="logo-img" loading="lazy">
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="sponsor-card">
+                        ${previewHtml}
+                        <div class="card-info">
+                            <div class="card-title-row">
+                                <span class="brand-name">${s.name}</span>
+                                <span class="brand-key">${s.key}</span>
+                            </div>
+                            <span class="category-tag">${s.category}</span>
+                            <p class="brand-desc">${s.desc}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Search listener
+        searchInput.addEventListener('input', e => {
+            searchKeyword = e.target.value.trim().toLowerCase();
+            renderCards();
+        });
+
+        // Category filter listeners
+        categoryButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                categoryButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCategory = btn.getAttribute('data-category');
+                renderCards();
+            });
+        });
+
+        // Mode toggle listeners
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.getAttribute('data-mode');
+                renderCards();
+            });
+        });
+
+        // Initial render
+        renderCards();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Kit Pattern Library — Visual Contact Sheet (True to Spec)</title>
+    <style>
+        :root {
+            --bg: #090B10;
+            --surface: #121620;
+            --border: #232B3E;
+            --accent: #D4AF37;
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 32px 24px;
+            line-height: 1.5;
+        }
+        .header {
+            max-width: 1440px;
+            margin: 0 auto 32px auto;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .header-title h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #fff;
+        }
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .spec-badge {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            background: var(--surface);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .stat-item {
+            text-align: right;
+        }
+        .stat-num {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+        .filter-nav {
+            max-width: 1440px;
+            margin: 0 auto 28px auto;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+        .grid {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .kit-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .kit-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.5);
+        }
+        .card-preview {
+            background: radial-gradient(circle at center, #1E2638 0%, #0F131C 100%);
+            padding: 24px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-preview svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .card-info {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+        .card-header {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .motif-badge {
+            background: #2563EB;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .recipe-badge {
+            background: #7C3AED;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .family-tag {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-left: auto;
+        }
+        .motif-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .motif-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            flex-grow: 1;
+        }
+        .swatches {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">
+            <h1>Modern Kit Pattern Library</h1>
+            <p>Football Life 2027 Dynamic Kit Engine — Faithful Specification Visuals</p>
+            <span class="spec-badge">✓ Exact Procedural Implementation of PDF Spec</span>
+        </div>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-num">288</div>
+                <div class="stat-label">Motifs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">36</div>
+                <div class="stat-label">Families</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">48</div>
+                <div class="stat-label">Recipes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">19.9M</div>
+                <div class="stat-label">Grammar Space</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-nav">
+        <button class="filter-btn active" onclick="filterCards('all')">All Archetypes</button>
+        <button class="filter-btn" onclick="filterCards('outfield')">Modern Outfield</button>
+        <button class="filter-btn" onclick="filterCards('engraved')">Woven & Engraved Overlays</button>
+        <button class="filter-btn" onclick="filterCards('signature')">Heritage & Signatures</button>
+        <button class="filter-btn" onclick="filterCards('block')">Structural Blocks</button>
+    </div>
+
+    <div class="grid" id="cardGrid">
+        
+        <div class="kit-card" data-family="outfield" data-code="M001">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M001" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#0F141F" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#0F141F" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M001">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M001)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M001)">
+<polygon points="53,39 70,41 60,53" fill="#D4AF37" opacity="0.15"/>
+<polygon points="72,44 83,39 75,60" fill="#D4AF37" opacity="0.15"/>
+<polygon points="91,39 103,43 90,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="101,38 117,43 119,61" fill="#D4AF37" opacity="0.15"/>
+<polygon points="121,39 141,41 128,59" fill="#D4AF37" opacity="0.15"/>
+<polygon points="140,39 153,42 150,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="155,37 180,41 171,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="176,42 191,42 180,59" fill="#D4AF37" opacity="0.15"/>
+<polygon points="199,42 206,43 200,61" fill="#D4AF37" opacity="0.15"/>
+<polygon points="207,41 236,36 220,58" fill="#D4AF37" opacity="0.15"/>
+<polygon points="224,40 251,38 233,59" fill="#D4AF37" opacity="0.15"/>
+<polygon points="244,40 261,38 257,58" fill="#D4AF37" opacity="0.15"/>
+<polygon points="270,43 280,43 277,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="280,44 306,36 288,54" fill="#D4AF37" opacity="0.15"/>
+<polygon points="44,58 73,60 55,84" fill="#D4AF37" opacity="0.20"/>
+<polygon points="77,55 96,55 87,80" fill="#D4AF37" opacity="0.20"/>
+<polygon points="97,61 114,55 97,79" fill="#D4AF37" opacity="0.20"/>
+<polygon points="111,58 134,54 117,85" fill="#D4AF37" opacity="0.20"/>
+<polygon points="136,58 156,53 141,81" fill="#D4AF37" opacity="0.20"/>
+<polygon points="159,58 171,57 161,81" fill="#D4AF37" opacity="0.20"/>
+<polygon points="177,56 197,54 188,82" fill="#D4AF37" opacity="0.20"/>
+<polygon points="194,54 216,55 201,77" fill="#D4AF37" opacity="0.20"/>
+<polygon points="222,59 242,60 232,77" fill="#D4AF37" opacity="0.20"/>
+<polygon points="245,58 257,57 250,80" fill="#D4AF37" opacity="0.20"/>
+<polygon points="262,61 280,58 264,79" fill="#D4AF37" opacity="0.20"/>
+<polygon points="279,58 306,58 291,83" fill="#D4AF37" opacity="0.20"/>
+<polygon points="54,77 82,80 65,108" fill="#D4AF37" opacity="0.24"/>
+<polygon points="74,79 108,78 86,112" fill="#D4AF37" opacity="0.24"/>
+<polygon points="99,82 125,84 121,110" fill="#D4AF37" opacity="0.24"/>
+<polygon points="135,82 160,85 141,109" fill="#D4AF37" opacity="0.24"/>
+<polygon points="159,85 187,82 169,111" fill="#D4AF37" opacity="0.24"/>
+<polygon points="190,81 209,83 195,114" fill="#D4AF37" opacity="0.24"/>
+<polygon points="210,77 236,77 228,112" fill="#D4AF37" opacity="0.24"/>
+<polygon points="244,84 267,77 250,115" fill="#D4AF37" opacity="0.24"/>
+<polygon points="271,80 287,84 282,107" fill="#D4AF37" opacity="0.24"/>
+<polygon points="44,113 84,111 72,141" fill="#D4AF37" opacity="0.29"/>
+<polygon points="84,107 110,111 102,140" fill="#D4AF37" opacity="0.29"/>
+<polygon points="121,108 152,114 131,147" fill="#D4AF37" opacity="0.29"/>
+<polygon points="154,108 178,114 170,145" fill="#D4AF37" opacity="0.29"/>
+<polygon points="177,111 209,110 197,142" fill="#D4AF37" opacity="0.29"/>
+<polygon points="219,115 243,110 236,142" fill="#D4AF37" opacity="0.29"/>
+<polygon points="252,109 277,110 265,141" fill="#D4AF37" opacity="0.29"/>
+<polygon points="275,110 316,115 294,140" fill="#D4AF37" opacity="0.29"/>
+<polygon points="53,147 83,144 71,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="92,146 124,140 103,174" fill="#D4AF37" opacity="0.33"/>
+<polygon points="129,140 165,145 153,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="172,139 201,143 190,182" fill="#D4AF37" opacity="0.33"/>
+<polygon points="200,140 243,143 222,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="250,145 288,147 264,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="290,144 328,139 300,178" fill="#D4AF37" opacity="0.33"/>
+<polygon points="50,177 96,177 69,217" fill="#D4AF37" opacity="0.38"/>
+<polygon points="91,176 141,181 118,214" fill="#D4AF37" opacity="0.38"/>
+<polygon points="138,174 191,177 161,211" fill="#D4AF37" opacity="0.38"/>
+<polygon points="182,178 232,178 201,217" fill="#D4AF37" opacity="0.38"/>
+<polygon points="226,178 278,179 258,218" fill="#D4AF37" opacity="0.38"/>
+<polygon points="278,178 314,181 301,215" fill="#D4AF37" opacity="0.38"/>
+<polygon points="45,213 105,211 74,256" fill="#D4AF37" opacity="0.42"/>
+<polygon points="95,217 146,216 120,252" fill="#D4AF37" opacity="0.42"/>
+<polygon points="146,217 199,218 177,250" fill="#D4AF37" opacity="0.42"/>
+<polygon points="208,213 254,218 226,254" fill="#D4AF37" opacity="0.42"/>
+<polygon points="259,214 309,215 279,251" fill="#D4AF37" opacity="0.42"/>
+<polygon points="56,251 109,256 76,293" fill="#D4AF37" opacity="0.46"/>
+<polygon points="107,257 158,249 137,291" fill="#D4AF37" opacity="0.46"/>
+<polygon points="169,249 227,256 190,297" fill="#D4AF37" opacity="0.46"/>
+<polygon points="225,254 281,253 245,295" fill="#D4AF37" opacity="0.46"/>
+<polygon points="279,252 341,251 312,297" fill="#D4AF37" opacity="0.46"/>
+<polygon points="55,291 113,291 84,339" fill="#D4AF37" opacity="0.51"/>
+<polygon points="108,298 170,297 142,337" fill="#D4AF37" opacity="0.51"/>
+<polygon points="176,292 245,291 209,335" fill="#D4AF37" opacity="0.51"/>
+<polygon points="245,298 304,296 275,338" fill="#D4AF37" opacity="0.51"/>
+<polygon points="56,334 124,332 83,377" fill="#D4AF37" opacity="0.56"/>
+<polygon points="113,334 186,334 155,378" fill="#D4AF37" opacity="0.56"/>
+<polygon points="190,336 259,335 224,377" fill="#D4AF37" opacity="0.56"/>
+<polygon points="254,334 320,340 288,383" fill="#D4AF37" opacity="0.56"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#0F141F" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFFFFF" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#D4AF37"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FFFFFF" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#0F141F" stroke="#D4AF37" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#D4AF37"/>
+<polygon points="104,114 114,102 124,114" fill="#FFFFFF" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#D4AF37" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M001</span>
+                    <span class="recipe-badge">R01</span>
+                    <span class="family-tag">Fractured Geometry</span>
+                </div>
+                <h3 class="motif-title">Shard Field</h3>
+                <p class="motif-desc">triangulated low-poly shards that grow larger toward the hem</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#0F141F" title="Primary"></span>
+                    <span class="swatch" style="background:#D4AF37" title="Secondary"></span>
+                    <span class="swatch" style="background:#FFFFFF" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M002">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M002" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#1E293B" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#1E293B" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M002">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M002)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M002)">
+<polygon points="182,84 272,76 253,140" fill="#38BDF8" opacity="0.44"/>
+<line x1="85" y1="55" x2="272" y2="76" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="168,112 304,178 280,214" fill="#38BDF8" opacity="0.41"/>
+<line x1="85" y1="55" x2="304" y2="178" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="141,127 304,248 220,314" fill="#38BDF8" opacity="0.35"/>
+<line x1="85" y1="55" x2="304" y2="248" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="133,75 321,107 288,186" fill="#38BDF8" opacity="0.44"/>
+<line x1="85" y1="55" x2="321" y2="107" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="155,111 246,147 210,191" fill="#38BDF8" opacity="0.26"/>
+<line x1="85" y1="55" x2="246" y2="147" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="148,136 274,247 226,285" fill="#38BDF8" opacity="0.24"/>
+<line x1="85" y1="55" x2="274" y2="247" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="178,110 320,140 273,219" fill="#38BDF8" opacity="0.37"/>
+<line x1="85" y1="55" x2="320" y2="140" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="191,130 274,160 247,199" fill="#38BDF8" opacity="0.44"/>
+<line x1="85" y1="55" x2="274" y2="160" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="135,121 250,218 198,258" fill="#38BDF8" opacity="0.47"/>
+<line x1="85" y1="55" x2="250" y2="218" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="122,171 211,310 133,335" fill="#38BDF8" opacity="0.58"/>
+<line x1="85" y1="55" x2="211" y2="310" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="164,119 348,201 282,282" fill="#38BDF8" opacity="0.36"/>
+<line x1="85" y1="55" x2="348" y2="201" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="133,142 275,294 186,344" fill="#38BDF8" opacity="0.41"/>
+<line x1="85" y1="55" x2="275" y2="294" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="103,145 172,253 83,271" fill="#38BDF8" opacity="0.58"/>
+<line x1="85" y1="55" x2="172" y2="253" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="129,70 327,84 296,178" fill="#38BDF8" opacity="0.35"/>
+<line x1="85" y1="55" x2="327" y2="84" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#1E293B" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#F1F5F9" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#38BDF8"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#F1F5F9" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#1E293B" stroke="#38BDF8" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#38BDF8"/>
+<polygon points="104,114 114,102 124,114" fill="#F1F5F9" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#38BDF8" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M002</span>
+                    <span class="recipe-badge">R07</span>
+                    <span class="family-tag">Fractured Geometry</span>
+                </div>
+                <h3 class="motif-title">Apex Fracture</h3>
+                <p class="motif-desc">a radial crack burst from the left shoulder with offset plates</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#1E293B" title="Primary"></span>
+                    <span class="swatch" style="background:#38BDF8" title="Secondary"></span>
+                    <span class="swatch" style="background:#F1F5F9" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M009">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M009" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#0B2240" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#0B2240" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M009">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M009)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M009)">
+<ellipse cx="129.2" cy="176.4" rx="18.0" ry="12.8" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.60"/>
+<ellipse cx="129.2" cy="176.4" rx="34.8" ry="24.6" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.55"/>
+<ellipse cx="129.2" cy="176.4" rx="51.6" ry="36.5" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.51"/>
+<ellipse cx="129.2" cy="176.4" rx="68.4" ry="48.4" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.46"/>
+<ellipse cx="129.2" cy="176.4" rx="85.2" ry="60.4" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.41"/>
+<ellipse cx="129.2" cy="176.4" rx="102.0" ry="72.2" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.37"/>
+<ellipse cx="129.2" cy="176.4" rx="118.8" ry="84.1" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.32"/>
+<ellipse cx="129.2" cy="176.4" rx="135.6" ry="96.0" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.27"/>
+<ellipse cx="129.2" cy="176.4" rx="152.4" ry="108.0" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.23"/>
+<ellipse cx="129.2" cy="176.4" rx="169.2" ry="119.8" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.18"/>
+<ellipse cx="129.2" cy="176.4" rx="186.0" ry="131.8" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.15"/>
+<ellipse cx="129.2" cy="176.4" rx="202.8" ry="143.7" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.15"/>
+<ellipse cx="224.4" cy="285.6" rx="13.2" ry="10.8" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.61"/>
+<ellipse cx="224.4" cy="285.6" rx="28.6" ry="23.4" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.56"/>
+<ellipse cx="224.4" cy="285.6" rx="44.0" ry="36.0" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.52"/>
+<ellipse cx="224.4" cy="285.6" rx="59.4" ry="48.6" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.47"/>
+<ellipse cx="224.4" cy="285.6" rx="74.8" ry="61.2" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.42"/>
+<ellipse cx="224.4" cy="285.6" rx="90.2" ry="73.8" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.38"/>
+<ellipse cx="224.4" cy="285.6" rx="105.6" ry="86.4" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.33"/>
+<ellipse cx="224.4" cy="285.6" rx="121.0" ry="99.0" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.28"/>
+<ellipse cx="224.4" cy="285.6" rx="136.4" ry="111.6" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.24"/>
+<ellipse cx="224.4" cy="285.6" rx="151.8" ry="124.2" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.19"/>
+<ellipse cx="224.4" cy="285.6" rx="167.2" ry="136.8" fill="none" stroke="#22D3EE" stroke-width="1.6" opacity="0.15"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#0B2240" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFFFFF" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#22D3EE"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FFFFFF" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#0B2240" stroke="#22D3EE" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#22D3EE"/>
+<polygon points="104,114 114,102 124,114" fill="#FFFFFF" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#22D3EE" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M009</span>
+                    <span class="recipe-badge">R06</span>
+                    <span class="family-tag">Topographic and Contour</span>
+                </div>
+                <h3 class="motif-title">Contour Rings</h3>
+                <p class="motif-desc">closed elevation rings around two off-centre peaks</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#0B2240" title="Primary"></span>
+                    <span class="swatch" style="background:#22D3EE" title="Secondary"></span>
+                    <span class="swatch" style="background:#FFFFFF" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M017">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M017" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#1E1B4B" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#1E1B4B" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M017">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M017)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M017)">
+<rect x="75" y="272" width="6" height="113" rx="2" fill="#A855F7" opacity="0.48"/>
+<rect x="85" y="275" width="6" height="110" rx="2" fill="#A855F7" opacity="0.58"/>
+<rect x="95" y="283" width="6" height="102" rx="2" fill="#A855F7" opacity="0.65"/>
+<rect x="105" y="288" width="6" height="97" rx="2" fill="#A855F7" opacity="0.72"/>
+<rect x="115" y="170" width="6" height="215" rx="2" fill="#A855F7" opacity="0.55"/>
+<rect x="125" y="192" width="6" height="193" rx="2" fill="#A855F7" opacity="0.76"/>
+<rect x="135" y="302" width="6" height="83" rx="2" fill="#A855F7" opacity="0.46"/>
+<rect x="145" y="202" width="6" height="183" rx="2" fill="#A855F7" opacity="0.60"/>
+<rect x="155" y="258" width="6" height="127" rx="2" fill="#A855F7" opacity="0.60"/>
+<rect x="165" y="175" width="6" height="210" rx="2" fill="#A855F7" opacity="0.59"/>
+<rect x="175" y="255" width="6" height="130" rx="2" fill="#A855F7" opacity="0.72"/>
+<rect x="185" y="252" width="6" height="133" rx="2" fill="#A855F7" opacity="0.67"/>
+<rect x="195" y="268" width="6" height="117" rx="2" fill="#A855F7" opacity="0.62"/>
+<rect x="205" y="159" width="6" height="226" rx="2" fill="#A855F7" opacity="0.60"/>
+<rect x="215" y="210" width="6" height="175" rx="2" fill="#A855F7" opacity="0.80"/>
+<rect x="225" y="271" width="6" height="114" rx="2" fill="#A855F7" opacity="0.55"/>
+<rect x="235" y="171" width="6" height="214" rx="2" fill="#A855F7" opacity="0.81"/>
+<rect x="245" y="171" width="6" height="214" rx="2" fill="#A855F7" opacity="0.68"/>
+<rect x="255" y="313" width="6" height="72" rx="2" fill="#A855F7" opacity="0.49"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#1E1B4B" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#F8FAFC" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#A855F7"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#F8FAFC" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#1E1B4B" stroke="#A855F7" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#A855F7"/>
+<polygon points="104,114 114,102 124,114" fill="#F8FAFC" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#A855F7" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M017</span>
+                    <span class="recipe-badge">R03</span>
+                    <span class="family-tag">Data and Signal</span>
+                </div>
+                <h3 class="motif-title">Spectrum Burst</h3>
+                <p class="motif-desc">audio-spectrum columns of random height rising from the</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#1E1B4B" title="Primary"></span>
+                    <span class="swatch" style="background:#A855F7" title="Secondary"></span>
+                    <span class="swatch" style="background:#F8FAFC" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M018">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M018" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#09090B" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#09090B" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M018">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M018)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M018)">
+<rect x="235" y="40" width="8" height="8" fill="#F43F5E" opacity="0.39"/>
+<rect x="224" y="51" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="246" y="51" width="8" height="8" fill="#F43F5E" opacity="0.71"/>
+<rect x="136" y="84" width="8" height="8" fill="#F43F5E" opacity="0.30"/>
+<rect x="191" y="84" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="213" y="84" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="224" y="95" width="8" height="8" fill="#F43F5E" opacity="0.61"/>
+<rect x="125" y="106" width="8" height="8" fill="#F43F5E" opacity="0.63"/>
+<rect x="169" y="106" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="125" y="117" width="8" height="8" fill="#F43F5E" opacity="0.58"/>
+<rect x="114" y="128" width="8" height="8" fill="#F43F5E" opacity="0.58"/>
+<rect x="125" y="128" width="8" height="8" fill="#F43F5E" opacity="0.40"/>
+<rect x="268" y="128" width="8" height="8" fill="#F43F5E" opacity="0.33"/>
+<rect x="147" y="139" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="224" y="139" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="180" y="150" width="8" height="8" fill="#F43F5E" opacity="0.71"/>
+<rect x="191" y="150" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="235" y="150" width="8" height="8" fill="#F43F5E" opacity="0.52"/>
+<rect x="268" y="150" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="191" y="161" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="257" y="161" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="191" y="172" width="8" height="8" fill="#F43F5E" opacity="0.74"/>
+<rect x="125" y="183" width="8" height="8" fill="#F43F5E" opacity="0.32"/>
+<rect x="180" y="183" width="8" height="8" fill="#F43F5E" opacity="0.54"/>
+<rect x="268" y="183" width="8" height="8" fill="#F43F5E" opacity="0.38"/>
+<rect x="92" y="194" width="8" height="8" fill="#F43F5E" opacity="0.48"/>
+<rect x="103" y="194" width="8" height="8" fill="#F43F5E" opacity="0.50"/>
+<rect x="136" y="194" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="147" y="194" width="8" height="8" fill="#F43F5E" opacity="0.64"/>
+<rect x="158" y="194" width="8" height="8" fill="#F43F5E" opacity="0.55"/>
+<rect x="202" y="194" width="8" height="8" fill="#F43F5E" opacity="0.40"/>
+<rect x="224" y="194" width="8" height="8" fill="#F43F5E" opacity="0.44"/>
+<rect x="70" y="205" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="81" y="205" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="114" y="205" width="8" height="8" fill="#F43F5E" opacity="0.54"/>
+<rect x="147" y="205" width="8" height="8" fill="#F43F5E" opacity="0.54"/>
+<rect x="158" y="205" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="169" y="205" width="8" height="8" fill="#F43F5E" opacity="0.47"/>
+<rect x="202" y="205" width="8" height="8" fill="#F43F5E" opacity="0.33"/>
+<rect x="213" y="205" width="8" height="8" fill="#F43F5E" opacity="0.70"/>
+<rect x="224" y="205" width="8" height="8" fill="#F43F5E" opacity="0.42"/>
+<rect x="125" y="216" width="8" height="8" fill="#F43F5E" opacity="0.31"/>
+<rect x="180" y="216" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="235" y="216" width="8" height="8" fill="#F43F5E" opacity="0.67"/>
+<rect x="81" y="227" width="8" height="8" fill="#F43F5E" opacity="0.48"/>
+<rect x="103" y="227" width="8" height="8" fill="#F43F5E" opacity="0.73"/>
+<rect x="136" y="227" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="158" y="227" width="8" height="8" fill="#F43F5E" opacity="0.40"/>
+<rect x="169" y="227" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="180" y="227" width="8" height="8" fill="#F43F5E" opacity="0.34"/>
+<rect x="191" y="227" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="202" y="227" width="8" height="8" fill="#F43F5E" opacity="0.44"/>
+<rect x="213" y="227" width="8" height="8" fill="#F43F5E" opacity="0.30"/>
+<rect x="114" y="238" width="8" height="8" fill="#F43F5E" opacity="0.37"/>
+<rect x="125" y="238" width="8" height="8" fill="#F43F5E" opacity="0.39"/>
+<rect x="147" y="238" width="8" height="8" fill="#F43F5E" opacity="0.69"/>
+<rect x="158" y="238" width="8" height="8" fill="#F43F5E" opacity="0.51"/>
+<rect x="169" y="238" width="8" height="8" fill="#F43F5E" opacity="0.69"/>
+<rect x="180" y="238" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="191" y="238" width="8" height="8" fill="#F43F5E" opacity="0.73"/>
+<rect x="202" y="238" width="8" height="8" fill="#F43F5E" opacity="0.60"/>
+<rect x="213" y="238" width="8" height="8" fill="#F43F5E" opacity="0.58"/>
+<rect x="268" y="238" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="81" y="249" width="8" height="8" fill="#F43F5E" opacity="0.31"/>
+<rect x="92" y="249" width="8" height="8" fill="#F43F5E" opacity="0.64"/>
+<rect x="114" y="249" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="180" y="249" width="8" height="8" fill="#F43F5E" opacity="0.60"/>
+<rect x="202" y="249" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="213" y="249" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="246" y="249" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="257" y="249" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="70" y="260" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="103" y="260" width="8" height="8" fill="#F43F5E" opacity="0.62"/>
+<rect x="114" y="260" width="8" height="8" fill="#F43F5E" opacity="0.41"/>
+<rect x="136" y="260" width="8" height="8" fill="#F43F5E" opacity="0.44"/>
+<rect x="158" y="260" width="8" height="8" fill="#F43F5E" opacity="0.63"/>
+<rect x="169" y="260" width="8" height="8" fill="#F43F5E" opacity="0.51"/>
+<rect x="180" y="260" width="8" height="8" fill="#F43F5E" opacity="0.39"/>
+<rect x="191" y="260" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="213" y="260" width="8" height="8" fill="#F43F5E" opacity="0.41"/>
+<rect x="224" y="260" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="257" y="260" width="8" height="8" fill="#F43F5E" opacity="0.37"/>
+<rect x="268" y="260" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="70" y="271" width="8" height="8" fill="#F43F5E" opacity="0.64"/>
+<rect x="81" y="271" width="8" height="8" fill="#F43F5E" opacity="0.52"/>
+<rect x="92" y="271" width="8" height="8" fill="#F43F5E" opacity="0.40"/>
+<rect x="158" y="271" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="224" y="271" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="257" y="271" width="8" height="8" fill="#F43F5E" opacity="0.56"/>
+<rect x="70" y="282" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="92" y="282" width="8" height="8" fill="#F43F5E" opacity="0.47"/>
+<rect x="103" y="282" width="8" height="8" fill="#F43F5E" opacity="0.43"/>
+<rect x="125" y="282" width="8" height="8" fill="#F43F5E" opacity="0.61"/>
+<rect x="136" y="282" width="8" height="8" fill="#F43F5E" opacity="0.55"/>
+<rect x="147" y="282" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="158" y="282" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="191" y="282" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="202" y="282" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="224" y="282" width="8" height="8" fill="#F43F5E" opacity="0.38"/>
+<rect x="268" y="282" width="8" height="8" fill="#F43F5E" opacity="0.63"/>
+<rect x="70" y="293" width="8" height="8" fill="#F43F5E" opacity="0.62"/>
+<rect x="81" y="293" width="8" height="8" fill="#F43F5E" opacity="0.47"/>
+<rect x="114" y="293" width="8" height="8" fill="#F43F5E" opacity="0.54"/>
+<rect x="125" y="293" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="136" y="293" width="8" height="8" fill="#F43F5E" opacity="0.45"/>
+<rect x="158" y="293" width="8" height="8" fill="#F43F5E" opacity="0.45"/>
+<rect x="180" y="293" width="8" height="8" fill="#F43F5E" opacity="0.32"/>
+<rect x="191" y="293" width="8" height="8" fill="#F43F5E" opacity="0.52"/>
+<rect x="202" y="293" width="8" height="8" fill="#F43F5E" opacity="0.64"/>
+<rect x="246" y="293" width="8" height="8" fill="#F43F5E" opacity="0.62"/>
+<rect x="257" y="293" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="268" y="293" width="8" height="8" fill="#F43F5E" opacity="0.62"/>
+<rect x="70" y="304" width="8" height="8" fill="#F43F5E" opacity="0.54"/>
+<rect x="103" y="304" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="136" y="304" width="8" height="8" fill="#F43F5E" opacity="0.42"/>
+<rect x="147" y="304" width="8" height="8" fill="#F43F5E" opacity="0.68"/>
+<rect x="158" y="304" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="169" y="304" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="180" y="304" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="191" y="304" width="8" height="8" fill="#F43F5E" opacity="0.67"/>
+<rect x="224" y="304" width="8" height="8" fill="#F43F5E" opacity="0.30"/>
+<rect x="246" y="304" width="8" height="8" fill="#F43F5E" opacity="0.56"/>
+<rect x="257" y="304" width="8" height="8" fill="#F43F5E" opacity="0.63"/>
+<rect x="268" y="304" width="8" height="8" fill="#F43F5E" opacity="0.40"/>
+<rect x="70" y="315" width="8" height="8" fill="#F43F5E" opacity="0.69"/>
+<rect x="81" y="315" width="8" height="8" fill="#F43F5E" opacity="0.50"/>
+<rect x="103" y="315" width="8" height="8" fill="#F43F5E" opacity="0.52"/>
+<rect x="114" y="315" width="8" height="8" fill="#F43F5E" opacity="0.48"/>
+<rect x="125" y="315" width="8" height="8" fill="#F43F5E" opacity="0.61"/>
+<rect x="147" y="315" width="8" height="8" fill="#F43F5E" opacity="0.48"/>
+<rect x="169" y="315" width="8" height="8" fill="#F43F5E" opacity="0.74"/>
+<rect x="191" y="315" width="8" height="8" fill="#F43F5E" opacity="0.61"/>
+<rect x="213" y="315" width="8" height="8" fill="#F43F5E" opacity="0.69"/>
+<rect x="235" y="315" width="8" height="8" fill="#F43F5E" opacity="0.49"/>
+<rect x="246" y="315" width="8" height="8" fill="#F43F5E" opacity="0.45"/>
+<rect x="257" y="315" width="8" height="8" fill="#F43F5E" opacity="0.58"/>
+<rect x="268" y="315" width="8" height="8" fill="#F43F5E" opacity="0.55"/>
+<rect x="103" y="326" width="8" height="8" fill="#F43F5E" opacity="0.64"/>
+<rect x="114" y="326" width="8" height="8" fill="#F43F5E" opacity="0.37"/>
+<rect x="136" y="326" width="8" height="8" fill="#F43F5E" opacity="0.61"/>
+<rect x="147" y="326" width="8" height="8" fill="#F43F5E" opacity="0.60"/>
+<rect x="169" y="326" width="8" height="8" fill="#F43F5E" opacity="0.67"/>
+<rect x="180" y="326" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="191" y="326" width="8" height="8" fill="#F43F5E" opacity="0.68"/>
+<rect x="213" y="326" width="8" height="8" fill="#F43F5E" opacity="0.55"/>
+<rect x="235" y="326" width="8" height="8" fill="#F43F5E" opacity="0.74"/>
+<rect x="246" y="326" width="8" height="8" fill="#F43F5E" opacity="0.40"/>
+<rect x="257" y="326" width="8" height="8" fill="#F43F5E" opacity="0.44"/>
+<rect x="268" y="326" width="8" height="8" fill="#F43F5E" opacity="0.67"/>
+<rect x="92" y="337" width="8" height="8" fill="#F43F5E" opacity="0.69"/>
+<rect x="103" y="337" width="8" height="8" fill="#F43F5E" opacity="0.52"/>
+<rect x="125" y="337" width="8" height="8" fill="#F43F5E" opacity="0.46"/>
+<rect x="136" y="337" width="8" height="8" fill="#F43F5E" opacity="0.42"/>
+<rect x="147" y="337" width="8" height="8" fill="#F43F5E" opacity="0.38"/>
+<rect x="158" y="337" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="180" y="337" width="8" height="8" fill="#F43F5E" opacity="0.37"/>
+<rect x="191" y="337" width="8" height="8" fill="#F43F5E" opacity="0.33"/>
+<rect x="202" y="337" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="213" y="337" width="8" height="8" fill="#F43F5E" opacity="0.32"/>
+<rect x="224" y="337" width="8" height="8" fill="#F43F5E" opacity="0.60"/>
+<rect x="246" y="337" width="8" height="8" fill="#F43F5E" opacity="0.36"/>
+<rect x="257" y="337" width="8" height="8" fill="#F43F5E" opacity="0.32"/>
+<rect x="268" y="337" width="8" height="8" fill="#F43F5E" opacity="0.52"/>
+<rect x="103" y="348" width="8" height="8" fill="#F43F5E" opacity="0.33"/>
+<rect x="114" y="348" width="8" height="8" fill="#F43F5E" opacity="0.71"/>
+<rect x="125" y="348" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="136" y="348" width="8" height="8" fill="#F43F5E" opacity="0.64"/>
+<rect x="147" y="348" width="8" height="8" fill="#F43F5E" opacity="0.54"/>
+<rect x="158" y="348" width="8" height="8" fill="#F43F5E" opacity="0.50"/>
+<rect x="180" y="348" width="8" height="8" fill="#F43F5E" opacity="0.54"/>
+<rect x="191" y="348" width="8" height="8" fill="#F43F5E" opacity="0.41"/>
+<rect x="202" y="348" width="8" height="8" fill="#F43F5E" opacity="0.49"/>
+<rect x="213" y="348" width="8" height="8" fill="#F43F5E" opacity="0.74"/>
+<rect x="224" y="348" width="8" height="8" fill="#F43F5E" opacity="0.45"/>
+<rect x="235" y="348" width="8" height="8" fill="#F43F5E" opacity="0.53"/>
+<rect x="246" y="348" width="8" height="8" fill="#F43F5E" opacity="0.61"/>
+<rect x="257" y="348" width="8" height="8" fill="#F43F5E" opacity="0.71"/>
+<rect x="70" y="359" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="81" y="359" width="8" height="8" fill="#F43F5E" opacity="0.53"/>
+<rect x="92" y="359" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="103" y="359" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="147" y="359" width="8" height="8" fill="#F43F5E" opacity="0.62"/>
+<rect x="158" y="359" width="8" height="8" fill="#F43F5E" opacity="0.42"/>
+<rect x="180" y="359" width="8" height="8" fill="#F43F5E" opacity="0.40"/>
+<rect x="191" y="359" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="202" y="359" width="8" height="8" fill="#F43F5E" opacity="0.69"/>
+<rect x="213" y="359" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="224" y="359" width="8" height="8" fill="#F43F5E" opacity="0.53"/>
+<rect x="257" y="359" width="8" height="8" fill="#F43F5E" opacity="0.73"/>
+<rect x="268" y="359" width="8" height="8" fill="#F43F5E" opacity="0.56"/>
+<rect x="81" y="370" width="8" height="8" fill="#F43F5E" opacity="0.72"/>
+<rect x="92" y="370" width="8" height="8" fill="#F43F5E" opacity="0.57"/>
+<rect x="103" y="370" width="8" height="8" fill="#F43F5E" opacity="0.41"/>
+<rect x="114" y="370" width="8" height="8" fill="#F43F5E" opacity="0.34"/>
+<rect x="125" y="370" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="136" y="370" width="8" height="8" fill="#F43F5E" opacity="0.37"/>
+<rect x="147" y="370" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="158" y="370" width="8" height="8" fill="#F43F5E" opacity="0.38"/>
+<rect x="180" y="370" width="8" height="8" fill="#F43F5E" opacity="0.35"/>
+<rect x="191" y="370" width="8" height="8" fill="#F43F5E" opacity="0.61"/>
+<rect x="202" y="370" width="8" height="8" fill="#F43F5E" opacity="0.38"/>
+<rect x="213" y="370" width="8" height="8" fill="#F43F5E" opacity="0.59"/>
+<rect x="224" y="370" width="8" height="8" fill="#F43F5E" opacity="0.60"/>
+<rect x="235" y="370" width="8" height="8" fill="#F43F5E" opacity="0.48"/>
+<rect x="246" y="370" width="8" height="8" fill="#F43F5E" opacity="0.34"/>
+<rect x="70" y="381" width="8" height="8" fill="#F43F5E" opacity="0.69"/>
+<rect x="81" y="381" width="8" height="8" fill="#F43F5E" opacity="0.44"/>
+<rect x="92" y="381" width="8" height="8" fill="#F43F5E" opacity="0.32"/>
+<rect x="103" y="381" width="8" height="8" fill="#F43F5E" opacity="0.68"/>
+<rect x="114" y="381" width="8" height="8" fill="#F43F5E" opacity="0.31"/>
+<rect x="125" y="381" width="8" height="8" fill="#F43F5E" opacity="0.71"/>
+<rect x="136" y="381" width="8" height="8" fill="#F43F5E" opacity="0.65"/>
+<rect x="147" y="381" width="8" height="8" fill="#F43F5E" opacity="0.38"/>
+<rect x="169" y="381" width="8" height="8" fill="#F43F5E" opacity="0.46"/>
+<rect x="180" y="381" width="8" height="8" fill="#F43F5E" opacity="0.55"/>
+<rect x="191" y="381" width="8" height="8" fill="#F43F5E" opacity="0.39"/>
+<rect x="202" y="381" width="8" height="8" fill="#F43F5E" opacity="0.63"/>
+<rect x="213" y="381" width="8" height="8" fill="#F43F5E" opacity="0.31"/>
+<rect x="224" y="381" width="8" height="8" fill="#F43F5E" opacity="0.66"/>
+<rect x="235" y="381" width="8" height="8" fill="#F43F5E" opacity="0.48"/>
+<rect x="246" y="381" width="8" height="8" fill="#F43F5E" opacity="0.44"/>
+<rect x="257" y="381" width="8" height="8" fill="#F43F5E" opacity="0.49"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#09090B" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFE4E6" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#F43F5E"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FFE4E6" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#09090B" stroke="#F43F5E" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#F43F5E"/>
+<polygon points="104,114 114,102 124,114" fill="#FFE4E6" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#F43F5E" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M018</span>
+                    <span class="recipe-badge">R04</span>
+                    <span class="family-tag">Data and Signal</span>
+                </div>
+                <h3 class="motif-title">Pixel Dissolve</h3>
+                <p class="motif-desc">square pixels thinning from dense to sparse across the shirt</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#09090B" title="Primary"></span>
+                    <span class="swatch" style="background:#F43F5E" title="Secondary"></span>
+                    <span class="swatch" style="background:#FFE4E6" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M022">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M022" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#111827" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#111827" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M022">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M022)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M022)">
+<path d="M 210 169 L 250 169 L 250 209" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="210" cy="169" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="250" cy="209" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 173 172 L 233 172 L 233 272" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="173" cy="172" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="233" cy="272" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 231 142 L 171 142 L 171 212" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="231" cy="142" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="171" cy="212" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 195 183 L 255 183 L 255 253" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="195" cy="183" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="255" cy="253" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 240 132 L 280 132 L 280 202" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="240" cy="132" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="280" cy="202" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 200 97 L 260 97 L 260 137" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="200" cy="97" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="260" cy="137" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 213 291 L 153 291 L 153 391" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="213" cy="291" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="153" cy="391" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 232 312 L 272 312 L 272 382" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="232" cy="312" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="272" cy="382" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 239 80 L 279 80 L 279 150" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="239" cy="80" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="279" cy="150" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 191 135 L 231 135 L 231 205" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="191" cy="135" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="231" cy="205" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 98 293 L 38 293 L 38 393" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="98" cy="293" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="38" cy="393" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<path d="M 85 66 L 45 66 L 45 136" fill="none" stroke="#10B981" stroke-width="2.2" opacity="0.6"/>
+<circle cx="85" cy="66" r="3.5" fill="#D1FAE5" opacity="0.8"/>
+<circle cx="45" cy="136" r="4.5" fill="#10B981" stroke="#D1FAE5" stroke-width="1.5" opacity="0.9"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#111827" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#D1FAE5" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#10B981"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#D1FAE5" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#111827" stroke="#10B981" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#10B981"/>
+<polygon points="104,114 114,102 124,114" fill="#D1FAE5" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#10B981" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M022</span>
+                    <span class="recipe-badge">R02</span>
+                    <span class="family-tag">Data and Signal</span>
+                </div>
+                <h3 class="motif-title">Circuit T races</h3>
+                <p class="motif-desc">right-angle trace routes ending in node pads</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#111827" title="Primary"></span>
+                    <span class="swatch" style="background:#10B981" title="Secondary"></span>
+                    <span class="swatch" style="background:#D1FAE5" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M025">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M025" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#064E3B" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#064E3B" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M025">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M025)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M025)">
+<path d="M 60 70 C 102.0 35, 237.99999999999997 115, 280 60" fill="none" stroke="#34D399" stroke-width="3" opacity="0.25"/>
+<path d="M 60 92 C 102.0 57, 237.99999999999997 137, 280 82" fill="none" stroke="#F0FDF4" stroke-width="5" opacity="0.35"/>
+<path d="M 60 114 C 102.0 79, 237.99999999999997 159, 280 104" fill="none" stroke="#34D399" stroke-width="7" opacity="0.45"/>
+<path d="M 60 136 C 102.0 101, 237.99999999999997 181, 280 126" fill="none" stroke="#F0FDF4" stroke-width="3" opacity="0.55"/>
+<path d="M 60 158 C 102.0 123, 237.99999999999997 203, 280 148" fill="none" stroke="#34D399" stroke-width="5" opacity="0.25"/>
+<path d="M 60 180 C 102.0 145, 237.99999999999997 225, 280 170" fill="none" stroke="#F0FDF4" stroke-width="7" opacity="0.35"/>
+<path d="M 60 202 C 102.0 167, 237.99999999999997 247, 280 192" fill="none" stroke="#34D399" stroke-width="3" opacity="0.45"/>
+<path d="M 60 224 C 102.0 189, 237.99999999999997 269, 280 214" fill="none" stroke="#F0FDF4" stroke-width="5" opacity="0.55"/>
+<path d="M 60 246 C 102.0 211, 237.99999999999997 291, 280 236" fill="none" stroke="#34D399" stroke-width="7" opacity="0.25"/>
+<path d="M 60 268 C 102.0 233, 237.99999999999997 313, 280 258" fill="none" stroke="#F0FDF4" stroke-width="3" opacity="0.35"/>
+<path d="M 60 290 C 102.0 255, 237.99999999999997 335, 280 280" fill="none" stroke="#34D399" stroke-width="5" opacity="0.45"/>
+<path d="M 60 312 C 102.0 277, 237.99999999999997 357, 280 302" fill="none" stroke="#F0FDF4" stroke-width="7" opacity="0.55"/>
+<path d="M 60 334 C 102.0 299, 237.99999999999997 379, 280 324" fill="none" stroke="#34D399" stroke-width="3" opacity="0.25"/>
+<path d="M 60 356 C 102.0 321, 237.99999999999997 401, 280 346" fill="none" stroke="#F0FDF4" stroke-width="5" opacity="0.35"/>
+<path d="M 60 378 C 102.0 343, 237.99999999999997 423, 280 368" fill="none" stroke="#34D399" stroke-width="7" opacity="0.45"/>
+<path d="M 60 400 C 102.0 365, 237.99999999999997 445, 280 390" fill="none" stroke="#F0FDF4" stroke-width="3" opacity="0.55"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#064E3B" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#F0FDF4" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#34D399"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#F0FDF4" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#064E3B" stroke="#34D399" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#34D399"/>
+<polygon points="104,114 114,102 124,114" fill="#F0FDF4" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#34D399" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M025</span>
+                    <span class="recipe-badge">R05</span>
+                    <span class="family-tag">Fluid and Organic</span>
+                </div>
+                <h3 class="motif-title">Liquid Marble</h3>
+                <p class="motif-desc">swirled marbling in two or three tones</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#064E3B" title="Primary"></span>
+                    <span class="swatch" style="background:#34D399" title="Secondary"></span>
+                    <span class="swatch" style="background:#F0FDF4" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M033">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M033" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#18181B" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#18181B" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M033">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M033)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M033)">
+<line x1="70" y1="30" x2="70" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="78" y1="30" x2="78" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="86" y1="30" x2="86" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="94" y1="30" x2="94" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="102" y1="30" x2="102" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="110" y1="30" x2="110" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="118" y1="30" x2="118" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="126" y1="30" x2="126" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="134" y1="30" x2="134" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="142" y1="30" x2="142" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="150" y1="30" x2="150" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="158" y1="30" x2="158" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="166" y1="30" x2="166" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="174" y1="30" x2="174" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="182" y1="30" x2="182" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="190" y1="30" x2="190" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="198" y1="30" x2="198" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="206" y1="30" x2="206" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="214" y1="30" x2="214" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="222" y1="30" x2="222" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="230" y1="30" x2="230" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="238" y1="30" x2="238" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="246" y1="30" x2="246" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="254" y1="30" x2="254" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<line x1="262" y1="30" x2="262" y2="400" stroke="#A1A1AA" stroke-width="1.2" opacity="0.25"/>
+<polygon points="95,71 104,80 95,89 86,80" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="140,71 149,80 140,89 131,80" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="185,71 194,80 185,89 176,80" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="230,71 239,80 230,89 221,80" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="95,116 104,125 95,134 86,125" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="140,116 149,125 140,134 131,125" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="185,116 194,125 185,134 176,125" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="230,116 239,125 230,134 221,125" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="95,161 104,170 95,179 86,170" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="140,161 149,170 140,179 131,170" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="185,161 194,170 185,179 176,170" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="230,161 239,170 230,179 221,170" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="95,206 104,215 95,224 86,215" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="140,206 149,215 140,224 131,215" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="185,206 194,215 185,224 176,215" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="230,206 239,215 230,224 221,215" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="95,251 104,260 95,269 86,260" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="140,251 149,260 140,269 131,260" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="185,251 194,260 185,269 176,260" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="230,251 239,260 230,269 221,260" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="95,296 104,305 95,314 86,305" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="140,296 149,305 140,314 131,305" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="185,296 194,305 185,314 176,305" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="230,296 239,305 230,314 221,305" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="95,341 104,350 95,359 86,350" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="140,341 149,350 140,359 131,350" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="185,341 194,350 185,359 176,350" fill="#FAFAFA" opacity="0.35"/>
+<polygon points="230,341 239,350 230,359 221,350" fill="#FAFAFA" opacity="0.35"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#18181B" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FAFAFA" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#A1A1AA"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FAFAFA" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#18181B" stroke="#A1A1AA" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#A1A1AA"/>
+<polygon points="104,114 114,102 124,114" fill="#FAFAFA" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#A1A1AA" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M033</span>
+                    <span class="recipe-badge">R06</span>
+                    <span class="family-tag">Textile Jacquard</span>
+                </div>
+                <h3 class="motif-title">Rib Jacquard</h3>
+                <p class="motif-desc">tonal knit-rib relief broken by diamond inserts</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#18181B" title="Primary"></span>
+                    <span class="swatch" style="background:#A1A1AA" title="Secondary"></span>
+                    <span class="swatch" style="background:#FAFAFA" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M041">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M041" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#7F1D1D" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#7F1D1D" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M041">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M041)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M041)">
+<path d="M 60 60 Q 170.0 30 280 130 L 280 155 Q 170.0 55 60 85 Z" fill="#F87171" opacity="0.25"/>
+<path d="M 60 108 Q 170.0 78 280 178 L 280 203 Q 170.0 103 60 133 Z" fill="#F87171" opacity="0.4"/>
+<path d="M 60 156 Q 170.0 126 280 226 L 280 251 Q 170.0 151 60 181 Z" fill="#F87171" opacity="0.55"/>
+<path d="M 60 204 Q 170.0 174 280 274 L 280 299 Q 170.0 199 60 229 Z" fill="#F87171" opacity="0.25"/>
+<path d="M 60 252 Q 170.0 222 280 322 L 280 347 Q 170.0 247 60 277 Z" fill="#F87171" opacity="0.4"/>
+<path d="M 60 300 Q 170.0 270 280 370 L 280 395 Q 170.0 295 60 325 Z" fill="#F87171" opacity="0.55"/>
+<path d="M 60 348 Q 170.0 318 280 418 L 280 443 Q 170.0 343 60 373 Z" fill="#F87171" opacity="0.25"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#7F1D1D" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFFFFF" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#F87171"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FFFFFF" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#7F1D1D" stroke="#F87171" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#F87171"/>
+<polygon points="104,114 114,102 124,114" fill="#FFFFFF" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#F87171" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M041</span>
+                    <span class="recipe-badge">R07</span>
+                    <span class="family-tag">Speed and Motion</span>
+                </div>
+                <h3 class="motif-title">Slipstream</h3>
+                <p class="motif-desc">tapered curved streaks sweeping around the torso</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#7F1D1D" title="Primary"></span>
+                    <span class="swatch" style="background:#F87171" title="Secondary"></span>
+                    <span class="swatch" style="background:#FFFFFF" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M044">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M044" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#1E3A8A" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#1E3A8A" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M044">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M044)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M044)">
+<polygon points="70,370 170,330 270,370 270,384 170,344 70,384" fill="#60A5FA" opacity="0.75"/>
+<polygon points="78,334 170,298 262,334 262,348 170,312 78,348" fill="#60A5FA" opacity="0.68"/>
+<polygon points="86,298 170,265 254,298 254,312 170,279 86,312" fill="#60A5FA" opacity="0.61"/>
+<polygon points="94,262 170,232 246,262 246,276 170,246 94,276" fill="#60A5FA" opacity="0.54"/>
+<polygon points="102,226 170,199 238,226 238,240 170,213 102,240" fill="#60A5FA" opacity="0.47"/>
+<polygon points="110,190 170,166 230,190 230,204 170,180 110,204" fill="#60A5FA" opacity="0.40"/>
+<polygon points="118,154 170,134 222,154 222,168 170,148 118,168" fill="#60A5FA" opacity="0.33"/>
+<polygon points="127,118 170,101 213,118 213,132 170,115 127,132" fill="#60A5FA" opacity="0.26"/>
+<polygon points="134,82 170,68 206,82 206,96 170,82 134,96" fill="#60A5FA" opacity="0.19"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#1E3A8A" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#DBEAFE" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#60A5FA"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#DBEAFE" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#1E3A8A" stroke="#60A5FA" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#60A5FA"/>
+<polygon points="104,114 114,102 124,114" fill="#DBEAFE" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#60A5FA" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M044</span>
+                    <span class="recipe-badge">R04</span>
+                    <span class="family-tag">Speed and Motion</span>
+                </div>
+                <h3 class="motif-title">Chevron Cascade</h3>
+                <p class="motif-desc">stacked arrow shapes that shrink and fade as they climb</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#1E3A8A" title="Primary"></span>
+                    <span class="swatch" style="background:#60A5FA" title="Secondary"></span>
+                    <span class="swatch" style="background:#DBEAFE" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M049">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M049" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#1F2937" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#1F2937" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M049">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M049)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M049)">
+<rect x="65" y="258" width="15" height="132" fill="#F59E0B" opacity="0.3"/>
+<rect x="83" y="222" width="18" height="168" fill="#F59E0B" opacity="0.3"/>
+<rect x="104" y="253" width="16" height="137" fill="#F59E0B" opacity="0.3"/>
+<rect x="123" y="268" width="14" height="122" fill="#F59E0B" opacity="0.3"/>
+<rect x="140" y="248" width="26" height="142" fill="#F59E0B" opacity="0.3"/>
+<rect x="169" y="265" width="23" height="125" fill="#F59E0B" opacity="0.3"/>
+<rect x="195" y="264" width="20" height="126" fill="#F59E0B" opacity="0.3"/>
+<rect x="218" y="232" width="14" height="158" fill="#F59E0B" opacity="0.3"/>
+<rect x="235" y="258" width="26" height="132" fill="#F59E0B" opacity="0.3"/>
+<rect x="264" y="207" width="17" height="183" fill="#F59E0B" opacity="0.3"/>
+<rect x="68" y="322" width="20" height="68" fill="#F59E0B" opacity="0.6"/>
+<circle cx="78" cy="334" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="78" cy="348" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="78" cy="362" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="78" cy="376" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<rect x="92" y="319" width="28" height="71" fill="#F59E0B" opacity="0.6"/>
+<circle cx="106" cy="331" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="106" cy="345" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="106" cy="359" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="106" cy="373" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<rect x="124" y="326" width="21" height="64" fill="#F59E0B" opacity="0.6"/>
+<circle cx="134" cy="338" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="134" cy="352" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="134" cy="366" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="134" cy="380" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<rect x="149" y="287" width="28" height="103" fill="#F59E0B" opacity="0.6"/>
+<circle cx="163" cy="299" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="163" cy="313" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="163" cy="327" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="163" cy="341" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="163" cy="355" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="163" cy="369" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="163" cy="383" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<rect x="181" y="272" width="31" height="118" fill="#F59E0B" opacity="0.6"/>
+<circle cx="196" cy="284" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="196" cy="298" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="196" cy="312" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="196" cy="326" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="196" cy="340" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="196" cy="354" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="196" cy="368" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="196" cy="382" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<rect x="216" y="278" width="24" height="112" fill="#F59E0B" opacity="0.6"/>
+<circle cx="228" cy="290" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="228" cy="304" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="228" cy="318" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="228" cy="332" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="228" cy="346" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="228" cy="360" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="228" cy="374" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<rect x="244" y="249" width="24" height="141" fill="#F59E0B" opacity="0.6"/>
+<circle cx="256" cy="261" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="275" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="289" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="303" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="317" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="331" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="345" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="359" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<circle cx="256" cy="373" r="1.5" fill="#FEF3C7" opacity="0.8"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#1F2937" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FEF3C7" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#F59E0B"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FEF3C7" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#1F2937" stroke="#F59E0B" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#F59E0B"/>
+<polygon points="104,114 114,102 124,114" fill="#FEF3C7" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#F59E0B" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M049</span>
+                    <span class="recipe-badge">R02</span>
+                    <span class="family-tag">Architectural and Urban</span>
+                </div>
+                <h3 class="motif-title">Skyline Rise</h3>
+                <p class="motif-desc">city silhouettes of irregular height rising from the hem into a</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#1F2937" title="Primary"></span>
+                    <span class="swatch" style="background:#F59E0B" title="Secondary"></span>
+                    <span class="swatch" style="background:#FEF3C7" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M057">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M057" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#312E81" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#312E81" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M057">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M057)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M057)">
+<path d="M 55 70 A 15 15 0 0 1 85 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 42 70 A 28 28 0 0 1 98 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 30 70 A 40 40 0 0 1 110 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="70" y1="70" x2="104" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="70" x2="90" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="70" x2="70" y2="30" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="70" x2="51" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="70" x2="36" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 125 70 A 15 15 0 0 1 155 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 112 70 A 28 28 0 0 1 168 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 100 70 A 40 40 0 0 1 180 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="140" y1="70" x2="174" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="70" x2="160" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="70" x2="140" y2="30" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="70" x2="121" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="70" x2="106" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 195 70 A 15 15 0 0 1 225 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 182 70 A 28 28 0 0 1 238 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 170 70 A 40 40 0 0 1 250 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="210" y1="70" x2="244" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="70" x2="230" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="70" x2="210" y2="30" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="70" x2="191" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="70" x2="176" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 265 70 A 15 15 0 0 1 295 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 252 70 A 28 28 0 0 1 308 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 240 70 A 40 40 0 0 1 320 70" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="280" y1="70" x2="314" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="70" x2="300" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="70" x2="280" y2="30" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="70" x2="261" y2="36" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="70" x2="246" y2="51" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 55 130 A 15 15 0 0 1 85 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 42 130 A 28 28 0 0 1 98 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 30 130 A 40 40 0 0 1 110 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="70" y1="130" x2="104" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="130" x2="90" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="130" x2="70" y2="90" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="130" x2="51" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="130" x2="36" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 125 130 A 15 15 0 0 1 155 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 112 130 A 28 28 0 0 1 168 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 100 130 A 40 40 0 0 1 180 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="140" y1="130" x2="174" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="130" x2="160" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="130" x2="140" y2="90" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="130" x2="121" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="130" x2="106" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 195 130 A 15 15 0 0 1 225 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 182 130 A 28 28 0 0 1 238 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 170 130 A 40 40 0 0 1 250 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="210" y1="130" x2="244" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="130" x2="230" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="130" x2="210" y2="90" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="130" x2="191" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="130" x2="176" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 265 130 A 15 15 0 0 1 295 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 252 130 A 28 28 0 0 1 308 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 240 130 A 40 40 0 0 1 320 130" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="280" y1="130" x2="314" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="130" x2="300" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="130" x2="280" y2="90" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="130" x2="261" y2="96" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="130" x2="246" y2="111" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 55 190 A 15 15 0 0 1 85 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 42 190 A 28 28 0 0 1 98 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 30 190 A 40 40 0 0 1 110 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="70" y1="190" x2="104" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="190" x2="90" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="190" x2="70" y2="150" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="190" x2="51" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="190" x2="36" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 125 190 A 15 15 0 0 1 155 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 112 190 A 28 28 0 0 1 168 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 100 190 A 40 40 0 0 1 180 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="140" y1="190" x2="174" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="190" x2="160" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="190" x2="140" y2="150" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="190" x2="121" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="190" x2="106" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 195 190 A 15 15 0 0 1 225 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 182 190 A 28 28 0 0 1 238 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 170 190 A 40 40 0 0 1 250 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="210" y1="190" x2="244" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="190" x2="230" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="190" x2="210" y2="150" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="190" x2="191" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="190" x2="176" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 265 190 A 15 15 0 0 1 295 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 252 190 A 28 28 0 0 1 308 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 240 190 A 40 40 0 0 1 320 190" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="280" y1="190" x2="314" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="190" x2="300" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="190" x2="280" y2="150" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="190" x2="261" y2="156" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="190" x2="246" y2="171" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 55 250 A 15 15 0 0 1 85 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 42 250 A 28 28 0 0 1 98 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 30 250 A 40 40 0 0 1 110 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="70" y1="250" x2="104" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="250" x2="90" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="250" x2="70" y2="210" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="250" x2="51" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="250" x2="36" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 125 250 A 15 15 0 0 1 155 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 112 250 A 28 28 0 0 1 168 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 100 250 A 40 40 0 0 1 180 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="140" y1="250" x2="174" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="250" x2="160" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="250" x2="140" y2="210" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="250" x2="121" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="250" x2="106" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 195 250 A 15 15 0 0 1 225 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 182 250 A 28 28 0 0 1 238 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 170 250 A 40 40 0 0 1 250 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="210" y1="250" x2="244" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="250" x2="230" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="250" x2="210" y2="210" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="250" x2="191" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="250" x2="176" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 265 250 A 15 15 0 0 1 295 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 252 250 A 28 28 0 0 1 308 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 240 250 A 40 40 0 0 1 320 250" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="280" y1="250" x2="314" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="250" x2="300" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="250" x2="280" y2="210" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="250" x2="261" y2="216" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="250" x2="246" y2="231" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 55 310 A 15 15 0 0 1 85 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 42 310 A 28 28 0 0 1 98 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 30 310 A 40 40 0 0 1 110 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="70" y1="310" x2="104" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="310" x2="90" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="310" x2="70" y2="270" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="310" x2="51" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="310" x2="36" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 125 310 A 15 15 0 0 1 155 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 112 310 A 28 28 0 0 1 168 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 100 310 A 40 40 0 0 1 180 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="140" y1="310" x2="174" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="310" x2="160" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="310" x2="140" y2="270" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="310" x2="121" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="310" x2="106" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 195 310 A 15 15 0 0 1 225 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 182 310 A 28 28 0 0 1 238 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 170 310 A 40 40 0 0 1 250 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="210" y1="310" x2="244" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="310" x2="230" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="310" x2="210" y2="270" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="310" x2="191" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="310" x2="176" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 265 310 A 15 15 0 0 1 295 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 252 310 A 28 28 0 0 1 308 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 240 310 A 40 40 0 0 1 320 310" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="280" y1="310" x2="314" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="310" x2="300" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="310" x2="280" y2="270" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="310" x2="261" y2="276" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="310" x2="246" y2="291" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 55 370 A 15 15 0 0 1 85 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 42 370 A 28 28 0 0 1 98 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 30 370 A 40 40 0 0 1 110 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="70" y1="370" x2="104" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="370" x2="90" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="370" x2="70" y2="330" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="370" x2="51" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="70" y1="370" x2="36" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 125 370 A 15 15 0 0 1 155 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 112 370 A 28 28 0 0 1 168 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 100 370 A 40 40 0 0 1 180 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="140" y1="370" x2="174" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="370" x2="160" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="370" x2="140" y2="330" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="370" x2="121" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="140" y1="370" x2="106" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 195 370 A 15 15 0 0 1 225 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 182 370 A 28 28 0 0 1 238 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 170 370 A 40 40 0 0 1 250 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="210" y1="370" x2="244" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="370" x2="230" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="370" x2="210" y2="330" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="370" x2="191" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="210" y1="370" x2="176" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<path d="M 265 370 A 15 15 0 0 1 295 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 252 370 A 28 28 0 0 1 308 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<path d="M 240 370 A 40 40 0 0 1 320 370" fill="none" stroke="#D4AF37" stroke-width="2.2" opacity="0.45"/>
+<line x1="280" y1="370" x2="314" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="370" x2="300" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="370" x2="280" y2="330" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="370" x2="261" y2="336" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<line x1="280" y1="370" x2="246" y2="351" stroke="#FFFFFF" stroke-width="1.2" opacity="0.5"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#312E81" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFFFFF" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#D4AF37"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FFFFFF" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#312E81" stroke="#D4AF37" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#D4AF37"/>
+<polygon points="104,114 114,102 124,114" fill="#FFFFFF" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#D4AF37" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M057</span>
+                    <span class="recipe-badge">R01</span>
+                    <span class="family-tag">Heritage Reinterpreted</span>
+                </div>
+                <h3 class="motif-title">Deco F an</h3>
+                <p class="motif-desc">art-deco fans overlapping in tonal layers</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#312E81" title="Primary"></span>
+                    <span class="swatch" style="background:#D4AF37" title="Secondary"></span>
+                    <span class="swatch" style="background:#FFFFFF" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="outfield" data-code="M075">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M075" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#0F172A" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#0F172A" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M075">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M075)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M075)">
+<ellipse cx="163.2" cy="189.0" rx="35" ry="20" transform="rotate(-25 163.2 189.0)" fill="none" stroke="#818CF8" stroke-width="2.0" opacity="0.60"/>
+<circle cx="198.2" cy="189.0" r="3.2" fill="#C7D2FE" opacity="0.85"/>
+<ellipse cx="163.2" cy="189.0" rx="63" ry="40" transform="rotate(-19 163.2 189.0)" fill="none" stroke="#818CF8" stroke-width="2.0" opacity="0.54"/>
+<circle cx="191.2" cy="224.0" r="3.2" fill="#C7D2FE" opacity="0.85"/>
+<ellipse cx="163.2" cy="189.0" rx="91" ry="60" transform="rotate(-13 163.2 189.0)" fill="none" stroke="#818CF8" stroke-width="2.0" opacity="0.48"/>
+<circle cx="110.19999999999999" cy="237.0" r="3.2" fill="#C7D2FE" opacity="0.85"/>
+<ellipse cx="163.2" cy="189.0" rx="119" ry="80" transform="rotate(-7 163.2 189.0)" fill="none" stroke="#818CF8" stroke-width="2.0" opacity="0.42"/>
+<circle cx="46.19999999999999" cy="177.0" r="3.2" fill="#C7D2FE" opacity="0.85"/>
+<ellipse cx="163.2" cy="189.0" rx="147" ry="100" transform="rotate(-1 163.2 189.0)" fill="none" stroke="#818CF8" stroke-width="2.0" opacity="0.36"/>
+<circle cx="118.19999999999999" cy="94.0" r="3.2" fill="#C7D2FE" opacity="0.85"/>
+<ellipse cx="163.2" cy="189.0" rx="175" ry="120" transform="rotate(5 163.2 189.0)" fill="none" stroke="#818CF8" stroke-width="2.0" opacity="0.30"/>
+<circle cx="287.2" cy="105.0" r="3.2" fill="#C7D2FE" opacity="0.85"/>
+<ellipse cx="163.2" cy="189.0" rx="203" ry="140" transform="rotate(11 163.2 189.0)" fill="none" stroke="#818CF8" stroke-width="2.0" opacity="0.24"/>
+<circle cx="355.2" cy="232.0" r="3.2" fill="#C7D2FE" opacity="0.85"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#0F172A" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#C7D2FE" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#818CF8"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#C7D2FE" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#0F172A" stroke="#818CF8" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#818CF8"/>
+<polygon points="104,114 114,102 124,114" fill="#C7D2FE" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#818CF8" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M075</span>
+                    <span class="recipe-badge">R09</span>
+                    <span class="family-tag">Cosmic and Light</span>
+                </div>
+                <h3 class="motif-title">Orbit Rings</h3>
+                <p class="motif-desc">offset eccentric ellipses with small satellite dots</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#0F172A" title="Primary"></span>
+                    <span class="swatch" style="background:#818CF8" title="Secondary"></span>
+                    <span class="swatch" style="background:#C7D2FE" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="engraved" data-code="M193">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M193" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#034694" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#034694" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M193">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M193)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M193)">
+<path d="M 75 60 L 81 52 L 87 56 L 83 64 L 89 70 L 83 74 L 77 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 60 L 133 52 L 139 56 L 135 64 L 141 70 L 135 74 L 129 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 60 L 185 52 L 191 56 L 187 64 L 193 70 L 187 74 L 181 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 60 L 237 52 L 243 56 L 239 64 L 245 70 L 239 74 L 233 68 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 112 L 81 104 L 87 108 L 83 116 L 89 122 L 83 126 L 77 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 112 L 133 104 L 139 108 L 135 116 L 141 122 L 135 126 L 129 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 112 L 185 104 L 191 108 L 187 116 L 193 122 L 187 126 L 181 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 112 L 237 104 L 243 108 L 239 116 L 245 122 L 239 126 L 233 120 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 164 L 81 156 L 87 160 L 83 168 L 89 174 L 83 178 L 77 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 164 L 133 156 L 139 160 L 135 168 L 141 174 L 135 178 L 129 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 164 L 185 156 L 191 160 L 187 168 L 193 174 L 187 178 L 181 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 164 L 237 156 L 243 160 L 239 168 L 245 174 L 239 178 L 233 172 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 216 L 81 208 L 87 212 L 83 220 L 89 226 L 83 230 L 77 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 216 L 133 208 L 139 212 L 135 220 L 141 226 L 135 230 L 129 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 216 L 185 208 L 191 212 L 187 220 L 193 226 L 187 230 L 181 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 216 L 237 208 L 243 212 L 239 220 L 245 226 L 239 230 L 233 224 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 268 L 81 260 L 87 264 L 83 272 L 89 278 L 83 282 L 77 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 268 L 133 260 L 139 264 L 135 272 L 141 278 L 135 282 L 129 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 268 L 185 260 L 191 264 L 187 272 L 193 278 L 187 282 L 181 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 268 L 237 260 L 243 264 L 239 272 L 245 278 L 239 282 L 233 276 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 320 L 81 312 L 87 316 L 83 324 L 89 330 L 83 334 L 77 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 320 L 133 312 L 139 316 L 135 324 L 141 330 L 135 334 L 129 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 320 L 185 312 L 191 316 L 187 324 L 193 330 L 187 334 L 181 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 320 L 237 312 L 243 316 L 239 324 L 245 330 L 239 334 L 233 328 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 75 372 L 81 364 L 87 368 L 83 376 L 89 382 L 83 386 L 77 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 127 372 L 133 364 L 139 368 L 135 376 L 141 382 L 135 386 L 129 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 179 372 L 185 364 L 191 368 L 187 376 L 193 382 L 187 386 L 181 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<path d="M 231 372 L 237 364 L 243 368 L 239 376 L 245 382 L 239 386 L 233 380 Z" fill="#1D4ED8" opacity="0.22"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#034694" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#93C5FD" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#1D4ED8"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#93C5FD" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#034694" stroke="#1D4ED8" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#1D4ED8"/>
+<polygon points="104,114 114,102 124,114" fill="#93C5FD" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#1D4ED8" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M193</span>
+                    <span class="recipe-badge">R06</span>
+                    <span class="family-tag">Woven Crest and Heritage</span>
+                </div>
+                <h3 class="motif-title">Interwoven Crest Field</h3>
+                <p class="motif-desc">a generic crest shape woven in two close tones across</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#034694" title="Primary"></span>
+                    <span class="swatch" style="background:#1D4ED8" title="Secondary"></span>
+                    <span class="swatch" style="background:#93C5FD" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="signature" data-code="M273">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M273" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#650616" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#650616" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M273">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M273)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M273)">
+<rect x="70" y="25" width="35" height="375" fill="#820C20"/>
+<line x1="70" y1="25" x2="70" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="105" y="25" width="37" height="375" fill="#0B4EA2"/>
+<line x1="105" y1="25" x2="105" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="142" y="25" width="43" height="375" fill="#650616"/>
+<line x1="142" y1="25" x2="142" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="185" y="25" width="40" height="375" fill="#002B66"/>
+<line x1="185" y1="25" x2="185" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="225" y="25" width="35" height="375" fill="#A5102A"/>
+<line x1="225" y1="25" x2="225" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="260" y="25" width="30" height="375" fill="#001D44"/>
+<line x1="260" y1="25" x2="260" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#650616" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#D97706" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#002B66"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#D97706" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#650616" stroke="#002B66" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#002B66"/>
+<polygon points="104,114 114,102 124,114" fill="#D97706" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#002B66" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M273</span>
+                    <span class="recipe-badge">R01</span>
+                    <span class="family-tag">Banded Identity Layouts</span>
+                </div>
+                <h3 class="motif-title">Graded V ertical Bands</h3>
+                <p class="motif-desc">vertical bands in three shades of each club colour with</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#650616" title="Primary"></span>
+                    <span class="swatch" style="background:#002B66" title="Secondary"></span>
+                    <span class="swatch" style="background:#D97706" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="signature" data-code="M277">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M277" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#0284C7" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#0284C7" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M277">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M277)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M277)">
+<polyline points="69.6,30 69.2,50 69.0,70 69.1,90 69.4,110 70.0,130 70.7,150 71.6,170 72.5,190 73.4,210 74.1,230 74.6,250 74.9,270 75.0,290 74.8,310 74.3,330 73.6,350 72.8,370 71.9,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="83.0,30 83.2,50 83.6,70 84.2,90 85.0,110 85.9,130 86.8,150 87.6,170 88.3,190 88.8,210 89.0,230 88.9,250 88.6,270 88.1,290 87.4,310 86.5,330 85.6,350 84.8,370 84.0,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="97.8,30 98.5,50 99.3,70 100.2,90 101.1,110 101.9,130 102.5,150 102.9,170 103.0,190 102.9,210 102.5,230 101.9,250 101.1,270 100.2,290 99.3,310 98.5,330 97.8,350 97.3,370 97.0,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="113.6,30 114.5,50 115.4,70 116.1,90 116.6,110 116.9,130 117.0,150 116.8,170 116.3,190 115.6,210 114.8,230 113.9,250 113.0,270 112.2,290 111.6,310 111.2,330 111.0,350 111.1,370 111.4,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="129.6,30 130.3,50 130.8,70 131.0,90 130.9,110 130.6,130 130.1,150 129.4,170 128.5,190 127.6,210 126.8,230 126.0,250 125.4,270 125.1,290 125.0,310 125.2,330 125.6,350 126.3,370 127.1,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="144.9,30 145.0,50 144.9,70 144.5,90 143.9,110 143.1,130 142.2,150 141.3,170 140.5,190 139.8,210 139.3,230 139.0,250 139.0,270 139.3,290 139.8,310 140.5,330 141.4,350 142.3,370 143.1,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="158.8,30 158.3,50 157.6,70 156.8,90 155.9,110 155.0,130 154.2,150 153.6,170 153.2,190 153.0,210 153.1,230 153.4,250 154.0,270 154.8,290 155.7,310 156.5,330 157.4,350 158.1,370 158.7,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="171.4,30 170.5,50 169.6,70 168.8,90 168.0,110 167.4,130 167.1,150 167.0,170 167.2,190 167.6,210 168.3,230 169.1,250 170.0,270 170.8,290 171.7,310 172.3,330 172.8,350 173.0,370 172.9,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="183.3,30 182.5,50 181.8,70 181.3,90 181.0,110 181.0,130 181.3,150 181.8,170 182.5,190 183.4,210 184.3,230 185.1,250 185.9,270 186.5,290 186.9,310 187.0,330 186.9,350 186.5,370 185.8,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="195.6,30 195.2,50 195.0,70 195.1,90 195.4,110 196.0,130 196.8,150 197.7,170 198.5,190 199.4,210 200.1,230 200.7,250 200.9,270 201.0,290 200.7,310 200.3,330 199.6,350 198.8,370 197.9,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="209.0,30 209.2,50 209.6,70 210.3,90 211.1,110 212.0,130 212.8,150 213.7,170 214.3,190 214.8,210 215.0,230 214.9,250 214.6,270 214.1,290 213.3,310 212.5,330 211.6,350 210.7,370 210.0,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="223.8,30 224.5,50 225.4,70 226.3,90 227.1,110 227.9,130 228.5,150 228.9,170 229.0,190 228.9,210 228.5,230 227.8,250 227.1,270 226.2,290 225.3,310 224.5,330 223.8,350 223.3,370 223.0,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="239.7,30 240.5,50 241.4,70 242.1,90 242.7,110 242.9,130 243.0,150 242.7,170 242.3,190 241.6,210 240.8,230 239.9,250 239.0,270 238.2,290 237.6,310 237.2,330 237.0,350 237.1,370 237.5,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<polyline points="255.7,30 256.3,50 256.8,70 257.0,90 256.9,110 256.6,130 256.1,150 255.3,170 254.5,190 253.6,210 252.7,230 252.0,250 251.4,270 251.1,290 251.0,310 251.2,330 251.7,350 252.3,370 253.1,390" fill="none" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#0284C7" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFFFFF" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<polygon points="115,25 225,25 200,85 140,85" fill="#38BDF8"/>
+<line x1="170" y1="25" x2="170" y2="85" stroke="#FFFFFF" stroke-width="2"/>
+<circle cx="226" cy="110" r="17" fill="#0284C7" stroke="#38BDF8" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#38BDF8"/>
+<polygon points="104,114 114,102 124,114" fill="#FFFFFF" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#38BDF8" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M277</span>
+                    <span class="recipe-badge">R06</span>
+                    <span class="family-tag">Banded Identity Layouts</span>
+                </div>
+                <h3 class="motif-title">T onal Hairline Field</h3>
+                <p class="motif-desc">tonal hairlines of 5 units or less, with drifting spacing and</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#0284C7" title="Primary"></span>
+                    <span class="swatch" style="background:#38BDF8" title="Secondary"></span>
+                    <span class="swatch" style="background:#FFFFFF" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kit-card" data-family="block" data-code="M265">
+            <div class="card-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M265" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#0F172A" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#0F172A" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M265">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M265)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M265)">
+<rect x="132" y="25" width="76" height="375" fill="#FFFFFF"/>
+<rect x="138" y="25" width="64" height="375" fill="#DC2626"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#0F172A" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFFFFF" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#DC2626"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FFFFFF" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#0F172A" stroke="#DC2626" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#DC2626"/>
+<polygon points="104,114 114,102 124,114" fill="#FFFFFF" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#DC2626" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>
+            </div>
+            <div class="card-info">
+                <div class="card-header">
+                    <span class="motif-badge">M265</span>
+                    <span class="recipe-badge">R02</span>
+                    <span class="family-tag">Central and Panel Structures</span>
+                </div>
+                <h3 class="motif-title">Wide Central Band</h3>
+                <p class="motif-desc">an ultra-wide centre band from collar to hem, front to</p>
+                <div class="swatches">
+                    <span class="swatch" style="background:#0F172A" title="Primary"></span>
+                    <span class="swatch" style="background:#DC2626" title="Secondary"></span>
+                    <span class="swatch" style="background:#FFFFFF" title="Accent"></span>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        function filterCards(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.kit-card').forEach(card => {
+                if (type === 'all' || card.getAttribute('data-family') === type) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

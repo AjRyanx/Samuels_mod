@@ -1,0 +1,3669 @@
+{
+  "title": "Modern Kit Pattern Library",
+  "version": "1.0 (19 November 2026)",
+  "motifs_count": 288,
+  "families_count": 36,
+  "recipes_count": 24,
+  "engrave_recipes_count": 24,
+  "potential_combinations": {
+    "curated_designs": 6912,
+    "overlay_combinations": 9437184,
+    "raw_grammar_combinations": 19906560
+  },
+  "families": {
+    "F01": {
+      "id": "F01",
+      "number": 1,
+      "name": "Fractured Geometry",
+      "type": "outfield",
+      "motifs": [
+        "M001",
+        "M002",
+        "M003",
+        "M004",
+        "M005",
+        "M006",
+        "M007",
+        "M008"
+      ]
+    },
+    "F02": {
+      "id": "F02",
+      "number": 2,
+      "name": "Topographic and Contour",
+      "type": "outfield",
+      "motifs": [
+        "M009",
+        "M010",
+        "M011",
+        "M012",
+        "M013",
+        "M014",
+        "M015",
+        "M016"
+      ]
+    },
+    "F03": {
+      "id": "F03",
+      "number": 3,
+      "name": "Data and Signal",
+      "type": "outfield",
+      "motifs": [
+        "M017",
+        "M018",
+        "M019",
+        "M020",
+        "M021",
+        "M022",
+        "M023",
+        "M024"
+      ]
+    },
+    "F04": {
+      "id": "F04",
+      "number": 4,
+      "name": "Fluid and Organic",
+      "type": "outfield",
+      "motifs": [
+        "M025",
+        "M026",
+        "M027",
+        "M028",
+        "M029",
+        "M030",
+        "M031",
+        "M032"
+      ]
+    },
+    "F05": {
+      "id": "F05",
+      "number": 5,
+      "name": "Textile Jacquard",
+      "type": "outfield",
+      "motifs": [
+        "M033",
+        "M034",
+        "M035",
+        "M036",
+        "M037",
+        "M038",
+        "M039",
+        "M040"
+      ]
+    },
+    "F06": {
+      "id": "F06",
+      "number": 6,
+      "name": "Speed and Motion",
+      "type": "outfield",
+      "motifs": [
+        "M041",
+        "M042",
+        "M043",
+        "M044",
+        "M045",
+        "M046",
+        "M047",
+        "M048"
+      ]
+    },
+    "F07": {
+      "id": "F07",
+      "number": 7,
+      "name": "Architectural and Urban",
+      "type": "outfield",
+      "motifs": [
+        "M049",
+        "M050",
+        "M051",
+        "M052",
+        "M053",
+        "M054",
+        "M055",
+        "M056"
+      ]
+    },
+    "F08": {
+      "id": "F08",
+      "number": 8,
+      "name": "Heritage Reinterpreted",
+      "type": "outfield",
+      "motifs": [
+        "M057",
+        "M058",
+        "M059",
+        "M060",
+        "M061",
+        "M062",
+        "M063",
+        "M064"
+      ]
+    },
+    "F09": {
+      "id": "F09",
+      "number": 9,
+      "name": "Nature and Wildlife",
+      "type": "outfield",
+      "motifs": [
+        "M065",
+        "M066",
+        "M067",
+        "M068",
+        "M069",
+        "M070",
+        "M071",
+        "M072"
+      ]
+    },
+    "F10": {
+      "id": "F10",
+      "number": 10,
+      "name": "Cosmic and Light",
+      "type": "outfield",
+      "motifs": [
+        "M073",
+        "M074",
+        "M075",
+        "M076",
+        "M077",
+        "M078",
+        "M079",
+        "M080"
+      ]
+    },
+    "F11": {
+      "id": "F11",
+      "number": 11,
+      "name": "Mechanical and Tech",
+      "type": "outfield",
+      "motifs": [
+        "M081",
+        "M082",
+        "M083",
+        "M084",
+        "M085",
+        "M086",
+        "M087",
+        "M088"
+      ]
+    },
+    "F12": {
+      "id": "F12",
+      "number": 12,
+      "name": "Abstract Brush and Art",
+      "type": "outfield",
+      "motifs": [
+        "M089",
+        "M090",
+        "M091",
+        "M092",
+        "M093",
+        "M094",
+        "M095",
+        "M096"
+      ]
+    },
+    "F13": {
+      "id": "F13",
+      "number": 13,
+      "name": "Optical and Illusion",
+      "type": "outfield",
+      "motifs": [
+        "M097",
+        "M098",
+        "M099",
+        "M100",
+        "M101",
+        "M102",
+        "M103",
+        "M104"
+      ]
+    },
+    "F14": {
+      "id": "F14",
+      "number": 14,
+      "name": "Gradient Hybrids",
+      "type": "outfield",
+      "motifs": [
+        "M105",
+        "M106",
+        "M107",
+        "M108",
+        "M109",
+        "M110",
+        "M111",
+        "M112"
+      ]
+    },
+    "F15": {
+      "id": "F15",
+      "number": 15,
+      "name": "Heraldic and Symbolic",
+      "type": "outfield",
+      "motifs": [
+        "M113",
+        "M114",
+        "M115",
+        "M116",
+        "M117",
+        "M118",
+        "M119",
+        "M120"
+      ]
+    },
+    "F16": {
+      "id": "F16",
+      "number": 16,
+      "name": "Football-Native",
+      "type": "outfield",
+      "motifs": [
+        "M121",
+        "M122",
+        "M123",
+        "M124",
+        "M125",
+        "M126",
+        "M127",
+        "M128"
+      ]
+    },
+    "F17": {
+      "id": "F17",
+      "number": 17,
+      "name": "Panel and Collage",
+      "type": "outfield",
+      "motifs": [
+        "M129",
+        "M130",
+        "M131",
+        "M132",
+        "M133",
+        "M134",
+        "M135",
+        "M136"
+      ]
+    },
+    "F18": {
+      "id": "F18",
+      "number": 18,
+      "name": "Experimental Hero",
+      "type": "outfield",
+      "motifs": [
+        "M137",
+        "M138",
+        "M139",
+        "M140",
+        "M141",
+        "M142",
+        "M143",
+        "M144"
+      ]
+    },
+    "F19": {
+      "id": "F19",
+      "number": 19,
+      "name": "Seventies Geometry",
+      "type": "retro",
+      "motifs": [
+        "M145",
+        "M146",
+        "M147",
+        "M148",
+        "M149",
+        "M150",
+        "M151",
+        "M152"
+      ]
+    },
+    "F20": {
+      "id": "F20",
+      "number": 20,
+      "name": "Eighties Abstract",
+      "type": "retro",
+      "motifs": [
+        "M153",
+        "M154",
+        "M155",
+        "M156",
+        "M157",
+        "M158",
+        "M159",
+        "M160"
+      ]
+    },
+    "F21": {
+      "id": "F21",
+      "number": 21,
+      "name": "Early Nineties Graphic",
+      "type": "retro",
+      "motifs": [
+        "M161",
+        "M162",
+        "M163",
+        "M164",
+        "M165",
+        "M166",
+        "M167",
+        "M168"
+      ]
+    },
+    "F22": {
+      "id": "F22",
+      "number": 22,
+      "name": "Late Nineties Tech",
+      "type": "retro",
+      "motifs": [
+        "M169",
+        "M170",
+        "M171",
+        "M172",
+        "M173",
+        "M174",
+        "M175",
+        "M176"
+      ]
+    },
+    "F23": {
+      "id": "F23",
+      "number": 23,
+      "name": "Two-Thousands Tonal",
+      "type": "retro",
+      "motifs": [
+        "M177",
+        "M178",
+        "M179",
+        "M180",
+        "M181",
+        "M182",
+        "M183",
+        "M184"
+      ]
+    },
+    "F24": {
+      "id": "F24",
+      "number": 24,
+      "name": "Twenty-Tens Digital",
+      "type": "retro",
+      "motifs": [
+        "M185",
+        "M186",
+        "M187",
+        "M188",
+        "M189",
+        "M190",
+        "M191",
+        "M192"
+      ]
+    },
+    "F25": {
+      "id": "F25",
+      "number": 25,
+      "name": "Woven Crest and Heritage",
+      "type": "engraved",
+      "motifs": [
+        "M193",
+        "M194",
+        "M195",
+        "M196",
+        "M197",
+        "M198",
+        "M199",
+        "M200"
+      ]
+    },
+    "F26": {
+      "id": "F26",
+      "number": 26,
+      "name": "Engraved Textile",
+      "type": "engraved",
+      "motifs": [
+        "M201",
+        "M202",
+        "M203",
+        "M204",
+        "M205",
+        "M206",
+        "M207",
+        "M208"
+      ]
+    },
+    "F27": {
+      "id": "F27",
+      "number": 27,
+      "name": "Engraved Geometry",
+      "type": "engraved",
+      "motifs": [
+        "M209",
+        "M210",
+        "M211",
+        "M212",
+        "M213",
+        "M214",
+        "M215",
+        "M216"
+      ]
+    },
+    "F28": {
+      "id": "F28",
+      "number": 28,
+      "name": "Engraved Nature",
+      "type": "engraved",
+      "motifs": [
+        "M217",
+        "M218",
+        "M219",
+        "M220",
+        "M221",
+        "M222",
+        "M223",
+        "M224"
+      ]
+    },
+    "F29": {
+      "id": "F29",
+      "number": 29,
+      "name": "Engraved Light and Shadow",
+      "type": "engraved",
+      "motifs": [
+        "M225",
+        "M226",
+        "M227",
+        "M228",
+        "M229",
+        "M230",
+        "M231",
+        "M232"
+      ]
+    },
+    "F30": {
+      "id": "F30",
+      "number": 30,
+      "name": "Engraved Urban and Sport",
+      "type": "engraved",
+      "motifs": [
+        "M233",
+        "M234",
+        "M235",
+        "M236",
+        "M237",
+        "M238",
+        "M239",
+        "M240"
+      ]
+    },
+    "F31": {
+      "id": "F31",
+      "number": 31,
+      "name": "Engraved Symbols",
+      "type": "engraved",
+      "motifs": [
+        "M241",
+        "M242",
+        "M243",
+        "M244",
+        "M245",
+        "M246",
+        "M247",
+        "M248"
+      ]
+    },
+    "F32": {
+      "id": "F32",
+      "number": 32,
+      "name": "Engraved Tonal Systems",
+      "type": "engraved",
+      "motifs": [
+        "M249",
+        "M250",
+        "M251",
+        "M252",
+        "M253",
+        "M254",
+        "M255",
+        "M256"
+      ]
+    },
+    "F33": {
+      "id": "F33",
+      "number": 33,
+      "name": "Gradient Structures",
+      "type": "block",
+      "motifs": [
+        "M257",
+        "M258",
+        "M259",
+        "M260",
+        "M261",
+        "M262",
+        "M263",
+        "M264"
+      ]
+    },
+    "F34": {
+      "id": "F34",
+      "number": 34,
+      "name": "Central and Panel Structures",
+      "type": "block",
+      "motifs": [
+        "M265",
+        "M266",
+        "M267",
+        "M268",
+        "M269",
+        "M270",
+        "M271",
+        "M272"
+      ]
+    },
+    "F35": {
+      "id": "F35",
+      "number": 35,
+      "name": "Banded Identity Layouts",
+      "type": "signature",
+      "motifs": [
+        "M273",
+        "M274",
+        "M275",
+        "M276",
+        "M277",
+        "M278",
+        "M279",
+        "M280"
+      ]
+    },
+    "F36": {
+      "id": "F36",
+      "number": 36,
+      "name": "Trim and Collar Systems",
+      "type": "trim",
+      "motifs": [
+        "M281",
+        "M282",
+        "M283",
+        "M284",
+        "M285",
+        "M286",
+        "M287",
+        "M288"
+      ]
+    }
+  },
+  "recipes": {
+    "R01": {
+      "id": "R01",
+      "scale": 3,
+      "density": 2,
+      "orientation": 1,
+      "treatment": 1,
+      "zone": 1,
+      "colour": 1,
+      "sleeve": 1,
+      "character": "Quiet tonal all-over"
+    },
+    "R02": {
+      "id": "R02",
+      "scale": 4,
+      "density": 2,
+      "orientation": 2,
+      "treatment": 2,
+      "zone": 2,
+      "colour": 2,
+      "sleeve": 2,
+      "character": "Contrast torso panel"
+    },
+    "R03": {
+      "id": "R03",
+      "scale": 2,
+      "density": 3,
+      "orientation": 4,
+      "treatment": 3,
+      "zone": 1,
+      "colour": 3,
+      "sleeve": 1,
+      "character": "Dense accent texture"
+    },
+    "R04": {
+      "id": "R04",
+      "scale": 5,
+      "density": 1,
+      "orientation": 5,
+      "treatment": 4,
+      "zone": 3,
+      "colour": 2,
+      "sleeve": 0,
+      "character": "Hero fade from the hem"
+    },
+    "R05": {
+      "id": "R05",
+      "scale": 3,
+      "density": 3,
+      "orientation": 3,
+      "treatment": 6,
+      "zone": 2,
+      "colour": 4,
+      "sleeve": 3,
+      "character": "Ghosted layered torso"
+    },
+    "R06": {
+      "id": "R06",
+      "scale": 1,
+      "density": 4,
+      "orientation": 1,
+      "treatment": 1,
+      "zone": 1,
+      "colour": 1,
+      "sleeve": 1,
+      "character": "Fabric-grade micro texture"
+    },
+    "R07": {
+      "id": "R07",
+      "scale": 4,
+      "density": 2,
+      "orientation": 6,
+      "treatment": 3,
+      "zone": 4,
+      "colour": 3,
+      "sleeve": 2,
+      "character": "Large shoulder-down accent"
+    },
+    "R08": {
+      "id": "R08",
+      "scale": 3,
+      "density": 2,
+      "orientation": 2,
+      "treatment": 5,
+      "zone": 6,
+      "colour": 2,
+      "sleeve": 1,
+      "character": "Outline negative space, side sweep"
+    },
+    "R09": {
+      "id": "R09",
+      "scale": 5,
+      "density": 2,
+      "orientation": 4,
+      "treatment": 4,
+      "zone": 1,
+      "colour": 4,
+      "sleeve": 3,
+      "character": "Hero radial fade"
+    },
+    "R10": {
+      "id": "R10",
+      "scale": 2,
+      "density": 2,
+      "orientation": 5,
+      "treatment": 2,
+      "zone": 3,
+      "colour": 2,
+      "sleeve": 2,
+      "character": "Small contrast rising from hem"
+    },
+    "R11": {
+      "id": "R11",
+      "scale": 4,
+      "density": 3,
+      "orientation": 3,
+      "treatment": 1,
+      "zone": 5,
+      "colour": 1,
+      "sleeve": 0,
+      "character": "Large tonal side panels"
+    },
+    "R12": {
+      "id": "R12",
+      "scale": 3,
+      "density": 1,
+      "orientation": 1,
+      "treatment": 6,
+      "zone": 6,
+      "colour": 3,
+      "sleeve": 1,
+      "character": "Sparse ghost sweep"
+    },
+    "R13": {
+      "id": "R13",
+      "scale": 2,
+      "density": 4,
+      "orientation": 2,
+      "treatment": 3,
+      "zone": 2,
+      "colour": 4,
+      "sleeve": 2,
+      "character": "Dense small accent torso"
+    },
+    "R14": {
+      "id": "R14",
+      "scale": 5,
+      "density": 1,
+      "orientation": 6,
+      "treatment": 5,
+      "zone": 4,
+      "colour": 2,
+      "sleeve": 0,
+      "character": "Hero negative-space drape"
+    },
+    "R15": {
+      "id": "R15",
+      "scale": 3,
+      "density": 3,
+      "orientation": 4,
+      "treatment": 2,
+      "zone": 1,
+      "colour": 2,
+      "sleeve": 1,
+      "character": "Medium radial duotone"
+    },
+    "R16": {
+      "id": "R16",
+      "scale": 4,
+      "density": 1,
+      "orientation": 5,
+      "treatment": 1,
+      "zone": 3,
+      "colour": 1,
+      "sleeve": 3,
+      "character": "Large tonal rise"
+    },
+    "R17": {
+      "id": "R17",
+      "scale": 1,
+      "density": 3,
+      "orientation": 3,
+      "treatment": 4,
+      "zone": 2,
+      "colour": 3,
+      "sleeve": 1,
+      "character": "Micro fade torso"
+    },
+    "R18": {
+      "id": "R18",
+      "scale": 4,
+      "density": 4,
+      "orientation": 2,
+      "treatment": 6,
+      "zone": 1,
+      "colour": 4,
+      "sleeve": 2,
+      "character": "Large dense ghosted all-over"
+    },
+    "R19": {
+      "id": "R19",
+      "scale": 2,
+      "density": 1,
+      "orientation": 6,
+      "treatment": 3,
+      "zone": 5,
+      "colour": 2,
+      "sleeve": 0,
+      "character": "Sparse accent flanks"
+    },
+    "R20": {
+      "id": "R20",
+      "scale": 5,
+      "density": 3,
+      "orientation": 1,
+      "treatment": 2,
+      "zone": 6,
+      "colour": 4,
+      "sleeve": 3,
+      "character": "Hero contrast asymmetric"
+    },
+    "R21": {
+      "id": "R21",
+      "scale": 3,
+      "density": 4,
+      "orientation": 5,
+      "treatment": 5,
+      "zone": 2,
+      "colour": 1,
+      "sleeve": 1,
+      "character": "Negative-space rising torso"
+    },
+    "R22": {
+      "id": "R22",
+      "scale": 4,
+      "density": 2,
+      "orientation": 4,
+      "treatment": 3,
+      "zone": 4,
+      "colour": 3,
+      "sleeve": 2,
+      "character": "Large radial accent drape"
+    },
+    "R23": {
+      "id": "R23",
+      "scale": 1,
+      "density": 2,
+      "orientation": 2,
+      "treatment": 1,
+      "zone": 3,
+      "colour": 2,
+      "sleeve": 0,
+      "character": "Micro tonal hem-up"
+    },
+    "R24": {
+      "id": "R24",
+      "scale": 5,
+      "density": 2,
+      "orientation": 3,
+      "treatment": 6,
+      "zone": 1,
+      "colour": 4,
+      "sleeve": 3,
+      "character": "Hero ghosted diagonal"
+    }
+  },
+  "engrave_recipes": {
+    "E01": {
+      "id": "E01",
+      "el": 1,
+      "scale": 3,
+      "density": 3,
+      "orientation": 4,
+      "zone": 2,
+      "blur": 1
+    },
+    "E02": {
+      "id": "E02",
+      "el": 2,
+      "scale": 2,
+      "density": 4,
+      "orientation": 1,
+      "zone": 1,
+      "blur": 1
+    },
+    "E03": {
+      "id": "E03",
+      "el": 1,
+      "scale": 4,
+      "density": 2,
+      "orientation": 2,
+      "zone": 2,
+      "blur": 0
+    },
+    "E04": {
+      "id": "E04",
+      "el": 2,
+      "scale": 3,
+      "density": 3,
+      "orientation": 5,
+      "zone": 3,
+      "blur": 1
+    },
+    "E05": {
+      "id": "E05",
+      "el": 3,
+      "scale": 2,
+      "density": 3,
+      "orientation": 3,
+      "zone": 1,
+      "blur": 1
+    },
+    "E06": {
+      "id": "E06",
+      "el": 1,
+      "scale": 5,
+      "density": 1,
+      "orientation": 4,
+      "zone": 2,
+      "blur": 0
+    },
+    "E07": {
+      "id": "E07",
+      "el": 2,
+      "scale": 1,
+      "density": 4,
+      "orientation": 6,
+      "zone": 4,
+      "blur": 1
+    },
+    "E08": {
+      "id": "E08",
+      "el": 3,
+      "scale": 4,
+      "density": 2,
+      "orientation": 2,
+      "zone": 6,
+      "blur": 0
+    },
+    "E09": {
+      "id": "E09",
+      "el": 1,
+      "scale": 2,
+      "density": 4,
+      "orientation": 1,
+      "zone": 5,
+      "blur": 1
+    },
+    "E10": {
+      "id": "E10",
+      "el": 2,
+      "scale": 5,
+      "density": 2,
+      "orientation": 4,
+      "zone": 1,
+      "blur": 1
+    },
+    "E11": {
+      "id": "E11",
+      "el": 3,
+      "scale": 3,
+      "density": 2,
+      "orientation": 5,
+      "zone": 3,
+      "blur": 0
+    },
+    "E12": {
+      "id": "E12",
+      "el": 1,
+      "scale": 4,
+      "density": 3,
+      "orientation": 3,
+      "zone": 4,
+      "blur": 1
+    },
+    "E13": {
+      "id": "E13",
+      "el": 2,
+      "scale": 3,
+      "density": 1,
+      "orientation": 6,
+      "zone": 2,
+      "blur": 0
+    },
+    "E14": {
+      "id": "E14",
+      "el": 4,
+      "scale": 4,
+      "density": 2,
+      "orientation": 2,
+      "zone": 1,
+      "blur": 1
+    },
+    "E15": {
+      "id": "E15",
+      "el": 1,
+      "scale": 2,
+      "density": 3,
+      "orientation": 5,
+      "zone": 6,
+      "blur": 1
+    },
+    "E16": {
+      "id": "E16",
+      "el": 3,
+      "scale": 5,
+      "density": 2,
+      "orientation": 4,
+      "zone": 2,
+      "blur": 0
+    },
+    "E17": {
+      "id": "E17",
+      "el": 2,
+      "scale": 1,
+      "density": 3,
+      "orientation": 1,
+      "zone": 1,
+      "blur": 1
+    },
+    "E18": {
+      "id": "E18",
+      "el": 4,
+      "scale": 3,
+      "density": 3,
+      "orientation": 3,
+      "zone": 3,
+      "blur": 1
+    },
+    "E19": {
+      "id": "E19",
+      "el": 1,
+      "scale": 3,
+      "density": 2,
+      "orientation": 6,
+      "zone": 5,
+      "blur": 0
+    },
+    "E20": {
+      "id": "E20",
+      "el": 2,
+      "scale": 4,
+      "density": 4,
+      "orientation": 2,
+      "zone": 2,
+      "blur": 1
+    },
+    "E21": {
+      "id": "E21",
+      "el": 3,
+      "scale": 2,
+      "density": 2,
+      "orientation": 4,
+      "zone": 4,
+      "blur": 1
+    },
+    "E22": {
+      "id": "E22",
+      "el": 1,
+      "scale": 5,
+      "density": 3,
+      "orientation": 5,
+      "zone": 1,
+      "blur": 0
+    },
+    "E23": {
+      "id": "E23",
+      "el": 2,
+      "scale": 3,
+      "density": 4,
+      "orientation": 3,
+      "zone": 6,
+      "blur": 1
+    },
+    "E24": {
+      "id": "E24",
+      "el": 3,
+      "scale": 4,
+      "density": 1,
+      "orientation": 1,
+      "zone": 3,
+      "blur": 1
+    }
+  },
+  "motifs": {
+    "M001": {
+      "id": "M001",
+      "number": 1,
+      "name": "Shard Field",
+      "description": "triangulated low-poly shards that grow larger toward the hem",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M002": {
+      "id": "M002",
+      "number": 2,
+      "name": "Apex Fracture",
+      "description": "a radial crack burst from the left shoulder with offset plates",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M003": {
+      "id": "M003",
+      "number": 3,
+      "name": "Prism F acets",
+      "description": "large faceted planes with per-facet tonal shifts",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M004": {
+      "id": "M004",
+      "number": 4,
+      "name": "Shattered Glass",
+      "description": "impact-point radial cracks with fine secondary fractures",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M005": {
+      "id": "M005",
+      "number": 5,
+      "name": "F ault Plates",
+      "description": "tectonic slabs sliding past each other at irregular angles",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M006": {
+      "id": "M006",
+      "number": 6,
+      "name": "Crystal Lattice",
+      "description": "interlocking crystal clusters of mixed size",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M007": {
+      "id": "M007",
+      "number": 7,
+      "name": "Drift T riangles",
+      "description": "tessellated triangles whose size and opacity drift across the",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M008": {
+      "id": "M008",
+      "number": 8,
+      "name": "Broken Hex",
+      "description": "hex cells that fracture and detach toward one flank",
+      "family_id": "F01",
+      "family_name": "Fractured Geometry",
+      "type": "outfield"
+    },
+    "M009": {
+      "id": "M009",
+      "number": 9,
+      "name": "Contour Rings",
+      "description": "closed elevation rings around two off-centre peaks",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M010": {
+      "id": "M010",
+      "number": 10,
+      "name": "Ridge Lines",
+      "description": "wandering ridge curves of varying weight that merge and split",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M011": {
+      "id": "M011",
+      "number": 11,
+      "name": "Seismic T race",
+      "description": "jagged seismograph traces layered at different amplitudes",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M012": {
+      "id": "M012",
+      "number": 12,
+      "name": "Tidal Contours",
+      "description": "nested shoreline curves with sand-bar breaks",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M013": {
+      "id": "M013",
+      "number": 13,
+      "name": "Dune Ripple",
+      "description": "wind-shaped ripple crests with irregular spacing",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M014": {
+      "id": "M014",
+      "number": 14,
+      "name": "Heat Map",
+      "description": "thermal blobs with stepped edges",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M015": {
+      "id": "M015",
+      "number": 15,
+      "name": "Isobar Swirl",
+      "description": "weather-chart pressure swirls with cell centres",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M016": {
+      "id": "M016",
+      "number": 16,
+      "name": "T errain Hatch",
+      "description": "cross-hatched slope shading over a contour base",
+      "family_id": "F02",
+      "family_name": "Topographic and Contour",
+      "type": "outfield"
+    },
+    "M017": {
+      "id": "M017",
+      "number": 17,
+      "name": "Spectrum Burst",
+      "description": "audio-spectrum columns of random height rising from the",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M018": {
+      "id": "M018",
+      "number": 18,
+      "name": "Pixel Dissolve",
+      "description": "square pixels thinning from dense to sparse across the shirt",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M019": {
+      "id": "M019",
+      "number": 19,
+      "name": "Glitch Shift",
+      "description": "data slices displaced left and right with a colour split, never full-",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M020": {
+      "id": "M020",
+      "number": 20,
+      "name": "Moire Scan",
+      "description": "two fine grids at a small angle producing interference ripples",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M021": {
+      "id": "M021",
+      "number": 21,
+      "name": "Code Rain",
+      "description": "falling dotted trails of varying length and fade",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M022": {
+      "id": "M022",
+      "number": 22,
+      "name": "Circuit T races",
+      "description": "right-angle trace routes ending in node pads",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M023": {
+      "id": "M023",
+      "number": 23,
+      "name": "Pulse Lines",
+      "description": "heartbeat and waveform lines crossing the torso diagonally",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M024": {
+      "id": "M024",
+      "number": 24,
+      "name": "Radar Sweep",
+      "description": "concentric range arcs with a faded sweep wedge",
+      "family_id": "F03",
+      "family_name": "Data and Signal",
+      "type": "outfield"
+    },
+    "M025": {
+      "id": "M025",
+      "number": 25,
+      "name": "Liquid Marble",
+      "description": "swirled marbling in two or three tones",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M026": {
+      "id": "M026",
+      "number": 26,
+      "name": "Ink Bleed",
+      "description": "dark ink blooms spreading through lighter fibre",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M027": {
+      "id": "M027",
+      "number": 27,
+      "name": "Smoke Plume",
+      "description": "rising soft plumes with wispy edges",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M028": {
+      "id": "M028",
+      "number": 28,
+      "name": "Ocean Swell",
+      "description": "layered swell curves with foam speckle",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M029": {
+      "id": "M029",
+      "number": 29,
+      "name": "Lava Flow",
+      "description": "branching glowing channels over a cooled crust",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M030": {
+      "id": "M030",
+      "number": 30,
+      "name": "Aurora V eil",
+      "description": "draped translucent curtains of light",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M031": {
+      "id": "M031",
+      "number": 31,
+      "name": "Silk Ripple",
+      "description": "fabric-fold highlights radiating from a pinch point",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M032": {
+      "id": "M032",
+      "number": 32,
+      "name": "Cell Membrane",
+      "description": "organic Voronoi cells with thick irregular walls",
+      "family_id": "F04",
+      "family_name": "Fluid and Organic",
+      "type": "outfield"
+    },
+    "M033": {
+      "id": "M033",
+      "number": 33,
+      "name": "Rib Jacquard",
+      "description": "tonal knit-rib relief broken by diamond inserts",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M034": {
+      "id": "M034",
+      "number": 34,
+      "name": "Honeycomb Jacquard",
+      "description": "tonal honeycomb with graded cell depth",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M035": {
+      "id": "M035",
+      "number": 35,
+      "name": "Quilt Diamond",
+      "description": "padded-quilt diamond lattice with varied cell size",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M036": {
+      "id": "M036",
+      "number": 36,
+      "name": "Basket W eave",
+      "description": "tonal woven blocks that change orientation by zone",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M037": {
+      "id": "M037",
+      "number": 37,
+      "name": "Chevron Mesh",
+      "description": "layered chevron weave with fading rows",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M038": {
+      "id": "M038",
+      "number": 38,
+      "name": "Perforation Gradient",
+      "description": "vent-hole dots shrinking from the hem to the chest",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M039": {
+      "id": "M039",
+      "number": 39,
+      "name": "Lattice Crest",
+      "description": "generic shield-shaped cells in a lattice, no text",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M040": {
+      "id": "M040",
+      "number": 40,
+      "name": "Micro Hex",
+      "description": "fine hex mesh with a soft vignette of density",
+      "family_id": "F05",
+      "family_name": "Textile Jacquard",
+      "type": "outfield"
+    },
+    "M041": {
+      "id": "M041",
+      "number": 41,
+      "name": "Slipstream",
+      "description": "tapered curved streaks sweeping around the torso",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M042": {
+      "id": "M042",
+      "number": 42,
+      "name": "V elocity Blur",
+      "description": "ghosted repeats of one shape trailing from a leading edge",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M043": {
+      "id": "M043",
+      "number": 43,
+      "name": "Wind T unnel",
+      "description": "flow lines bending around an invisible central obstacle",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M044": {
+      "id": "M044",
+      "number": 44,
+      "name": "Chevron Cascade",
+      "description": "stacked arrow shapes that shrink and fade as they climb",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M045": {
+      "id": "M045",
+      "number": 45,
+      "name": "Jet T rails",
+      "description": "long arcing vapour trails crossing at shallow angles",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M046": {
+      "id": "M046",
+      "number": 46,
+      "name": "Skid Arcs",
+      "description": "rubber-mark arcs of changing weight",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M047": {
+      "id": "M047",
+      "number": 47,
+      "name": "T urbine Radial",
+      "description": "curved blade shapes spinning out from a hub",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M048": {
+      "id": "M048",
+      "number": 48,
+      "name": "Motion Echo",
+      "description": "a bold shape repeated at falling opacity along a path",
+      "family_id": "F06",
+      "family_name": "Speed and Motion",
+      "type": "outfield"
+    },
+    "M049": {
+      "id": "M049",
+      "number": 49,
+      "name": "Skyline Rise",
+      "description": "city silhouettes of irregular height rising from the hem into a",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M050": {
+      "id": "M050",
+      "number": 50,
+      "name": "Brutalist Blocks",
+      "description": "chunky offset concrete-style slabs with shadow edges",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M051": {
+      "id": "M051",
+      "number": 51,
+      "name": "Cable Bridge",
+      "description": "suspension-cable curves with tower verticals",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M052": {
+      "id": "M052",
+      "number": 52,
+      "name": "Roof T russ",
+      "description": "stadium-roof triangulated truss geometry",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M053": {
+      "id": "M053",
+      "number": 53,
+      "name": "T errace Mosaic",
+      "description": "stadium-seating cells with scattered gaps and bright dots",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M054": {
+      "id": "M054",
+      "number": 54,
+      "name": "Floodlight Beams",
+      "description": "fanned beams from an upper corner with haze falloff",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M055": {
+      "id": "M055",
+      "number": 55,
+      "name": "Street Grid",
+      "description": "an abstract city-map network with one highlighted route",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M056": {
+      "id": "M056",
+      "number": 56,
+      "name": "Tile Mosaic",
+      "description": "geometric ceramic-tile mosaic with broken repeats",
+      "family_id": "F07",
+      "family_name": "Architectural and Urban",
+      "type": "outfield"
+    },
+    "M057": {
+      "id": "M057",
+      "number": 57,
+      "name": "Deco F an",
+      "description": "art-deco fans overlapping in tonal layers",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M058": {
+      "id": "M058",
+      "number": 58,
+      "name": "Interlace W eave",
+      "description": "over-under knotwork bands that thin and thicken",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M059": {
+      "id": "M059",
+      "number": 59,
+      "name": "Star Lattice",
+      "description": "an eight-point star lattice inspired by traditional geometric",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M060": {
+      "id": "M060",
+      "number": 60,
+      "name": "Key Fret Broken",
+      "description": "a fret border motif fragmented across the torso",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M061": {
+      "id": "M061",
+      "number": 61,
+      "name": "Deconstructed Plaid",
+      "description": "overlapping translucent bands at varied widths and",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M062": {
+      "id": "M062",
+      "number": 62,
+      "name": "W ax-Print Bloom",
+      "description": "abstract bloom and ring forms inspired by wax-print cloth",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M063": {
+      "id": "M063",
+      "number": 63,
+      "name": "W oven Strip Geometry",
+      "description": "stepped interlocking blocks inspired by woven-strip",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M064": {
+      "id": "M064",
+      "number": 64,
+      "name": "Resist-Dye Cloud",
+      "description": "indigo-style resist-dye clouds and rings inspired by adire",
+      "family_id": "F08",
+      "family_name": "Heritage Reinterpreted",
+      "type": "outfield"
+    },
+    "M065": {
+      "id": "M065",
+      "number": 65,
+      "name": "Rosette F ade",
+      "description": "leopard-style rosettes shrinking toward the sleeves",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M066": {
+      "id": "M066",
+      "number": 66,
+      "name": "Feather Barbs",
+      "description": "layered feather vanes in a tonal gradient",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M067": {
+      "id": "M067",
+      "number": 67,
+      "name": "Armour Scales",
+      "description": "overlapping scale arcs with a highlight sweep",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M068": {
+      "id": "M068",
+      "number": 68,
+      "name": "Wing V eins",
+      "description": "dragonfly-wing vein network with translucent cells",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M069": {
+      "id": "M069",
+      "number": 69,
+      "name": "Coral Branch",
+      "description": "branching coral forms growing from the hem",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M070": {
+      "id": "M070",
+      "number": 70,
+      "name": "Leaf V enation",
+      "description": "oversized leaf-vein networks in outline",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M071": {
+      "id": "M071",
+      "number": 71,
+      "name": "Ridge Mist",
+      "description": "misty mountain ridges with irregular peaks in tonal steps",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M072": {
+      "id": "M072",
+      "number": 72,
+      "name": "Storm Front",
+      "description": "roiling cloud mass with sharp lightning-fork highlights",
+      "family_id": "F09",
+      "family_name": "Nature and Wildlife",
+      "type": "outfield"
+    },
+    "M073": {
+      "id": "M073",
+      "number": 73,
+      "name": "Nebula Dust",
+      "description": "soft nebula clouds with star specks",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M074": {
+      "id": "M074",
+      "number": 74,
+      "name": "Constellation Net",
+      "description": "node-and-link star maps of varied density",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M075": {
+      "id": "M075",
+      "number": 75,
+      "name": "Orbit Rings",
+      "description": "offset eccentric ellipses with small satellite dots",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M076": {
+      "id": "M076",
+      "number": 76,
+      "name": "Eclipse Halo",
+      "description": "an off-centre dark disc with a corona glow",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M077": {
+      "id": "M077",
+      "number": 77,
+      "name": "Starburst Offset",
+      "description": "rays from a point beyond the shoulder, varying in length",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M078": {
+      "id": "M078",
+      "number": 78,
+      "name": "Bokeh Flare",
+      "description": "soft lens-flare discs of varying size",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M079": {
+      "id": "M079",
+      "number": 79,
+      "name": "Gravity W arp",
+      "description": "a grid bent around a heavy point mass",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M080": {
+      "id": "M080",
+      "number": 80,
+      "name": "Meteor Shower",
+      "description": "diagonal streaks with glowing heads and scattered debris",
+      "family_id": "F10",
+      "family_name": "Cosmic and Light",
+      "type": "outfield"
+    },
+    "M081": {
+      "id": "M081",
+      "number": 81,
+      "name": "Carbon F ade",
+      "description": "carbon-weave texture that dissolves into plain colour",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M082": {
+      "id": "M082",
+      "number": 82,
+      "name": "Gear Ring",
+      "description": "partial gear-tooth rings meshing at different scales",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M083": {
+      "id": "M083",
+      "number": 83,
+      "name": "Blueprint Callouts",
+      "description": "fine technical linework with measurement ticks",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M084": {
+      "id": "M084",
+      "number": 84,
+      "name": "Rivet Plates",
+      "description": "riveted armour plates with offset seams",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M085": {
+      "id": "M085",
+      "number": 85,
+      "name": "T urbo Spiral",
+      "description": "a spiral of compressor blades around a chest-offset axis",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M086": {
+      "id": "M086",
+      "number": 86,
+      "name": "Piston Stack",
+      "description": "chevron stacks resembling engine pistons",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M087": {
+      "id": "M087",
+      "number": 87,
+      "name": "V ent Mesh",
+      "description": "angled vent cells forming a mesh with variable openings",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M088": {
+      "id": "M088",
+      "number": 88,
+      "name": "Cable Braid",
+      "description": "braided cable strands twisting across the torso",
+      "family_id": "F11",
+      "family_name": "Mechanical and Tech",
+      "type": "outfield"
+    },
+    "M089": {
+      "id": "M089",
+      "number": 89,
+      "name": "Dry Brush",
+      "description": "dry-bristle brush swipes with broken edges",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M090": {
+      "id": "M090",
+      "number": 90,
+      "name": "Spray Splatter",
+      "description": "aerosol splatter with a soft fall-off cloud",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M091": {
+      "id": "M091",
+      "number": 91,
+      "name": "Halftone Gradient",
+      "description": "halftone dots fading from heavy to nothing",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M092": {
+      "id": "M092",
+      "number": 92,
+      "name": "Riso Overprint",
+      "description": "offset overprinted shapes with deliberate misregistration",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M093": {
+      "id": "M093",
+      "number": 93,
+      "name": "P aper Collage",
+      "description": "torn-paper layers with soft shadows",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M094": {
+      "id": "M094",
+      "number": 94,
+      "name": "Charcoal Smudge",
+      "description": "smudged charcoal strokes in a tonal shade of the body",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M095": {
+      "id": "M095",
+      "number": 95,
+      "name": "W atercolour Bloom",
+      "description": "blooming wet-edge washes",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M096": {
+      "id": "M096",
+      "number": 96,
+      "name": "T ag Fragments",
+      "description": "abstract graffiti line fragments, never legible text",
+      "family_id": "F12",
+      "family_name": "Abstract Brush and Art",
+      "type": "outfield"
+    },
+    "M097": {
+      "id": "M097",
+      "number": 97,
+      "name": "Op-Art Ripple",
+      "description": "warped concentric ripples from an off-body point",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M098": {
+      "id": "M098",
+      "number": 98,
+      "name": "Moire Rings",
+      "description": "two interfering ring sets producing beat patterns",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M099": {
+      "id": "M099",
+      "number": 99,
+      "name": "Isometric Cascade",
+      "description": "isometric cubes tumbling down in shifting scale",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M100": {
+      "id": "M100",
+      "number": 100,
+      "name": "Ribbon Fold",
+      "description": "a twisted ribbon with visible fold shading",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M101": {
+      "id": "M101",
+      "number": 101,
+      "name": "W arped Grid",
+      "description": "a regular grid pinched and bulged by distortion",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M102": {
+      "id": "M102",
+      "number": 102,
+      "name": "Mirror Kaleidoscope",
+      "description": "kaleidoscopic mirror segments around a chest-offset",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M103": {
+      "id": "M103",
+      "number": 103,
+      "name": "Lenticular Shift",
+      "description": "layered offsets simulating a lenticular colour flip",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M104": {
+      "id": "M104",
+      "number": 104,
+      "name": "Depth T unnel",
+      "description": "receding polygonal frames pulling toward one flank",
+      "family_id": "F13",
+      "family_name": "Optical and Illusion",
+      "type": "outfield"
+    },
+    "M105": {
+      "id": "M105",
+      "number": 105,
+      "name": "Hem Burst",
+      "description": "a glow rising from the hem with film grain",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M106": {
+      "id": "M106",
+      "number": 106,
+      "name": "Mesh Blobs",
+      "description": "three to five soft colour blobs blended as a mesh gradient",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M107": {
+      "id": "M107",
+      "number": 107,
+      "name": "Duotone Dissolve",
+      "description": "body colour dissolving into a second colour through noise",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M108": {
+      "id": "M108",
+      "number": 108,
+      "name": "Spectral Bloom",
+      "description": "a bloom of adjacent hues drawn only from the kit palette,",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M109": {
+      "id": "M109",
+      "number": 109,
+      "name": "Diagonal Grain F ade",
+      "description": "shoulder-to-hem diagonal fade with film grain",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M110": {
+      "id": "M110",
+      "number": 110,
+      "name": "Chest Glow",
+      "description": "a radial glow offset from the logo area",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M111": {
+      "id": "M111",
+      "number": 111,
+      "name": "Corner Bleed",
+      "description": "colour bleeding in from one lower corner",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M112": {
+      "id": "M112",
+      "number": 112,
+      "name": "Gloss Sweep",
+      "description": "a soft specular highlight sweeping across a tonal base",
+      "family_id": "F14",
+      "family_name": "Gradient Hybrids",
+      "type": "outfield"
+    },
+    "M113": {
+      "id": "M113",
+      "number": 113,
+      "name": "Shield Repeat",
+      "description": "small generic shield outlines at gradually changing size",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M114": {
+      "id": "M114",
+      "number": 114,
+      "name": "Laurel Line",
+      "description": "laurel-leaf line art rising along the flanks",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M115": {
+      "id": "M115",
+      "number": 115,
+      "name": "Star Cluster",
+      "description": "five-point stars clustered and fading",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M116": {
+      "id": "M116",
+      "number": 116,
+      "name": "Heritage Hatch",
+      "description": "cross-hatched engraving texture in tonal ink",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M117": {
+      "id": "M117",
+      "number": 117,
+      "name": "Arrow Stack",
+      "description": "layered arrow and chevron forms pointing upward",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M118": {
+      "id": "M118",
+      "number": 118,
+      "name": "Lozenge Chain",
+      "description": "linked heraldic lozenges with varying fill",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M119": {
+      "id": "M119",
+      "number": 119,
+      "name": "Crown Linework",
+      "description": "abstract crown-point silhouettes along the shoulder line",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M120": {
+      "id": "M120",
+      "number": 120,
+      "name": "Chain Link",
+      "description": "interlocking chain links curving across the chest",
+      "family_id": "F15",
+      "family_name": "Heraldic and Symbolic",
+      "type": "outfield"
+    },
+    "M121": {
+      "id": "M121",
+      "number": 121,
+      "name": "Ball P anel F ade",
+      "description": "football panel tessellation fading across the shirt",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M122": {
+      "id": "M122",
+      "number": 122,
+      "name": "Pitch Fragments",
+      "description": "broken pitch-marking arcs and circles in outline",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M123": {
+      "id": "M123",
+      "number": 123,
+      "name": "Net W arp",
+      "description": "goal-net mesh stretched as if struck",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M124": {
+      "id": "M124",
+      "number": 124,
+      "name": "Stud Matrix",
+      "description": "boot-stud dots in a drifting matrix",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M125": {
+      "id": "M125",
+      "number": 125,
+      "name": "Movement Heat",
+      "description": "a player heat-map blotch with contour edges",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M126": {
+      "id": "M126",
+      "number": 126,
+      "name": "P assing Network",
+      "description": "node-and-link passing diagram across the torso",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M127": {
+      "id": "M127",
+      "number": 127,
+      "name": "Goal Arc Sweep",
+      "description": "curved shot-trajectory arcs converging on a point",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M128": {
+      "id": "M128",
+      "number": 128,
+      "name": "T urf Cut",
+      "description": "mown-turf diamond lattice with varied shading",
+      "family_id": "F16",
+      "family_name": "Football-Native",
+      "type": "outfield"
+    },
+    "M129": {
+      "id": "M129",
+      "number": 129,
+      "name": "Angular Blocking",
+      "description": "four or more unequal angular colour panels, never a 50/50",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M130": {
+      "id": "M130",
+      "number": 130,
+      "name": "Plane Shift",
+      "description": "offset layered planes with soft shadow edges",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M131": {
+      "id": "M131",
+      "number": 131,
+      "name": "Poly Overlap",
+      "description": "overlapping translucent polygons",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M132": {
+      "id": "M132",
+      "number": 132,
+      "name": "Flank W edge",
+      "description": "side-panel wedges flowing into the sleeve",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M133": {
+      "id": "M133",
+      "number": 133,
+      "name": "Y oke Geometry",
+      "description": "a geometric shoulder yoke dissolving into the torso",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M134": {
+      "id": "M134",
+      "number": 134,
+      "name": "Slice Stack",
+      "description": "irregular-width angled slices with varied tonal steps and fractured",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M135": {
+      "id": "M135",
+      "number": 135,
+      "name": "Corner Arcs",
+      "description": "large arcs anchored to opposing corners",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M136": {
+      "id": "M136",
+      "number": 136,
+      "name": "Interlock L",
+      "description": "interlocking L -shaped forms of mixed scale",
+      "family_id": "F17",
+      "family_name": "Panel and Collage",
+      "type": "outfield"
+    },
+    "M137": {
+      "id": "M137",
+      "number": 137,
+      "name": "Pixel Camo",
+      "description": "large-scale digital camouflage in kit tones",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M138": {
+      "id": "M138",
+      "number": 138,
+      "name": "Chrome Ripple",
+      "description": "liquid-chrome ripple highlights",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M139": {
+      "id": "M139",
+      "number": 139,
+      "name": "Fibre Bloom",
+      "description": "fibre-optic strands blooming from one point",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M140": {
+      "id": "M140",
+      "number": 140,
+      "name": "Neon Horizon",
+      "description": "a perspective grid receding to a glowing horizon",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M141": {
+      "id": "M141",
+      "number": 141,
+      "name": "Holo Foil",
+      "description": "a subtle iridescent foil shimmer drawn as tonal shifts",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M142": {
+      "id": "M142",
+      "number": 142,
+      "name": "Burnt Edge",
+      "description": "scorched paper edges with ember glints",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M143": {
+      "id": "M143",
+      "number": 143,
+      "name": "Cracked Earth",
+      "description": "dried-earth polygon cracks that widen toward the hem",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M144": {
+      "id": "M144",
+      "number": 144,
+      "name": "Ice Fracture",
+      "description": "layered ice cracks with frosted fill",
+      "family_id": "F18",
+      "family_name": "Experimental Hero",
+      "type": "outfield"
+    },
+    "M145": {
+      "id": "M145",
+      "number": 145,
+      "name": "Sunburst W edges",
+      "description": "wide wedges radiating from the collar in alternating tones,",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M146": {
+      "id": "M146",
+      "number": 146,
+      "name": "Arch Roundels",
+      "description": "concentric arches rising from the hem, thick to thin",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M147": {
+      "id": "M147",
+      "number": 147,
+      "name": "Y oke Chevron Flash",
+      "description": "a deep V yoke across the chest with a layered double",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M148": {
+      "id": "M148",
+      "number": 148,
+      "name": "Pennant Flags",
+      "description": "overlapping pennant triangles pointing toward one shoulder",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M149": {
+      "id": "M149",
+      "number": 149,
+      "name": "Diamond Inset",
+      "description": "a large chest diamond with stepped inner diamonds",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M150": {
+      "id": "M150",
+      "number": 150,
+      "name": "Zig Flash",
+      "description": "a zigzag flash crossing the torso diagonally, broken in three",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M151": {
+      "id": "M151",
+      "number": 151,
+      "name": "Roundel Spread",
+      "description": "large overlapping circles in two tones, cropped by the side",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M152": {
+      "id": "M152",
+      "number": 152,
+      "name": "Bolt Splice",
+      "description": "lightning-bolt panel splices of unequal length",
+      "family_id": "F19",
+      "family_name": "Seventies Geometry",
+      "type": "retro"
+    },
+    "M153": {
+      "id": "M153",
+      "number": 153,
+      "name": "T errazzo Chips",
+      "description": "scattered irregular chips of three sizes in kit tones",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M154": {
+      "id": "M154",
+      "number": 154,
+      "name": "Candy T riangles",
+      "description": "jagged faded triangles whose tips turn solid, late-eighties",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M155": {
+      "id": "M155",
+      "number": 155,
+      "name": "Squiggle Confetti",
+      "description": "squiggles, dots and short zigzags scattered at random",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M156": {
+      "id": "M156",
+      "number": 156,
+      "name": "Brush Splash",
+      "description": "wide brush splashes with drips toward the hem",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M157": {
+      "id": "M157",
+      "number": 157,
+      "name": "Pixel W ave",
+      "description": "stepped pixel waves rising from the hem",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M158": {
+      "id": "M158",
+      "number": 158,
+      "name": "Halftone Burst",
+      "description": "a halftone-dot explosion from the chest outward",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M159": {
+      "id": "M159",
+      "number": 159,
+      "name": "Shadow Lattice",
+      "description": "a diamond lattice with an offset hard shadow on every cell",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M160": {
+      "id": "M160",
+      "number": 160,
+      "name": "Racetrack Loops",
+      "description": "looping track-shaped curves intersecting across the torso",
+      "family_id": "F20",
+      "family_name": "Eighties Abstract",
+      "type": "retro"
+    },
+    "M161": {
+      "id": "M161",
+      "number": 161,
+      "name": "Bruised Cloud",
+      "description": "hard-edged overlapping blotches in two or three tones",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M162": {
+      "id": "M162",
+      "number": 162,
+      "name": "Shadow Blocks",
+      "description": "large offset blocks with a stepped shadow",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M163": {
+      "id": "M163",
+      "number": 163,
+      "name": "T orn Zigzag",
+      "description": "a torn-paper zigzag edge across the chest with a ghost copy",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M164": {
+      "id": "M164",
+      "number": 164,
+      "name": "Hexagon Overlap",
+      "description": "large overlapping hexagon outlines in graded tones",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M165": {
+      "id": "M165",
+      "number": 165,
+      "name": "Scribble Lattice",
+      "description": "hand-drawn crossing lines forming an irregular net",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M166": {
+      "id": "M166",
+      "number": 166,
+      "name": "Fractal T riangles",
+      "description": "triangles subdivided into smaller triangles toward one corner",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M167": {
+      "id": "M167",
+      "number": 167,
+      "name": "Diagonal W ash",
+      "description": "a grainy diagonal wash cut by two angled planes",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M168": {
+      "id": "M168",
+      "number": 168,
+      "name": "Cracked Mosaic",
+      "description": "irregular mosaic tiles with thin bright joints",
+      "family_id": "F21",
+      "family_name": "Early Nineties Graphic",
+      "type": "retro"
+    },
+    "M169": {
+      "id": "M169",
+      "number": 169,
+      "name": "Sports Mesh P anels",
+      "description": "hexagonal sports-mesh panels with piped seams in two",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M170": {
+      "id": "M170",
+      "number": 170,
+      "name": "Seam P anels",
+      "description": "bonded panel shapes divided by thin metallic-tone seams",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M171": {
+      "id": "M171",
+      "number": 171,
+      "name": "Flame Lick",
+      "description": "flame-edged shapes rising from the hem with trailing licks",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M172": {
+      "id": "M172",
+      "number": 172,
+      "name": "Wireframe Globe",
+      "description": "a latitude-and-longitude wireframe sphere partly cropped",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M173": {
+      "id": "M173",
+      "number": 173,
+      "name": "Speed Slash",
+      "description": "three angled slashes of unequal length and non-parallel angles,",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M174": {
+      "id": "M174",
+      "number": 174,
+      "name": "Carbon Dots",
+      "description": "carbon micro dots in a staggered weave, thickest at the sides",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M175": {
+      "id": "M175",
+      "number": 175,
+      "name": "Circuit Bloom",
+      "description": "sublimated circuit traces blooming from a central pad",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M176": {
+      "id": "M176",
+      "number": 176,
+      "name": "Spiral Burst",
+      "description": "a spiral burst of tapered petals",
+      "family_id": "F22",
+      "family_name": "Late Nineties Tech",
+      "type": "retro"
+    },
+    "M177": {
+      "id": "M177",
+      "number": 177,
+      "name": "T onal Swirl",
+      "description": "soft tone-on-tone swirls drifting across the shirt",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M178": {
+      "id": "M178",
+      "number": 178,
+      "name": "P anel Piping",
+      "description": "bonded shoulder panels outlined with piped contrast seams",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M179": {
+      "id": "M179",
+      "number": 179,
+      "name": "Ripple W eave",
+      "description": "woven ripple texture radiating from the lower hem",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M180": {
+      "id": "M180",
+      "number": 180,
+      "name": "Cell F ade",
+      "description": "rounded cells that shrink and fade across the torso",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M181": {
+      "id": "M181",
+      "number": 181,
+      "name": "Burst W eave",
+      "description": "woven starburst clusters in a staggered layout",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M182": {
+      "id": "M182",
+      "number": 182,
+      "name": "Hex Emboss",
+      "description": "large embossed hexes with a raised-edge highlight",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M183": {
+      "id": "M183",
+      "number": 183,
+      "name": "Shield Dissolve",
+      "description": "generic shield outlines dissolving into dots",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M184": {
+      "id": "M184",
+      "number": 184,
+      "name": "Contour Net",
+      "description": "fine netting that follows the torso contour",
+      "family_id": "F23",
+      "family_name": "Two-Thousands Tonal",
+      "type": "retro"
+    },
+    "M185": {
+      "id": "M185",
+      "number": 185,
+      "name": "Pixel Cascade",
+      "description": "pixel blocks cascading from one shoulder and shrinking as they",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M186": {
+      "id": "M186",
+      "number": 186,
+      "name": "Mesh Diagonal",
+      "description": "a diagonal mesh gradient between two kit tones with grain",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M187": {
+      "id": "M187",
+      "number": 187,
+      "name": "F aceted Gem",
+      "description": "faceted gem shapes in three tones across the chest",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M188": {
+      "id": "M188",
+      "number": 188,
+      "name": "Neon Shard",
+      "description": "angular shards edged with a thin bright keyline",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M189": {
+      "id": "M189",
+      "number": 189,
+      "name": "Layered Chevron Flow",
+      "description": "chevrons layered at changing sizes with a flowing",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M190": {
+      "id": "M190",
+      "number": 190,
+      "name": "Digital Smudge",
+      "description": "smudged pixel-sort streaks fading toward the sleeves",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M191": {
+      "id": "M191",
+      "number": 191,
+      "name": "Mirror F acets",
+      "description": "mirrored triangular facets reflecting across the centre line",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M192": {
+      "id": "M192",
+      "number": 192,
+      "name": "P aper Fold",
+      "description": "origami-style folds with soft crease shading",
+      "family_id": "F24",
+      "family_name": "Twenty-Tens Digital",
+      "type": "retro"
+    },
+    "M193": {
+      "id": "M193",
+      "number": 193,
+      "name": "Interwoven Crest Field",
+      "description": "a generic crest shape woven in two close tones across",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M194": {
+      "id": "M194",
+      "number": 194,
+      "name": "Laurel Ring Halo",
+      "description": "a laurel wreath ring around the crest position",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M195": {
+      "id": "M195",
+      "number": 195,
+      "name": "Beast Rampant Lattice",
+      "description": "repeated generic rampant-beast outlines, no text or",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M196": {
+      "id": "M196",
+      "number": 196,
+      "name": "Shield Chain W eave",
+      "description": "shield outlines linked by thin chain lines",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M197": {
+      "id": "M197",
+      "number": 197,
+      "name": "Knot Repeat",
+      "description": "an interlaced knot repeated at two scales",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M198": {
+      "id": "M198",
+      "number": 198,
+      "name": "Banner Fold",
+      "description": "folded ribbon outlines drifting across the chest",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M199": {
+      "id": "M199",
+      "number": 199,
+      "name": "Coin Relief",
+      "description": "circular medallion reliefs of mixed size",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M200": {
+      "id": "M200",
+      "number": 200,
+      "name": "Hatch Plate",
+      "description": "engraving-hatch plates under the crest position",
+      "family_id": "F25",
+      "family_name": "Woven Crest and Heritage",
+      "type": "engraved"
+    },
+    "M201": {
+      "id": "M201",
+      "number": 201,
+      "name": "Micro Rib Emboss",
+      "description": "fine rib relief broken by diamond inserts",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M202": {
+      "id": "M202",
+      "number": 202,
+      "name": "Dobby Squares",
+      "description": "woven dobby squares with offset steps",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M203": {
+      "id": "M203",
+      "number": 203,
+      "name": "Honeycomb Deboss",
+      "description": "debossed honeycomb with graded depth",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M204": {
+      "id": "M204",
+      "number": 204,
+      "name": "Basket Relief",
+      "description": "raised basket-weave relief that changes direction by zone",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M205": {
+      "id": "M205",
+      "number": 205,
+      "name": "V ent Dimples",
+      "description": "vent holes shown as faint dimples",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M206": {
+      "id": "M206",
+      "number": 206,
+      "name": "T will P atches",
+      "description": "twill-weave patches that shift direction by zone",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M207": {
+      "id": "M207",
+      "number": 207,
+      "name": "Jacquard Ripple",
+      "description": "jacquard ripples spreading from the lower left",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M208": {
+      "id": "M208",
+      "number": 208,
+      "name": "Cable Knit",
+      "description": "faint cable-knit twists in a staggered layout",
+      "family_id": "F26",
+      "family_name": "Engraved Textile",
+      "type": "engraved"
+    },
+    "M209": {
+      "id": "M209",
+      "number": 209,
+      "name": "F acet Deboss",
+      "description": "large faceted shards debossed into the fabric",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M210": {
+      "id": "M210",
+      "number": 210,
+      "name": "Isometric Relief",
+      "description": "faint isometric cube relief",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M211": {
+      "id": "M211",
+      "number": 211,
+      "name": "T riangle Etch",
+      "description": "etched triangles in a graded field",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M212": {
+      "id": "M212",
+      "number": 212,
+      "name": "Hex Lattice Etch",
+      "description": "an etched hex lattice with missing cells",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M213": {
+      "id": "M213",
+      "number": 213,
+      "name": "Radial Etch",
+      "description": "radial etching from a chest-offset centre",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M214": {
+      "id": "M214",
+      "number": 214,
+      "name": "T essellation Ghost",
+      "description": "a ghosted tessellation of mixed polygons",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M215": {
+      "id": "M215",
+      "number": 215,
+      "name": "W ave Etch",
+      "description": "layered etched waves at irregular spacing",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M216": {
+      "id": "M216",
+      "number": 216,
+      "name": "Slice Contour",
+      "description": "contour lines like a sliced topographic model",
+      "family_id": "F27",
+      "family_name": "Engraved Geometry",
+      "type": "engraved"
+    },
+    "M217": {
+      "id": "M217",
+      "number": 217,
+      "name": "Frost Etch",
+      "description": "frost-crystal branching etched faintly",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M218": {
+      "id": "M218",
+      "number": 218,
+      "name": "V ein Emboss",
+      "description": "leaf-vein networks embossed",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M219": {
+      "id": "M219",
+      "number": 219,
+      "name": "Ripple Deboss",
+      "description": "circular water ripples debossed",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M220": {
+      "id": "M220",
+      "number": 220,
+      "name": "Shell Spiral",
+      "description": "shell spirals etched at several sizes",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M221": {
+      "id": "M221",
+      "number": 221,
+      "name": "Pore Emboss",
+      "description": "coral-pore texture embossed",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M222": {
+      "id": "M222",
+      "number": 222,
+      "name": "Grain Etch",
+      "description": "bark-grain lines etched in drifting patches",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M223": {
+      "id": "M223",
+      "number": 223,
+      "name": "Cloud Relief",
+      "description": "faint cloud forms in relief",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M224": {
+      "id": "M224",
+      "number": 224,
+      "name": "Plume Emboss",
+      "description": "feather plumes embossed",
+      "family_id": "F28",
+      "family_name": "Engraved Nature",
+      "type": "engraved"
+    },
+    "M225": {
+      "id": "M225",
+      "number": 225,
+      "name": "Shadow Planes",
+      "description": "barely-there overlapping shadow planes",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M226": {
+      "id": "M226",
+      "number": 226,
+      "name": "Sheen Sweep",
+      "description": "a faint diagonal sheen across a satin-like finish",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M227": {
+      "id": "M227",
+      "number": 227,
+      "name": "Hem Vignette",
+      "description": "a subtle darkening at the hem and shoulders",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M228": {
+      "id": "M228",
+      "number": 228,
+      "name": "Lens Halo",
+      "description": "faint concentric halos",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M229": {
+      "id": "M229",
+      "number": 229,
+      "name": "Caustic Net",
+      "description": "an underwater caustic light network",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M230": {
+      "id": "M230",
+      "number": 230,
+      "name": "Prism Planes",
+      "description": "a prism split drawn as tonal planes, never a rainbow",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M231": {
+      "id": "M231",
+      "number": 231,
+      "name": "Fold Shadow",
+      "description": "soft fabric-fold shadows",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M232": {
+      "id": "M232",
+      "number": 232,
+      "name": "Dusk Grain",
+      "description": "a grain-textured gradient",
+      "family_id": "F29",
+      "family_name": "Engraved Light and Shadow",
+      "type": "engraved"
+    },
+    "M233": {
+      "id": "M233",
+      "number": 233,
+      "name": "Pitch Grain",
+      "description": "mown-pitch pattern as a faint relief",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M234": {
+      "id": "M234",
+      "number": 234,
+      "name": "Net Relief",
+      "description": "goal-net knots as a faint relief",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M235": {
+      "id": "M235",
+      "number": 235,
+      "name": "Stadium F acade P anels",
+      "description": "panel joints of a stadium facade at varied widths",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M236": {
+      "id": "M236",
+      "number": 236,
+      "name": "T errace Step Etch",
+      "description": "stepped terrace geometry etched",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M237": {
+      "id": "M237",
+      "number": 237,
+      "name": "Skyline Etch",
+      "description": "a skyline contour etched at the hem",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M238": {
+      "id": "M238",
+      "number": 238,
+      "name": "Street Map Etch",
+      "description": "street-map lines etched across the front",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M239": {
+      "id": "M239",
+      "number": 239,
+      "name": "T rack Bend Etch",
+      "description": "curved athletics-track lane lines in a bend",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M240": {
+      "id": "M240",
+      "number": 240,
+      "name": "Stud Deboss",
+      "description": "boot-stud dots debossed in clusters",
+      "family_id": "F30",
+      "family_name": "Engraved Urban and Sport",
+      "type": "engraved"
+    },
+    "M241": {
+      "id": "M241",
+      "number": 241,
+      "name": "Star Field Etch",
+      "description": "scattered stars etched at several sizes",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M242": {
+      "id": "M242",
+      "number": 242,
+      "name": "Crown Point Etch",
+      "description": "abstract crown points etched along the shoulder line",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M243": {
+      "id": "M243",
+      "number": 243,
+      "name": "Arrow Chevron Emboss",
+      "description": "layered arrow chevrons embossed pointing upward",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M244": {
+      "id": "M244",
+      "number": 244,
+      "name": "Lozenge W eave",
+      "description": "interwoven lozenges of varying size",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M245": {
+      "id": "M245",
+      "number": 245,
+      "name": "Chain Link Deboss",
+      "description": "interlocking chain links debossed",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M246": {
+      "id": "M246",
+      "number": 246,
+      "name": "Fleck T errazzo",
+      "description": "faint terrazzo flecks",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M247": {
+      "id": "M247",
+      "number": 247,
+      "name": "Compass Rose Etch",
+      "description": "compass-rose geometry etched",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M248": {
+      "id": "M248",
+      "number": 248,
+      "name": "Sunray F an Etch",
+      "description": "fanned rays etched from a corner",
+      "family_id": "F31",
+      "family_name": "Engraved Symbols",
+      "type": "engraved"
+    },
+    "M249": {
+      "id": "M249",
+      "number": 249,
+      "name": "Gradient W eave F ade",
+      "description": "a woven texture whose scale grows with a gradient",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M250": {
+      "id": "M250",
+      "number": 250,
+      "name": "Dot Matrix Ghost",
+      "description": "a ghosted dot matrix drifting across the torso",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M251": {
+      "id": "M251",
+      "number": 251,
+      "name": "Grid Relief W arp",
+      "description": "a relief grid warped by a soft bulge",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M252": {
+      "id": "M252",
+      "number": 252,
+      "name": "Cell Relief Drift",
+      "description": "soft cells drifting and merging",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M253": {
+      "id": "M253",
+      "number": 253,
+      "name": "T onal W ave Relief",
+      "description": "broad tonal waves in relief",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M254": {
+      "id": "M254",
+      "number": 254,
+      "name": "Soft Mosaic Etch",
+      "description": "a soft mosaic etched with irregular tiles",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M255": {
+      "id": "M255",
+      "number": 255,
+      "name": "Pebble Relief",
+      "description": "river-pebble relief",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M256": {
+      "id": "M256",
+      "number": 256,
+      "name": "Spore Dust Relief",
+      "description": "fine spore-like dust in relief",
+      "family_id": "F32",
+      "family_name": "Engraved Tonal Systems",
+      "type": "engraved"
+    },
+    "M257": {
+      "id": "M257",
+      "number": 257,
+      "name": "Shoulder-Dark Hem-Light F ade",
+      "description": "a full gradient, darker at the shoulders and",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M258": {
+      "id": "M258",
+      "number": 258,
+      "name": "Radial Dual- T one F ade",
+      "description": "a two-tone fade radiating from the chest",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M259": {
+      "id": "M259",
+      "number": 259,
+      "name": "Hem W ash",
+      "description": "a wash toward white or a light tint at the hem",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M260": {
+      "id": "M260",
+      "number": 260,
+      "name": "Stepped Grain Gradient",
+      "description": "a gradient built from soft steps with film grain",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M261": {
+      "id": "M261",
+      "number": 261,
+      "name": "Diagonal T onal F ade",
+      "description": "a diagonal fade between two shades of the base colour",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M262": {
+      "id": "M262",
+      "number": 262,
+      "name": "Centre Glow F ade",
+      "description": "a lighter glow in the middle fading to darker edges",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M263": {
+      "id": "M263",
+      "number": 263,
+      "name": "Side Vignette",
+      "description": "darker sides fading toward the centre",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M264": {
+      "id": "M264",
+      "number": 264,
+      "name": "Gradient Band F ade",
+      "description": "a band whose colour fades from one kit colour to another",
+      "family_id": "F33",
+      "family_name": "Gradient Structures",
+      "type": "block"
+    },
+    "M265": {
+      "id": "M265",
+      "number": 265,
+      "name": "Wide Central Band",
+      "description": "an ultra-wide centre band from collar to hem, front to",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M266": {
+      "id": "M266",
+      "number": 266,
+      "name": "Offset Central Band",
+      "description": "a wide band shifted to one side",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M267": {
+      "id": "M267",
+      "number": 267,
+      "name": "Stepped Central P anel",
+      "description": "a centre panel whose edges step in at the chest and",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M268": {
+      "id": "M268",
+      "number": 268,
+      "name": "Side Line Front-to-Back",
+      "description": "a narrow line on each side running from the front",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M269": {
+      "id": "M269",
+      "number": 269,
+      "name": "Single Side Line",
+      "description": "one asymmetric line along one flank",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M270": {
+      "id": "M270",
+      "number": 270,
+      "name": "Sleeve- Through Flash",
+      "description": "a flash running from the torso through one sleeve",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M271": {
+      "id": "M271",
+      "number": 271,
+      "name": "Wide Y oke P anel",
+      "description": "a wide shoulder yoke in a second tone",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M272": {
+      "id": "M272",
+      "number": 272,
+      "name": "Side Seam T rim",
+      "description": "a trim along the side seam only",
+      "family_id": "F34",
+      "family_name": "Central and Panel Structures",
+      "type": "block"
+    },
+    "M273": {
+      "id": "M273",
+      "number": 273,
+      "name": "Graded V ertical Bands",
+      "description": "vertical bands in three shades of each club colour with",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M274": {
+      "id": "M274",
+      "number": 274,
+      "name": "F acade P anel Bands",
+      "description": "band edges cut like stadium facade panels",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M275": {
+      "id": "M275",
+      "number": 275,
+      "name": "E volved Hoops",
+      "description": "hoops with a 0.62 width progression and tonal breaks",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M276": {
+      "id": "M276",
+      "number": 276,
+      "name": "E volved Halves",
+      "description": "halves with a fractured, offset seam and a tonal overlay",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M277": {
+      "id": "M277",
+      "number": 277,
+      "name": "T onal Hairline Field",
+      "description": "tonal hairlines of 5 units or less, with drifting spacing and",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M278": {
+      "id": "M278",
+      "number": 278,
+      "name": "T onal Wide Bands",
+      "description": "wide bands only a few units apart in tone",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M279": {
+      "id": "M279",
+      "number": 279,
+      "name": "E volved Sash",
+      "description": "a sash with a broken edge and a tonal echo",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M280": {
+      "id": "M280",
+      "number": 280,
+      "name": "E volved Quarters",
+      "description": "quarters with offset corners and a tonal overlay",
+      "family_id": "F35",
+      "family_name": "Banded Identity Layouts",
+      "type": "signature"
+    },
+    "M281": {
+      "id": "M281",
+      "number": 281,
+      "name": "Polo Collar T ri- T rim",
+      "description": "a polo collar with three trim colours",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    },
+    "M282": {
+      "id": "M282",
+      "number": 282,
+      "name": "Button-Down Collar Placket",
+      "description": "a collar with a button-down placket edge",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    },
+    "M283": {
+      "id": "M283",
+      "number": 283,
+      "name": "Semi-Hexagonal Collar",
+      "description": "a collar with a six-sided cut",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    },
+    "M284": {
+      "id": "M284",
+      "number": 284,
+      "name": "Laurel Border Collar",
+      "description": "a collar and cuff border with a laurel motif",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    },
+    "M285": {
+      "id": "M285",
+      "number": 285,
+      "name": "Cuff T rio T rim",
+      "description": "a three-colour cuff trim",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    },
+    "M286": {
+      "id": "M286",
+      "number": 286,
+      "name": "Engineered Shoulder Ribs",
+      "description": "raised rib panels on the shoulders",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    },
+    "M287": {
+      "id": "M287",
+      "number": 287,
+      "name": "Hem T ape T rim",
+      "description": "a tape trim along the hem",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    },
+    "M288": {
+      "id": "M288",
+      "number": 288,
+      "name": "Back-Collar P anel",
+      "description": "a small panel under the back collar, with no text",
+      "family_id": "F36",
+      "family_name": "Trim and Collar Systems",
+      "type": "trim"
+    }
+  }
+}

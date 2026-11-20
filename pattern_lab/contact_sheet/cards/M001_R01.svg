@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M001" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#0F141F" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#0F141F" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M001">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M001)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M001)">
+<polygon points="53,39 70,41 60,53" fill="#D4AF37" opacity="0.15"/>
+<polygon points="72,44 83,39 75,60" fill="#D4AF37" opacity="0.15"/>
+<polygon points="91,39 103,43 90,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="101,38 117,43 119,61" fill="#D4AF37" opacity="0.15"/>
+<polygon points="121,39 141,41 128,59" fill="#D4AF37" opacity="0.15"/>
+<polygon points="140,39 153,42 150,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="155,37 180,41 171,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="176,42 191,42 180,59" fill="#D4AF37" opacity="0.15"/>
+<polygon points="199,42 206,43 200,61" fill="#D4AF37" opacity="0.15"/>
+<polygon points="207,41 236,36 220,58" fill="#D4AF37" opacity="0.15"/>
+<polygon points="224,40 251,38 233,59" fill="#D4AF37" opacity="0.15"/>
+<polygon points="244,40 261,38 257,58" fill="#D4AF37" opacity="0.15"/>
+<polygon points="270,43 280,43 277,57" fill="#D4AF37" opacity="0.15"/>
+<polygon points="280,44 306,36 288,54" fill="#D4AF37" opacity="0.15"/>
+<polygon points="44,58 73,60 55,84" fill="#D4AF37" opacity="0.20"/>
+<polygon points="77,55 96,55 87,80" fill="#D4AF37" opacity="0.20"/>
+<polygon points="97,61 114,55 97,79" fill="#D4AF37" opacity="0.20"/>
+<polygon points="111,58 134,54 117,85" fill="#D4AF37" opacity="0.20"/>
+<polygon points="136,58 156,53 141,81" fill="#D4AF37" opacity="0.20"/>
+<polygon points="159,58 171,57 161,81" fill="#D4AF37" opacity="0.20"/>
+<polygon points="177,56 197,54 188,82" fill="#D4AF37" opacity="0.20"/>
+<polygon points="194,54 216,55 201,77" fill="#D4AF37" opacity="0.20"/>
+<polygon points="222,59 242,60 232,77" fill="#D4AF37" opacity="0.20"/>
+<polygon points="245,58 257,57 250,80" fill="#D4AF37" opacity="0.20"/>
+<polygon points="262,61 280,58 264,79" fill="#D4AF37" opacity="0.20"/>
+<polygon points="279,58 306,58 291,83" fill="#D4AF37" opacity="0.20"/>
+<polygon points="54,77 82,80 65,108" fill="#D4AF37" opacity="0.24"/>
+<polygon points="74,79 108,78 86,112" fill="#D4AF37" opacity="0.24"/>
+<polygon points="99,82 125,84 121,110" fill="#D4AF37" opacity="0.24"/>
+<polygon points="135,82 160,85 141,109" fill="#D4AF37" opacity="0.24"/>
+<polygon points="159,85 187,82 169,111" fill="#D4AF37" opacity="0.24"/>
+<polygon points="190,81 209,83 195,114" fill="#D4AF37" opacity="0.24"/>
+<polygon points="210,77 236,77 228,112" fill="#D4AF37" opacity="0.24"/>
+<polygon points="244,84 267,77 250,115" fill="#D4AF37" opacity="0.24"/>
+<polygon points="271,80 287,84 282,107" fill="#D4AF37" opacity="0.24"/>
+<polygon points="44,113 84,111 72,141" fill="#D4AF37" opacity="0.29"/>
+<polygon points="84,107 110,111 102,140" fill="#D4AF37" opacity="0.29"/>
+<polygon points="121,108 152,114 131,147" fill="#D4AF37" opacity="0.29"/>
+<polygon points="154,108 178,114 170,145" fill="#D4AF37" opacity="0.29"/>
+<polygon points="177,111 209,110 197,142" fill="#D4AF37" opacity="0.29"/>
+<polygon points="219,115 243,110 236,142" fill="#D4AF37" opacity="0.29"/>
+<polygon points="252,109 277,110 265,141" fill="#D4AF37" opacity="0.29"/>
+<polygon points="275,110 316,115 294,140" fill="#D4AF37" opacity="0.29"/>
+<polygon points="53,147 83,144 71,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="92,146 124,140 103,174" fill="#D4AF37" opacity="0.33"/>
+<polygon points="129,140 165,145 153,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="172,139 201,143 190,182" fill="#D4AF37" opacity="0.33"/>
+<polygon points="200,140 243,143 222,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="250,145 288,147 264,176" fill="#D4AF37" opacity="0.33"/>
+<polygon points="290,144 328,139 300,178" fill="#D4AF37" opacity="0.33"/>
+<polygon points="50,177 96,177 69,217" fill="#D4AF37" opacity="0.38"/>
+<polygon points="91,176 141,181 118,214" fill="#D4AF37" opacity="0.38"/>
+<polygon points="138,174 191,177 161,211" fill="#D4AF37" opacity="0.38"/>
+<polygon points="182,178 232,178 201,217" fill="#D4AF37" opacity="0.38"/>
+<polygon points="226,178 278,179 258,218" fill="#D4AF37" opacity="0.38"/>
+<polygon points="278,178 314,181 301,215" fill="#D4AF37" opacity="0.38"/>
+<polygon points="45,213 105,211 74,256" fill="#D4AF37" opacity="0.42"/>
+<polygon points="95,217 146,216 120,252" fill="#D4AF37" opacity="0.42"/>
+<polygon points="146,217 199,218 177,250" fill="#D4AF37" opacity="0.42"/>
+<polygon points="208,213 254,218 226,254" fill="#D4AF37" opacity="0.42"/>
+<polygon points="259,214 309,215 279,251" fill="#D4AF37" opacity="0.42"/>
+<polygon points="56,251 109,256 76,293" fill="#D4AF37" opacity="0.46"/>
+<polygon points="107,257 158,249 137,291" fill="#D4AF37" opacity="0.46"/>
+<polygon points="169,249 227,256 190,297" fill="#D4AF37" opacity="0.46"/>
+<polygon points="225,254 281,253 245,295" fill="#D4AF37" opacity="0.46"/>
+<polygon points="279,252 341,251 312,297" fill="#D4AF37" opacity="0.46"/>
+<polygon points="55,291 113,291 84,339" fill="#D4AF37" opacity="0.51"/>
+<polygon points="108,298 170,297 142,337" fill="#D4AF37" opacity="0.51"/>
+<polygon points="176,292 245,291 209,335" fill="#D4AF37" opacity="0.51"/>
+<polygon points="245,298 304,296 275,338" fill="#D4AF37" opacity="0.51"/>
+<polygon points="56,334 124,332 83,377" fill="#D4AF37" opacity="0.56"/>
+<polygon points="113,334 186,334 155,378" fill="#D4AF37" opacity="0.56"/>
+<polygon points="190,336 259,335 224,377" fill="#D4AF37" opacity="0.56"/>
+<polygon points="254,334 320,340 288,383" fill="#D4AF37" opacity="0.56"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#0F141F" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#FFFFFF" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#D4AF37"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#FFFFFF" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#0F141F" stroke="#D4AF37" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#D4AF37"/>
+<polygon points="104,114 114,102 124,114" fill="#FFFFFF" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#D4AF37" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>

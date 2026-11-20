@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M273" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#650616" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#650616" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M273">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M273)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M273)">
+<rect x="70" y="25" width="35" height="375" fill="#820C20"/>
+<line x1="70" y1="25" x2="70" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="105" y="25" width="37" height="375" fill="#0B4EA2"/>
+<line x1="105" y1="25" x2="105" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="142" y="25" width="43" height="375" fill="#650616"/>
+<line x1="142" y1="25" x2="142" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="185" y="25" width="40" height="375" fill="#002B66"/>
+<line x1="185" y1="25" x2="185" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="225" y="25" width="35" height="375" fill="#A5102A"/>
+<line x1="225" y1="25" x2="225" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="260" y="25" width="30" height="375" fill="#001D44"/>
+<line x1="260" y1="25" x2="260" y2="375" stroke="#000" stroke-width="1.2" opacity="0.5"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#650616" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#D97706" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#002B66"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#D97706" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#650616" stroke="#002B66" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#002B66"/>
+<polygon points="104,114 114,102 124,114" fill="#D97706" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#002B66" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>

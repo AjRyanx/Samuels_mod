@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 420" width="340" height="420" class="kit-torso">
+<defs>
+<filter id="clothShade" x="-10%" y="-10%" width="120%" height="120%">
+  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+</filter>
+<linearGradient id="bodyGrad_M002" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" stop-color="#1E293B" stop-opacity="1.0"/>
+  <stop offset="70%" stop-color="#1E293B" stop-opacity="0.95"/>
+  <stop offset="100%" stop-color="#05070B" stop-opacity="1.0"/>
+</linearGradient>
+<clipPath id="shirtClip_M002">
+  <path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z"/>
+</clipPath>
+</defs>
+<path d="M 115 25 L 225 25 L 295 65 L 280 150 L 270 145 L 270 400 L 70 400 L 70 145 L 60 150 L 45 65 Z" fill="url(#bodyGrad_M002)" filter="url(#clothShade)"/>
+<g clip-path="url(#shirtClip_M002)">
+<polygon points="182,84 272,76 253,140" fill="#38BDF8" opacity="0.44"/>
+<line x1="85" y1="55" x2="272" y2="76" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="168,112 304,178 280,214" fill="#38BDF8" opacity="0.41"/>
+<line x1="85" y1="55" x2="304" y2="178" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="141,127 304,248 220,314" fill="#38BDF8" opacity="0.35"/>
+<line x1="85" y1="55" x2="304" y2="248" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="133,75 321,107 288,186" fill="#38BDF8" opacity="0.44"/>
+<line x1="85" y1="55" x2="321" y2="107" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="155,111 246,147 210,191" fill="#38BDF8" opacity="0.26"/>
+<line x1="85" y1="55" x2="246" y2="147" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="148,136 274,247 226,285" fill="#38BDF8" opacity="0.24"/>
+<line x1="85" y1="55" x2="274" y2="247" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="178,110 320,140 273,219" fill="#38BDF8" opacity="0.37"/>
+<line x1="85" y1="55" x2="320" y2="140" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="191,130 274,160 247,199" fill="#38BDF8" opacity="0.44"/>
+<line x1="85" y1="55" x2="274" y2="160" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="135,121 250,218 198,258" fill="#38BDF8" opacity="0.47"/>
+<line x1="85" y1="55" x2="250" y2="218" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="122,171 211,310 133,335" fill="#38BDF8" opacity="0.58"/>
+<line x1="85" y1="55" x2="211" y2="310" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="164,119 348,201 282,282" fill="#38BDF8" opacity="0.36"/>
+<line x1="85" y1="55" x2="348" y2="201" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="133,142 275,294 186,344" fill="#38BDF8" opacity="0.41"/>
+<line x1="85" y1="55" x2="275" y2="294" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="103,145 172,253 83,271" fill="#38BDF8" opacity="0.58"/>
+<line x1="85" y1="55" x2="172" y2="253" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<polygon points="129,70 327,84 296,178" fill="#38BDF8" opacity="0.35"/>
+<line x1="85" y1="55" x2="327" y2="84" stroke="#F1F5F9" stroke-width="1.2" opacity="0.6"/>
+<rect x="65" y="178" width="210" height="64" rx="8" fill="#1E293B" opacity="0.82"/>
+<text x="170" y="219" font-family="system-ui, sans-serif" font-size="18" font-weight="900" letter-spacing="4" fill="#F1F5F9" text-anchor="middle">SPONSOR</text>
+</g>
+<path d="M 115 25 L 115 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 115 25 L 115 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 225 25 L 225 145" stroke="#000" stroke-width="1.8" opacity="0.55"/>
+<path d="M 225 25 L 225 145" stroke="#fff" stroke-width="0.8" opacity="0.25"/>
+<path d="M 115 25 Q 170 80 225 25 Q 170 55 115 25 Z" fill="#38BDF8"/>
+<path d="M 122 25 Q 170 74 218 25" stroke="#F1F5F9" stroke-width="2.2" fill="none"/>
+<circle cx="226" cy="110" r="17" fill="#1E293B" stroke="#38BDF8" stroke-width="2.5" filter="url(#clothShade)"/>
+<polygon points="226,101 235,117 217,117" fill="#38BDF8"/>
+<polygon points="104,114 114,102 124,114" fill="#F1F5F9" opacity="0.9"/>
+<rect x="235" y="375" width="22" height="15" rx="2" fill="#38BDF8" stroke="#000" stroke-width="0.8" opacity="0.85"/>
+</svg>

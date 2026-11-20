@@ -13,6 +13,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+import pytest
 import numpy as np
 from PIL import Image
 
@@ -109,6 +110,9 @@ def test_real_font_texture_tinting():
 
 
 def test_end_to_end_process_kit_fonts():
+    arsenal_p1 = Path(r"C:\Games\SP Football Life 2027\SiderAddons\content\kits\Premier League\Arsenal\p1\u0101p1_back.ftex")
+    if not arsenal_p1.is_file():
+        pytest.skip("Real game kit font textures not available in this environment")
     tmp_out = Path(tempfile.mkdtemp())
     try:
         club = {"id": 101, "name": "Arsenal"}
