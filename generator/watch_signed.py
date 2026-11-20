@@ -328,7 +328,7 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                         continue
                 elif is_league:
                     continue
-                elif not force_clean:
+                else:
                     target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
                     career_id = req.get("career_id")
                     career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None

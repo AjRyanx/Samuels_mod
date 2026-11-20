@@ -143,7 +143,12 @@ def test_watcher_forces_clean_when_branded_file_exists(tmp_path, monkeypatch):
     assert not calls
 
     req_file.write_text("clean-force-102-2028|102|2028||force|2026-11-20 10:00:01\n")
-    state_file.write_text("clean-force-102-2028\n\n")
+    state_file.write_text("some-older-request\n\n")
     assert watch_signed.process_pending(req_file, state_file, sider, tmp_path, log_file) == 1
     assert len(calls) == 1
     assert calls[0][0][2] is None                  # brand -> sponsorless rebuild
+
+    # A forced clean must be deduplicated like any other processed request.
+    # Otherwise it rebuilds forever and overwrites a newly signed sponsor.
+    assert watch_signed.process_pending(req_file, state_file, sider, tmp_path, log_file) == 0
+    assert len(calls) == 1

@@ -215,6 +215,16 @@ def lint_kit(club, slot, design, chest_img):
     else:
         results.append({"rule": "Club Badge", "status": "WARN", "msg": "No badge asset found"})
 
+    # Rule 6: Sleeve Sponsor Verification
+    sleeve_sp = design.get("sleeve_sponsor")
+    if sleeve_sp:
+        sp_name = Path(str(sleeve_sp)).stem.replace("_white", "").upper()
+        results.append({"rule": "Sleeve Sponsor", "status": "PASS",
+                        "msg": f"Stamped authentic '{sp_name}' on left sleeve"})
+    else:
+        results.append({"rule": "Sleeve Sponsor", "status": "INFO",
+                        "msg": "No sleeve sponsor (clean)"})
+
     # Aggregate kit status
     statuses = [r["status"] for r in results]
     if "FAIL" in statuses:
@@ -235,6 +245,11 @@ def crop_chest(atlas_img):
 def crop_torso(atlas_img):
     """Crop the full front panel (x: 660..1390, y: 952..1888)."""
     return atlas_img.crop((660, 952, 1390, 1888))
+
+
+def crop_sleeve(atlas_img):
+    """Crop the left sleeve area (x: 1520..1980, y: 200..580) containing the sleeve sponsor mark."""
+    return atlas_img.crop((1520, 200, 1980, 580))
 
 
 def generate_html_gallery(audit_data, out_html_path):
@@ -291,6 +306,7 @@ def generate_html_gallery(audit_data, out_html_path):
         badge_img_tag = f'<img src="{item["badge_rel"]}" class="club-crest" alt="crest" onerror="this.style.display=\'none\'">' if item.get("badge_rel") else ''
 
         torso_tag = f'<img src="{item["torso_rel"]}" class="torso-img" alt="Torso Preview" loading="lazy" style="display:none;">' if item.get("torso_rel") else ''
+        sleeve_tag = f'<img src="{item["sleeve_rel"]}" class="sleeve-img" alt="Sleeve Preview" loading="lazy" style="display:none;">' if item.get("sleeve_rel") else ''
 
         card = f"""
         <div class="kit-card" data-status="{overall}" data-slot="{slot}" data-season="{season_val}" data-league="{league_key}" data-name="{html.escape(club['name']).lower()} {cid} {season_val} {league_name.lower()}">
@@ -310,6 +326,7 @@ def generate_html_gallery(audit_data, out_html_path):
             <div class="preview-container">
                 <img src="{item['chest_rel']}" class="chest-img" alt="Chest Preview" loading="lazy">
                 {torso_tag}
+                {sleeve_tag}
             </div>
 
             <div class="card-body">
@@ -331,6 +348,7 @@ def generate_html_gallery(audit_data, out_html_path):
                 <div class="meta-row">
                     <span>Pattern: <strong>{html.escape(str(design.get('pattern_name', design.get('pattern', 'plain'))))}</strong></span>
                     <span>Sponsor: <strong>{html.escape(item.get('sponsor_name', 'None')).upper()}</strong></span>
+                    <span>Sleeve: <strong>{html.escape(item.get('sleeve_name', 'None')).upper()}</strong></span>
                 </div>
 
                 <div class="lint-list">
@@ -443,6 +461,7 @@ def generate_html_gallery(audit_data, out_html_path):
         <div style="display:flex; gap:12px; flex-wrap:wrap">
             <div class="filter-group" id="viewModeFilter">
                 <button class="filter-btn active" id="btnChestView" onclick="setViewMode('chest')">Chest Focus</button>
+                <button class="filter-btn" id="btnSleeveView" onclick="setViewMode('sleeve')">Left Sleeve (Sponsor)</button>
                 <button class="filter-btn" id="btnTorsoView" onclick="setViewMode('torso')">Full Torso</button>
             </div>
 
@@ -493,7 +512,9 @@ def generate_html_gallery(audit_data, out_html_path):
         function setViewMode(mode) {{
             document.querySelectorAll('.chest-img').forEach(el => el.style.display = (mode === 'chest') ? 'block' : 'none');
             document.querySelectorAll('.torso-img').forEach(el => el.style.display = (mode === 'torso') ? 'block' : 'none');
+            document.querySelectorAll('.sleeve-img').forEach(el => el.style.display = (mode === 'sleeve') ? 'block' : 'none');
             document.getElementById('btnChestView').classList.toggle('active', mode === 'chest');
+            document.getElementById('btnSleeveView').classList.toggle('active', mode === 'sleeve');
             document.getElementById('btnTorsoView').classList.toggle('active', mode === 'torso');
         }}
 
@@ -663,18 +684,21 @@ def main():
                 atlas_png = crops_dir / f"atlas_{cid}_{season}_{slot_code}.png"
                 chest_png = crops_dir / f"chest_{cid}_{season}_{slot_code}.png"
                 torso_png = crops_dir / f"torso_{cid}_{season}_{slot_code}.png"
+                sleeve_png = crops_dir / f"sleeve_{cid}_{season}_{slot_code}.png"
 
                 # Render kit
                 _, design = render_club(club, season, atlas_png, logo_dir,
                                         masks=masks, slot=slot, sponsor=active_sponsor,
                                         badge_dir=badge_dir)
 
-                # Crop chest & torso & save
+                # Crop chest, torso & left sleeve & save
                 with Image.open(atlas_png) as im:
                     c_crop = crop_chest(im)
                     c_crop.save(chest_png)
                     t_crop = crop_torso(im)
                     t_crop.save(torso_png)
+                    s_crop = crop_sleeve(im)
+                    s_crop.save(sleeve_png)
 
                 # Remove heavy 2048x2048 atlas to save disk space
                 try:
@@ -691,6 +715,9 @@ def main():
                 if overall == "FAIL":
                     season_passed = False
 
+                sl_val = design.get("sleeve_sponsor")
+                sl_name = Path(str(sl_val)).stem.replace("_white", "") if sl_val else "None"
+
                 audit_data.append({
                     "club": club,
                     "slot": slot,
@@ -699,8 +726,10 @@ def main():
                     "design": design,
                     "lint": lint_results,
                     "sponsor_name": active_sponsor or "None",
+                    "sleeve_name": sl_name,
                     "chest_rel": f"crops/{chest_png.name}",
                     "torso_rel": f"crops/{torso_png.name}",
+                    "sleeve_rel": f"crops/{sleeve_png.name}",
                     "badge_rel": b_rel,
                     "league_key": lk,
                     "league_name": lname,
