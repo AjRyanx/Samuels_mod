@@ -52,6 +52,7 @@ The mod allows Master League careers to sign real-world dynamic sponsors (Spotif
    - **Season 2 onwards:**
      - **All clubs automatically change their kits** for the new season.
      - **AI Clubs:** Automatically wear dynamic kits with their assigned sponsors from the authentic brand library (maintaining multi-year contracts or realistically rotating as seasons progress).
+     - **Baseline + JIT scope:** Global rollover generates only the lightweight `p1/g1` baseline for every club. Secondary slots (`p2/p3/g2`) for AI clubs are generated on demand when that club is scheduled in a Master League fixture. League-wide 5-slot pre-generation is intentionally disabled.
      - **User Club:** Automatically generates a fresh dynamic kit for the new season **without a sponsor (sponsorless)** until a sponsorship deal is signed in the mod menu. Once signed, the kit regenerates immediately with the signed sponsor and sleeve branding in-tact.
      - **Deal Expiration:** When the user's sponsorship contract expires/retires, if they do not sign another deal by the following season, the kit generated for that next season will automatically be **sponsorless again**.
    - **Outside Master League:**

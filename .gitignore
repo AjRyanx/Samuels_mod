@@ -13,6 +13,9 @@ content/KitGenerator/staging/*
 # Generated logo contact sheet (recreate with: python generator/logomaker.py)
 content/KitGenerator/logos_sheet.png
 
+# Packaged release artifacts (recreate with: python scripts/build_release.py)
+dist/
+
 # ---- Live runtime state (created inside the game, not source) -------------
 content/KitGenerator/club.txt
 content/KitGenerator/active_deal.txt

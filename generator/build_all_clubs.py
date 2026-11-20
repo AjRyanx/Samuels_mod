@@ -15,7 +15,7 @@ import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -213,12 +213,13 @@ def generate_all_kits(
     logo_dir_path: Optional[Path] = None,
     badge_dir_path: Optional[Path] = None,
     low_priority: Optional[bool] = None,
+    abort_check: Optional[Callable[[], bool]] = None,
 ) -> Dict[str, Any]:
     outdir = Path(outdir or DEFAULT_ACTIVE)
     sider_dir = Path(sider_dir or outdir.parent.parent.parent)
     base_ftex = Path(base_ftex_path or DEFAULT_BASE)
     clubs_file = Path(clubs_path or ROOT / "generator" / "clubs.csv")
-    workers = workers or min(os.cpu_count() or 4, 8)
+    workers = workers or min(os.cpu_count() or 4, 2)
 
     if not base_ftex.is_file():
         candidates = list(sider_dir.glob("content/kits/**/p1/*.ftex"))
@@ -315,7 +316,16 @@ def generate_all_kits(
             for (c, s, sp, out, skip, sl) in tasks
         }
 
+        aborted = False
         for fut in as_completed(futures):
+            if abort_check and abort_check():
+                # A signed-deal / JIT request arrived while this bulk rollover
+                # was running.  Stop before installing a partial stale set; the
+                # rollover stays pending and is retried once the queue is idle.
+                for pending in futures:
+                    pending.cancel()
+                aborted = True
+                break
             completed += 1
             res = fut.result()
             cid = res["id"]
@@ -344,7 +354,8 @@ def generate_all_kits(
         "season": season,
         "generated": total_generated,
         "skipped": total_skipped,
-        "elapsed": elapsed
+        "elapsed": elapsed,
+        "aborted": aborted,
     }
 
 
@@ -376,7 +387,13 @@ def generate_club_kits(
     if not badges.is_dir():
         badges = ROOT / "content" / "KitGenerator" / "badges"
 
-    if not sponsor or sponsor == "all":
+    # The human club must NEVER get an AI-assigned sponsor from a JIT/background
+    # generation.  Its chest logo comes only from the signed deal; with no deal
+    # the kit is sponsorless.
+    user_cid, user_sponsor, _ = load_user_club_info(sider_dir)
+    if club_id == user_cid:
+        sponsor = user_sponsor
+    elif not sponsor or sponsor == "all":
         brands = sorted({
             p.stem.replace("_white", "")
             for p in logos.glob("*.png")
@@ -419,6 +436,7 @@ def generate_club_kits(
         logo_dir=logos,
         badge_dir=badges,
         slots=selected_slots,
+        previews=False,                   # JIT/background installs need only .ftex
     )
     return {"id": club_id, "sponsor": sponsor, "count": len(results), "skipped": False}
 
@@ -470,6 +488,8 @@ def refresh_season_kits(
     scope: str = "baseline",
     prune_secondary: bool = False,
     low_priority: bool = True,
+    abort_check: Optional[Callable[[], bool]] = None,
+    workers: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Force a fresh season render into staging, then copy it into active.
 
@@ -492,34 +512,35 @@ def refresh_season_kits(
     protected = {user_cid} if user_cid else set()
 
     result: Dict[str, Any] = {"season": season, "scope": scope,
-                              "generated": 0, "copied": 0, "pruned": 0, "clubs": 0}
+                              "generated": 0, "copied": 0, "pruned": 0, "clubs": 0,
+                              "aborted": False}
+    refresh_kwargs = dict(
+        season=season,
+        sider_dir=sider_dir,
+        slots=slots,
+        skip_existing=False,
+        outdir=staging,
+        low_priority=low_priority,
+        abort_check=abort_check,
+        workers=workers,
+    )
     if team_ids is None:
-        result.update(generate_all_kits(
-            season=season,
-            sider_dir=sider_dir,
-            slots=slots,
-            skip_existing=False,
-            outdir=staging,
-            low_priority=low_priority,
-        ))
+        result.update(generate_all_kits(**refresh_kwargs))
+        if result.get("aborted"):
+            return result
         result["clubs"] = len(list(staging.glob("u*p1.ftex")))
     else:
         ids = [int(t) for t in team_ids if int(t) not in protected]
-        for cid in ids:
-            try:
-                generate_club_kits(
-                    club_id=cid,
-                    season=season,
-                    sider_dir=sider_dir,
-                    slots=slots,
-                    skip_existing=False,
-                    outdir=staging,
-                    install=False,
-                    staging_dir=staging,
-                )
-            except Exception as exc:                   # keep the rest of the league alive
-                print(f"  [refresh warning] club #{cid}: {exc}")
-        result["clubs"] = len(ids)
+        # Use the same parallel lightweight renderer as the global rollover.
+        # The old serial loop called generate_club_kits(), which also writes
+        # preview/mockup PNGs and took ~18s per club instead of ~3s.
+        if not ids:
+            result["clubs"] = 0
+            return result
+        result.update(generate_all_kits(**refresh_kwargs, team_ids=ids))
+        if result.get("aborted"):
+            return result
+        result["clubs"] = len(list(staging.glob("u*p1.ftex")))
 
     result["copied"] = _copy_staged_kits(staging, active, protected)
     if prune_secondary:
@@ -530,7 +551,7 @@ def refresh_season_kits(
 def main():
     parser = argparse.ArgumentParser(description="Pre-generate Master League kits for all clubs.")
     parser.add_argument("--season", type=int, default=2027, help="Master League season year (e.g. 2027)")
-    parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 4, 8), help="CPU worker processes")
+    parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 4, 2), help="CPU worker processes")
     parser.add_argument("--slots", type=str, default="1,g1", help="Kit slots to build (default: 1,g1 - scoutable roster)")
     parser.add_argument("--power", action="store_true", help="Power PC mode: generate all 5 slots (1,2,3,g1,g2) upfront")
     parser.add_argument("--low-priority", action="store_true", default=None, help="Set background worker CPU priority below normal")

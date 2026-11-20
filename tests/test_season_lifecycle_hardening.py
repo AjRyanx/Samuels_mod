@@ -13,7 +13,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+import numpy as np
 from lupa import LuaRuntime
+from PIL import Image
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -21,6 +23,8 @@ if str(ROOT / "generator") not in sys.path:
     sys.path.insert(0, str(ROOT / "generator"))
 
 import build_all_clubs  # noqa: E402
+import kit_regions  # noqa: E402
+import kit_render  # noqa: E402
 import watch_signed  # noqa: E402
 
 
@@ -65,7 +69,7 @@ def test_season_1_never_queues_bulk_rollover():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
-def test_expired_deal_never_serves_stale_branded_kit():
+def test_expired_deal_queues_clean_without_hiding_dynamic_kit():
     tmp = Path(tempfile.mkdtemp())
     try:
         req_file = _prepare(tmp)
@@ -82,17 +86,19 @@ def test_expired_deal_never_serves_stale_branded_kit():
             "content/KitGenerator/active/u0108p1.ftex"
 
         # Deal ends: a forced clean request is queued and the old branded file
-        # is still physically present.
+        # is still physically present, but the club must stay in the dynamic
+        # pool instead of falling back to an authentic kit.
         M.debug_terminate()
         clean_lines = [line for line in req_file.read_text().splitlines()
                        if line.startswith("clean-108-2028-t")]
         assert clean_lines and "|force|" in clean_lines[-1], clean_lines
         req_id = clean_lines[-1].split("|")[0]
 
-        # Until the watcher records the request, authentic kit must be served.
-        assert M.make_key(ml_ctx, "k108p1.ftex") is None
+        assert M.make_key(ml_ctx, "k108p1.ftex") == \
+            "content/KitGenerator/active/u0108p1.ftex"
 
-        # Once the watcher has rebuilt the kit, the dynamic pool is used again.
+        # The watcher marker only retires the "rebuilding" notice; serving is
+        # unchanged before and after it.
         state_file = tmp / "content" / "KitGenerator" / "watcher_state.txt"
         state_file.write_text(req_id + "\n")
         assert M.debug_reset_clean_check(108, 2028)
@@ -188,9 +194,10 @@ def test_season_refresh_forces_regeneration_and_protects_user(tmp_path, monkeypa
 
 
 def test_league_refresh_uses_staging_and_full_slot_set(tmp_path, monkeypatch):
-    params = inspect.signature(build_all_clubs.generate_club_kits).parameters
-    assert "staging_dir" in params          # refresh passes staging_dir explicitly
-    assert "install" in params              # and keeps output out of active until copy
+    params = inspect.signature(build_all_clubs.generate_all_kits).parameters
+    assert "team_ids" in params              # refresh hands the league to the pool
+    assert "workers" in params               # with the rollover worker budget
+    assert "abort_check" in params           # and remains interruptible
 
     sider = tmp_path / "SiderAddons"
     active = sider / "content" / "KitGenerator" / "active"
@@ -200,15 +207,22 @@ def test_league_refresh_uses_staging_and_full_slot_set(tmp_path, monkeypatch):
     monkeypatch.setattr(build_all_clubs, "load_user_club_info",
                         lambda _s: (105, "sharp", True))
 
-    def fake_club(**kwargs):
-        assert kwargs["install"] is False, kwargs
-        assert kwargs["skip_existing"] is False, kwargs
-        out = kwargs["staging_dir"]
-        cid = kwargs["club_id"]
-        (out / f"u{cid:04d}p1.ftex").write_bytes(b"NEW")
-        (out / f"u{cid:04d}p1_back.ftex").write_bytes(b"NEW_FONT")
+    expected_staging = (sider / "content" / "KitGenerator" / "staging" /
+                        "season_2029" / "refresh_league")
 
-    monkeypatch.setattr(build_all_clubs, "generate_club_kits", fake_club)
+    def fake_all(**kwargs):
+        assert kwargs["outdir"] == expected_staging, kwargs
+        assert kwargs["skip_existing"] is False, kwargs
+        assert kwargs["slots"] == "1,2,3,g1,g2", kwargs
+        assert kwargs["team_ids"] == [103], kwargs   # human club excluded
+        out = kwargs["outdir"]
+        for cid in kwargs["team_ids"]:
+            (out / f"u{cid:04d}p1.ftex").write_bytes(b"NEW")
+            (out / f"u{cid:04d}p1_back.ftex").write_bytes(b"NEW_FONT")
+        return {"generated": 2, "copied": 0, "aborted": False, "elapsed": 0.0,
+                "skipped": 0, "season": 2029}
+
+    monkeypatch.setattr(build_all_clubs, "generate_all_kits", fake_all)
     stats = build_all_clubs.refresh_season_kits(
         2029, sider, slots="1,2,3,g1,g2", team_ids=[105, 103], scope="league")
 
@@ -290,3 +304,113 @@ def test_ai_sponsors_hold_for_contract_then_rotate():
     rotated = build_all_clubs.pick_ai_sponsor(club, 2030, brands)
     expected = build_all_clubs.season_rng(100, 2030, salt="ai-sponsor-deal").choice(brands)
     assert rotated == expected                     # new contract cycle from 2030
+
+
+def test_generate_club_kits_never_assigns_ai_sponsor_to_user(tmp_path, monkeypatch):
+    import build_kit
+
+    sider = tmp_path / "SiderAddons"
+    kg = sider / "content" / "KitGenerator"
+    kg.mkdir(parents=True)
+    (kg / "club.txt").write_text("105|USER|#000|#fff|#000|#000|\n", encoding="utf-8")
+    (kg / "active_deal.txt").write_text(
+        "105-2029-1|105|sharp|2029|1|1000|big|2026-11-20 19:00:00|0\n", encoding="utf-8")
+
+    monkeypatch.setattr(build_kit, "_load_club",
+                        lambda cid, _sdir: {"id": cid, "name": "USER"})
+    captured = {}
+
+    def fake_build_set(_club, _season, _outdir, **kwargs):
+        captured.update(kwargs)
+        return []
+
+    monkeypatch.setattr(build_kit, "build_set", fake_build_set)
+
+    build_all_clubs.generate_club_kits(
+        105, 2029, sider_dir=sider, sponsor=None, slots="1")
+
+    assert captured["sponsor"] == "sharp"     # never pick_ai_sponsor() for the human club
+
+
+def test_jit_request_for_user_club_routes_to_career_rebuild(tmp_path, monkeypatch):
+    sider = tmp_path / "SiderAddons"
+    kg = sider / "content" / "KitGenerator"
+    active = kg / "active"
+    active.mkdir(parents=True)
+    (kg / "club.txt").write_text("105|USER|#000|#fff|#000|#000|\n", encoding="utf-8")
+    (kg / "active_deal.txt").write_text(
+        "105-2029-1|105|sharp|2029|1|1000|big|2026-11-20 19:00:00|0\n", encoding="utf-8")
+    (active / "u0105p2.ftex").write_bytes(b"OLD_SECONDARY")  # force it past the seen check
+
+    req_file = tmp_path / "kit_request.txt"
+    state_file = tmp_path / "watcher_state.txt"
+    log_file = tmp_path / "watcher.log"
+    req_file.write_text(
+        "jit-105-2029|105|2029|all|jit|2026-11-20 19:00:00|ml_0105_saveA\n")
+
+    rebuild_calls = []
+    monkeypatch.setattr(watch_signed, "rebuild",
+                        lambda *a, **kw: rebuild_calls.append((a, kw)) or [])
+    monkeypatch.setattr(build_all_clubs, "generate_club_kits",
+                        lambda **_kw: (_ for _ in ()).throw(
+                            AssertionError("JIT must not regenerate the human club")))
+
+    assert watch_signed.process_pending(req_file, state_file, sider,
+                                        tmp_path, log_file) == 1
+    assert rebuild_calls
+    assert rebuild_calls[0][0][:3] == (105, 2029, "sharp")
+    assert rebuild_calls[0][1]["career_id"] == "ml_0105_saveA"
+
+
+def test_rollover_is_deferred_while_a_user_request_is_pending(tmp_path, monkeypatch):
+    sider = tmp_path / "SiderAddons"
+    (sider / "content" / "KitGenerator" / "active").mkdir(parents=True)
+
+    req_file = tmp_path / "kit_request.txt"
+    state_file = tmp_path / "watcher_state.txt"
+    log_file = tmp_path / "watcher.log"
+    req_file.write_text(
+        "season-ml_0105-2029|0|2029|all|balanced|2026-11-20 19:00:00|ml_0105\n"
+        "clean-105-2029-t20261120190000|105|2029||force|2026-11-20 19:00:01|ml_0105\n")
+
+    calls = []
+    monkeypatch.setattr(watch_signed, "rebuild",
+                        lambda *a, **kw: calls.append(("rebuild", a, kw)) or [])
+    monkeypatch.setattr(build_all_clubs, "refresh_season_kits",
+                        lambda **kw: calls.append(("refresh", kw)) or
+                        {"clubs": 0, "copied": 0, "pruned": 0})
+
+    assert watch_signed.process_pending(req_file, state_file, sider,
+                                        tmp_path, log_file) == 1
+    assert any(c[0] == "rebuild" for c in calls), calls
+    assert not any(c[0] == "refresh" for c in calls), calls
+    assert "season-ml_0105-2029" not in state_file.read_text()
+
+
+def test_mask_geometry_and_fabric_tiles_are_cached_per_worker():
+    masks = kit_regions.build_masks()
+    boxes = kit_regions.region_boxes(masks)
+    assert boxes is masks.boxes                 # no np.where per kit
+    assert kit_render._fabric_texture_data(masks) is \
+        kit_render._fabric_texture_data(masks)  # no tile rebuild per kit
+
+
+def test_masked_composite_stays_pixel_identical():
+    """The fast Pillow-only composite must match the old numpy-mask version."""
+    rng = np.random.default_rng(42)
+    base = rng.integers(0, 256, (64, 64, 4), dtype=np.uint8)
+    layer_arr = rng.integers(0, 256, (64, 64, 4), dtype=np.uint8)
+    mask = rng.random((64, 64)) > 0.35
+
+    atlas = Image.fromarray(base.copy(), "RGBA")
+    layer = Image.fromarray(layer_arr.copy(), "RGBA")
+
+    old_arr = layer_arr.copy()
+    old_arr[~mask] = 0
+    expected = atlas.copy()
+    expected.alpha_composite(Image.fromarray(old_arr, "RGBA"))
+
+    actual = atlas.copy()
+    kit_render._composite_layer(actual, layer, mask)
+
+    assert np.array_equal(np.array(expected), np.array(actual))

@@ -85,9 +85,17 @@ def _load_club(club_id, sider=None):
 
 
 def pack_atlas(atlas_png, out_ftex, template):
-    """Encode a 2048x2048 atlas PNG into a .ftex using `template`'s header."""
-    img = Image.open(atlas_png).convert("RGBA").resize(
-        (template["width"], template["height"]), Image.LANCZOS)
+    """Encode a 2048x2048 atlas (path or live PIL image) into a .ftex.
+
+    The JIT/rebuild fast path passes the in-memory atlas so it never writes,
+    reopens and downsamples a 16 MB PNG just to feed the FTEX encoder.
+    """
+    if isinstance(atlas_png, Image.Image):
+        img = atlas_png.convert("RGBA")
+    else:
+        img = Image.open(atlas_png).convert("RGBA")
+    if img.size != (template["width"], template["height"]):
+        img = img.resize((template["width"], template["height"]), Image.LANCZOS)
     fmt = template["pixel_format"]
     if fmt not in (2, 3, 4, 9):
         fmt = 4  # BC3/DXT5 (Pillow supports DXT1/DXT3/DXT5/BC5; standard PES kit format is BC3)
@@ -98,7 +106,8 @@ def pack_atlas(atlas_png, out_ftex, template):
 
 def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1", "g2"),
               install=False, game_root=DEFAULT_GAME_ROOT, quiet=False, sponsor=None,
-              logo_dir=None, badge_dir=None, badge=None, sleeve_sponsor=None):
+              logo_dir=None, badge_dir=None, badge=None, sleeve_sponsor=None,
+              previews=True):
     """Render + pack a club's kit set (outfield and goalkeeper). Returns [(slot, atlas, ftex, design)].
 
     When `sponsor` is given (a brand name from content/KitGenerator/logos), the
@@ -147,7 +156,8 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
                                          masks=masks, sponsor=sponsor,
                                          badge_dir=badge_dir, badge=badge,
                                          slots=norm_slots,
-                                         sleeve_sponsor=sleeve_sponsor)
+                                         sleeve_sponsor=sleeve_sponsor,
+                                         previews=previews)
     active_dir = Path(game_root) / ACTIVE_SUBDIR if install else None
     if active_dir:
         active_dir.mkdir(parents=True, exist_ok=True)
@@ -188,7 +198,8 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
             if not quiet:
                 print(f"  [font warning] failed to process fonts for {slot_code}: {e}")
 
-        results.append((slot, str(atlas), str(out_ftex), design))
+        atlas_ref = str(atlas) if isinstance(atlas, (str, Path)) else ""
+        results.append((slot, atlas_ref, str(out_ftex), design))
     return results
 
 

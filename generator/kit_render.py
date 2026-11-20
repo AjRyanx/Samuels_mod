@@ -33,11 +33,12 @@ Nothing is copied from a real club kit: the flat-colour template only tells us
 *where* the islands are, never *what* they look like.
 """
 from pathlib import Path
+from collections import OrderedDict
 import math
 import re
 import numpy as np
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 import kit_gen
 import kit_regions
@@ -107,10 +108,26 @@ def _hexc(h):
     return tuple(int(h[i:i + 2], 16) for i in range(0, 6, 2))
 
 
+# The worker reuses the same six UV masks for every club.  Keep their PIL
+# equivalents (and short-lived cropped masks) alive briefly so we do not
+# rebuild a 2048x2048 uint8 array on every paste.
+_MASK_IMG_CACHE = OrderedDict()
+
+
 def _mask_img(mask):
     """numpy bool mask -> single-channel PIL mask (255 where True)."""
-    import numpy as np
-    return Image.fromarray((mask * 255).astype("uint8"))
+    if isinstance(mask, Image.Image):
+        return mask                       # already cropped/derived from a cached mask
+    key = id(mask)
+    hit = _MASK_IMG_CACHE.get(key)
+    if hit is not None and hit[0] is mask:
+        _MASK_IMG_CACHE.move_to_end(key)
+        return hit[1]
+    img = Image.fromarray((mask * 255).astype("uint8"))
+    _MASK_IMG_CACHE[key] = (mask, img)
+    if len(_MASK_IMG_CACHE) > 96:
+        _MASK_IMG_CACHE.popitem(last=False)
+    return img
 
 
 def _col_lum(c):
@@ -303,13 +320,38 @@ def _apply_vent_panels(atlas, d, masks):
             atlas.paste(Image.fromarray(arr, "RGBA"), (0, 0))
 
 
-def _composite_layer(atlas, layer, mask=None):
-    """Safely alpha-composite a transparent RGBA layer onto atlas, optionally clipped by mask."""
+def _composite_layer(atlas, layer, mask=None, dest=(0, 0)):
+    """Safely alpha-composite a transparent RGBA layer onto atlas, optionally clipped by mask.
+
+    Only the bounding box of the *effective* alpha is composited.  Pixels outside
+    that box have zero source alpha, so omitting them is pixel-for-pixel
+    equivalent to compositing a full 2048x2048 layer, while avoiding a large
+    Pillow blend on every badge, seam and supplier mark.  `dest` lets callers
+    composite a small local canvas at its true atlas position.
+    """
+    if layer.mode != "RGBA":
+        layer = layer.convert("RGBA")
+
+    if mask is None:
+        bbox = layer.getchannel("A").getbbox()
+    else:
+        mask_img = _mask_img(mask)
+        if mask_img.size != layer.size:
+            raise ValueError("mask and layer must be the same size")
+        bbox = ImageChops.multiply(mask_img, layer.getchannel("A")).getbbox()
+
+    if not bbox:
+        return
+
     if mask is not None:
-        arr = np.array(layer)
-        arr[~mask] = 0
-        layer = Image.fromarray(arr)
-    atlas.alpha_composite(layer)
+        effective = ImageChops.multiply(
+            _mask_img(mask).crop(bbox), layer.getchannel("A").crop(bbox))
+        layer = layer.crop(bbox)
+        layer.putalpha(effective)
+    else:
+        layer = layer.crop(bbox)
+
+    atlas.alpha_composite(layer, (dest[0] + bbox[0], dest[1] + bbox[1]))
 
 
 def _apply_brand_signatures(atlas, d, masks):
@@ -634,61 +676,185 @@ def _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, 
     - Crisp contact drop shadow (+1, +relief_depth)
     - Top-left specular rim highlight (-1, -1)
     - Top edge ambient specular reflection (0, -1)
+
+    The relief is painted into a small canvas covering only the logo plus its
+    shadow/highlight offsets.  That canvas is then composited at its original
+    atlas position, producing byte-identical pixels without allocating a full
+    2048x2042 layer for every crest/sponsor mark.
     """
     if img is None:
         return
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
     w, h = img.size
-    alpha = np.array(img.split()[-1], dtype=np.float32)
-    if not np.any(alpha > 10):
-        if mask is not None:
-            layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-            layer.paste(img, (x, y), img)
-            _composite_layer(atlas, layer, mask)
-        else:
-            atlas.alpha_composite(img, (x, y))
+    alpha = np.array(img.getchannel("A"), dtype=np.float32)
+    alpha_bbox = Image.fromarray(alpha.astype(np.uint8)).getbbox()
+    if not alpha_bbox:
+        return
+    bx0, by0, bx1, by1 = alpha_bbox
+
+    use_relief = bool(np.any(alpha > 10))
+    if use_relief:
+        gx0 = max(0, x + bx0 - 1)
+        gy0 = max(0, y + by0 - 1)
+        gx1 = min(ATLAS, x + bx1 + 2)
+        gy1 = min(ATLAS, y + by1 + relief_depth + 1)
+    else:
+        gx0 = max(0, x + bx0)
+        gy0 = max(0, y + by0)
+        gx1 = min(ATLAS, x + bx1)
+        gy1 = min(ATLAS, y + by1)
+    if gx0 >= gx1 or gy0 >= gy1:
         return
 
-    layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    layer = Image.new("RGBA", (gx1 - gx0, gy1 - gy0), (0, 0, 0, 0))
 
-    # 1. Soft ambient occlusion shadow (+2, +relief_depth + 1)
-    amb_alpha = (alpha * (shadow_opacity * 0.45 / 255.0)).astype(np.uint8)
-    amb_arr = np.zeros((h, w, 4), dtype=np.uint8)
-    amb_arr[:, :, :3] = (10, 12, 16)
-    amb_arr[:, :, 3] = amb_alpha
-    amb_img = Image.fromarray(amb_arr)
-    layer.paste(amb_img, (x + 2, y + relief_depth + 1), amb_img)
+    if use_relief:
+        # 1. Soft ambient occlusion shadow (+2, +relief_depth + 1)
+        amb_alpha = (alpha * (shadow_opacity * 0.45 / 255.0)).astype(np.uint8)
+        amb_arr = np.zeros((h, w, 4), dtype=np.uint8)
+        amb_arr[:, :, :3] = (10, 12, 16)
+        amb_arr[:, :, 3] = amb_alpha
+        amb_img = Image.fromarray(amb_arr)
+        layer.paste(amb_img, (x + 2 - gx0, y + relief_depth + 1 - gy0), amb_img)
 
-    # 2. Crisp contact drop shadow (+1, +relief_depth)
-    sh_alpha = (alpha * (shadow_opacity / 255.0)).astype(np.uint8)
-    shadow_arr = np.zeros((h, w, 4), dtype=np.uint8)
-    shadow_arr[:, :, :3] = (12, 14, 20)
-    shadow_arr[:, :, 3] = sh_alpha
-    shadow_img = Image.fromarray(shadow_arr)
-    layer.paste(shadow_img, (x + 1, y + relief_depth), shadow_img)
+        # 2. Crisp contact drop shadow (+1, +relief_depth)
+        sh_alpha = (alpha * (shadow_opacity / 255.0)).astype(np.uint8)
+        shadow_arr = np.zeros((h, w, 4), dtype=np.uint8)
+        shadow_arr[:, :, :3] = (12, 14, 20)
+        shadow_arr[:, :, 3] = sh_alpha
+        shadow_img = Image.fromarray(shadow_arr)
+        layer.paste(shadow_img, (x + 1 - gx0, y + relief_depth - gy0), shadow_img)
 
-    # 3. Specular top-edge rim highlight (-1, -1)
-    hl_alpha = (alpha * (highlight_opacity / 255.0)).astype(np.uint8)
-    hl_arr = np.zeros((h, w, 4), dtype=np.uint8)
-    hl_arr[:, :, :3] = (255, 255, 255)
-    hl_arr[:, :, 3] = hl_alpha
-    hl_img = Image.fromarray(hl_arr)
-    layer.paste(hl_img, (x - 1, y - 1), hl_img)
+        # 3. Specular top-edge rim highlight (-1, -1)
+        hl_alpha = (alpha * (highlight_opacity / 255.0)).astype(np.uint8)
+        hl_arr = np.zeros((h, w, 4), dtype=np.uint8)
+        hl_arr[:, :, :3] = (255, 255, 255)
+        hl_arr[:, :, 3] = hl_alpha
+        hl_img = Image.fromarray(hl_arr)
+        layer.paste(hl_img, (x - 1 - gx0, y - 1 - gy0), hl_img)
 
-    # 4. Ambient top edge specular reflection (0, -1)
-    top_alpha = (alpha * (highlight_opacity * 0.55 / 255.0)).astype(np.uint8)
-    top_arr = np.zeros((h, w, 4), dtype=np.uint8)
-    top_arr[:, :, :3] = (245, 250, 255)
-    top_arr[:, :, 3] = top_alpha
-    top_img = Image.fromarray(top_arr)
-    layer.paste(top_img, (x, y - 1), top_img)
+        # 4. Ambient top edge specular reflection (0, -1)
+        top_alpha = (alpha * (highlight_opacity * 0.55 / 255.0)).astype(np.uint8)
+        top_arr = np.zeros((h, w, 4), dtype=np.uint8)
+        top_arr[:, :, :3] = (245, 250, 255)
+        top_arr[:, :, 3] = top_alpha
+        top_img = Image.fromarray(top_arr)
+        layer.paste(top_img, (x - gx0, y - 1 - gy0), top_img)
 
     # 5. Primary emblem
-    layer.paste(img, (x, y), img)
+    layer.paste(img, (x - gx0, y - gy0), img)
 
+    local_mask = None
     if mask is not None:
-        _composite_layer(atlas, layer, mask)
+        local_mask = _mask_img(mask).crop((gx0, gy0, gx1, gy1))
+    _composite_layer(atlas, layer, local_mask, dest=(gx0, gy0))
+
+
+_FABRIC_CACHE = OrderedDict()
+
+
+def _fabric_texture_data(masks):
+    """Build (and cache per worker) the static fabric mask / delta tiles."""
+    key = id(masks)
+    hit = _FABRIC_CACHE.get(key)
+    if hit is not None and hit[0] is masks:
+        _FABRIC_CACHE.move_to_end(key)
+        return hit[1]
+
+    fabric_mask = np.zeros((ATLAS, ATLAS), dtype=bool)
+    for key_name in ("body_front", "body_back", "sleeve", "shorts", "socks", "collar"):
+        m = masks.get(key_name)
+        if m is not None:
+            fabric_mask |= m
+
+    if np.any(fabric_mask):
+        delta = np.zeros((ATLAS, ATLAS), dtype=np.float32)
+
+        # 1. Torso: Engineered micro-honeycomb / jacquard piqué knit grain (6x6)
+        torso_m = np.zeros((ATLAS, ATLAS), dtype=bool)
+        for key_name in ("body_front", "body_back"):
+            m = masks.get(key_name)
+            if m is not None:
+                torso_m |= m
+        if np.any(torso_m):
+            k_torso = np.array([
+                [ 3.5, -2.5,  2.0, -3.5,  2.5, -2.0],
+                [-2.5,  3.5, -3.5,  2.0, -2.0,  2.5],
+                [ 2.0, -3.5,  3.5, -2.5,  2.5, -2.0],
+                [-3.5,  2.0, -2.5,  3.5, -2.0,  2.5],
+                [ 2.5, -2.0,  2.5, -2.0,  3.5, -3.5],
+                [-2.0,  2.5, -2.0,  2.5, -3.5,  3.5],
+            ], dtype=np.float32)
+            tile_torso = np.tile(k_torso, (ATLAS // 6 + 1, ATLAS // 6 + 1))[:ATLAS, :ATLAS]
+            delta[torso_m] = tile_torso[torso_m]
+
+        # 2. Collar & Cuffs: High-density vertical elastic ribbing (2x2)
+        collar_m = masks.get("collar")
+        if collar_m is not None and np.any(collar_m):
+            k_rib = np.array([
+                [ 4.5, -4.5],
+                [ 4.5, -4.5],
+            ], dtype=np.float32)
+            tile_rib = np.tile(k_rib, (ATLAS // 2, ATLAS // 2))
+            delta[collar_m] = tile_rib[collar_m]
+
+        # 3. Flanks & Underarms: Laser-perforated breathable mesh
+        flank_m = np.zeros((ATLAS, ATLAS), dtype=bool)
+        bf = masks.get("body_front")
+        if bf is not None:
+            flank_m[1100:1850, 674:725] = bf[1100:1850, 674:725]
+            flank_m[1100:1850, 1323:1374] = bf[1100:1850, 1323:1374]
+        if np.any(flank_m):
+            y_f, x_f = np.where(flank_m)
+            holes = ((y_f % 6 < 2) & (x_f % 6 < 2))
+            delta[y_f[holes], x_f[holes]] = -5.0
+
+        # 4. Shorts: Athletic micro-twill weave (4x4 diagonal)
+        shorts_m = masks.get("shorts")
+        if shorts_m is not None and np.any(shorts_m):
+            k_twill = np.array([
+                [ 3.0,  1.0, -2.5, -1.0],
+                [-1.0,  3.0,  1.0, -2.5],
+                [-2.5, -1.0,  3.0,  1.0],
+                [ 1.0, -2.5, -1.0,  3.0],
+            ], dtype=np.float32)
+            tile_twill = np.tile(k_twill, (ATLAS // 4, ATLAS // 4))
+            delta[shorts_m] = tile_twill[shorts_m]
+
+        # 5. Socks: Ribbed compression knit (4x2 horizontal ribs)
+        socks_m = masks.get("socks")
+        if socks_m is not None and np.any(socks_m):
+            k_socks = np.array([
+                [ 3.5,  3.5],
+                [ 3.5,  3.5],
+                [-3.5, -3.5],
+                [-3.5, -3.5],
+            ], dtype=np.float32)
+            tile_socks = np.tile(k_socks, (ATLAS // 4, ATLAS // 2))
+            delta[socks_m] = tile_socks[socks_m]
+
+        # 6. Sleeves: Fine athletic polyester knit grain (4x4)
+        sleeve_m = masks.get("sleeve")
+        if sleeve_m is not None and np.any(sleeve_m):
+            k_sleeve = np.array([
+                [ 2.8, -2.8,  2.0, -2.0],
+                [-2.0,  2.8, -2.8,  2.0],
+                [ 2.0, -2.0,  2.8, -2.8],
+                [-2.8,  2.0, -2.0,  2.8],
+            ], dtype=np.float32)
+            tile_sleeve = np.tile(k_sleeve, (ATLAS // 4, ATLAS // 4))
+            delta[sleeve_m] = tile_sleeve[sleeve_m]
     else:
-        atlas.alpha_composite(layer)
+        delta = np.zeros((ATLAS, ATLAS), dtype=np.float32)
+
+    fabric_idx = np.flatnonzero(fabric_mask)
+    delta_flat = delta[fabric_mask][:, None]
+    data = (fabric_mask, delta, fabric_idx, delta_flat)
+    _FABRIC_CACHE[key] = (masks, data)
+    if len(_FABRIC_CACHE) > 4:
+        _FABRIC_CACHE.popitem(last=False)
+    return data
 
 
 def _apply_fabric_microtexture(atlas, d, masks):
@@ -707,98 +873,20 @@ def _apply_fabric_microtexture(atlas, d, masks):
     if not d.get("fabric_texture", True):
         return
 
-    fabric_mask = np.zeros((ATLAS, ATLAS), dtype=bool)
-    for key in ("body_front", "body_back", "sleeve", "shorts", "socks", "collar"):
-        m = masks.get(key)
-        if m is not None:
-            fabric_mask |= m
-
-    if not np.any(fabric_mask):
+    fabric_mask, _delta, fabric_idx, delta_flat = _fabric_texture_data(masks)
+    if not len(fabric_idx):
         return
 
-    delta = np.zeros((ATLAS, ATLAS), dtype=np.float32)
-
-    # 1. Torso: Engineered micro-honeycomb / jacquard piqué knit grain (6x6)
-    torso_m = np.zeros((ATLAS, ATLAS), dtype=bool)
-    for key in ("body_front", "body_back"):
-        m = masks.get(key)
-        if m is not None:
-            torso_m |= m
-    if np.any(torso_m):
-        k_torso = np.array([
-            [ 3.5, -2.5,  2.0, -3.5,  2.5, -2.0],
-            [-2.5,  3.5, -3.5,  2.0, -2.0,  2.5],
-            [ 2.0, -3.5,  3.5, -2.5,  2.5, -2.0],
-            [-3.5,  2.0, -2.5,  3.5, -2.0,  2.5],
-            [ 2.5, -2.0,  2.5, -2.0,  3.5, -3.5],
-            [-2.0,  2.5, -2.0,  2.5, -3.5,  3.5],
-        ], dtype=np.float32)
-        tile_torso = np.tile(k_torso, (ATLAS // 6 + 1, ATLAS // 6 + 1))[:ATLAS, :ATLAS]
-        delta[torso_m] = tile_torso[torso_m]
-
-    # 2. Collar & Cuffs: High-density vertical elastic ribbing (2x2)
-    collar_m = masks.get("collar")
-    if collar_m is not None and np.any(collar_m):
-        k_rib = np.array([
-            [ 4.5, -4.5],
-            [ 4.5, -4.5],
-        ], dtype=np.float32)
-        tile_rib = np.tile(k_rib, (ATLAS // 2, ATLAS // 2))
-        delta[collar_m] = tile_rib[collar_m]
-
-    # 3. Flanks & Underarms: Laser-perforated breathable mesh
-    flank_m = np.zeros((ATLAS, ATLAS), dtype=bool)
-    bf = masks.get("body_front")
-    if bf is not None:
-        flank_m[1100:1850, 674:725] = bf[1100:1850, 674:725]
-        flank_m[1100:1850, 1323:1374] = bf[1100:1850, 1323:1374]
-    if np.any(flank_m):
-        y_f, x_f = np.where(flank_m)
-        holes = ((y_f % 6 < 2) & (x_f % 6 < 2))
-        delta[y_f[holes], x_f[holes]] = -5.0
-
-    # 4. Shorts: Athletic micro-twill weave (4x4 diagonal)
-    shorts_m = masks.get("shorts")
-    if shorts_m is not None and np.any(shorts_m):
-        k_twill = np.array([
-            [ 3.0,  1.0, -2.5, -1.0],
-            [-1.0,  3.0,  1.0, -2.5],
-            [-2.5, -1.0,  3.0,  1.0],
-            [ 1.0, -2.5, -1.0,  3.0],
-        ], dtype=np.float32)
-        tile_twill = np.tile(k_twill, (ATLAS // 4, ATLAS // 4))
-        delta[shorts_m] = tile_twill[shorts_m]
-
-    # 5. Socks: Ribbed compression knit (4x2 horizontal ribs)
-    socks_m = masks.get("socks")
-    if socks_m is not None and np.any(socks_m):
-        k_socks = np.array([
-            [ 3.5,  3.5],
-            [ 3.5,  3.5],
-            [-3.5, -3.5],
-            [-3.5, -3.5],
-        ], dtype=np.float32)
-        tile_socks = np.tile(k_socks, (ATLAS // 4, ATLAS // 2))
-        delta[socks_m] = tile_socks[socks_m]
-
-    # 6. Sleeves: Fine athletic polyester knit grain (4x4)
-    sleeve_m = masks.get("sleeve")
-    if sleeve_m is not None and np.any(sleeve_m):
-        k_sleeve = np.array([
-            [ 2.8, -2.8,  2.0, -2.0],
-            [-2.0,  2.8, -2.8,  2.0],
-            [ 2.0, -2.0,  2.8, -2.8],
-            [-2.8,  2.0, -2.0,  2.8],
-        ], dtype=np.float32)
-        tile_sleeve = np.tile(k_sleeve, (ATLAS // 4, ATLAS // 4))
-        delta[sleeve_m] = tile_sleeve[sleeve_m]
-
-    arr = np.array(atlas, dtype=np.float32)
-    rgb = arr[:, :, :3]
-    rgb[fabric_mask] = np.clip(rgb[fabric_mask] + delta[fabric_mask, None], 0, 255)
-    arr[:, :, :3] = rgb
-
-    atlas.paste(Image.fromarray(arr.astype(np.uint8)), (0, 0))
+    # Only touch fabric pixels.  The old full-atlas float32 conversion allocated
+    # a 64 MB temporary for every kit; precomputed flat indices keep this to a
+    # small scoped copy with no repeated boolean-mask scans.
+    arr = np.array(atlas)                      # uint8 RGBA copy
+    rgb_flat = arr.reshape(-1, 4)[:, :3]
+    patch = rgb_flat[fabric_idx].astype(np.float32)
+    patch += delta_flat
+    np.clip(patch, 0, 255, out=patch)
+    rgb_flat[fabric_idx] = patch.astype(np.uint8)
+    atlas.paste(Image.fromarray(arr), (0, 0))
 
 
 def _draw_flatlock_seam(draw, pts, dark_stitch, light_stitch, stitch_len=4, gap_len=1):
@@ -1731,10 +1819,12 @@ def render_club(club, season, out_png, logo_dir, masks=None, brand_files=None, s
 
 def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
                    sponsor=None, badge_dir=None, badge=None, slots=(1, 2, 3, "g1", "g2"),
-                   sleeve_sponsor=None):
+                   sleeve_sponsor=None, previews=True):
     """Render the full outfield and goalkeeper kit set for a club + season.
 
-    Returns a list of (slot, atlas_png, preview_png, design).
+    Returns a list of (slot, atlas_png_or_image, preview_png, design).  With
+    `previews=False` the atlas is returned as a live PIL image and the preview
+    and mockup PNGs are skipped; the FTEX bytes are unchanged.
     """
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -1749,15 +1839,29 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
     out = []
     for slot in slots:
         slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
-        atlas = outdir / f"u{team:04d}{slot_code}_atlas.png"
-        _, design = render_club(club, season, atlas, logo_dir, masks=masks,
-                                brand_files=brand_files, slot=slot, sponsor=sponsor,
-                                badge_dir=badge_dir, badge=badge, sleeve_sponsor=sleeve_sponsor)
-        preview = uv_contact_sheet(atlas, outdir / f"u{team:04d}{slot_code}_preview.png",
-                                   masks=masks)
-        mockup(design, club["name"], season,
-               outdir / f"u{team:04d}{slot_code}_mockup.png")
-        out.append((slot, str(atlas), str(preview), design))
+        if previews:
+            atlas = outdir / f"u{team:04d}{slot_code}_atlas.png"
+            atlas_path = str(atlas)
+        else:
+            atlas = None
+            atlas_path = None
+
+        atlas_img, design = render_club(
+            club, season, atlas_path, logo_dir, masks=masks,
+            brand_files=brand_files, slot=slot, sponsor=sponsor,
+            badge_dir=badge_dir, badge=badge, sleeve_sponsor=sleeve_sponsor)
+
+        if previews:
+            preview = uv_contact_sheet(atlas, outdir / f"u{team:04d}{slot_code}_preview.png",
+                                       masks=masks)
+            mockup(design, club["name"], season,
+                   outdir / f"u{team:04d}{slot_code}_mockup.png")
+            atlas_ref = str(atlas)
+            preview_ref = str(preview)
+        else:
+            atlas_ref = atlas_img
+            preview_ref = None
+        out.append((slot, atlas_ref, preview_ref, design))
     return out
 
 

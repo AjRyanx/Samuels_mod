@@ -1,6 +1,7 @@
 # Dynamic Kit & Sponsor Mod for PES 2021 / SP Football Life
 
-[![Tests](https://img.shields.io/badge/tests-15%20passed-brightgreen.svg)](tests/test_ml_only_kits.py)
+[![Version](https://img.shields.io/badge/version-0.8.0--beta.1-orange.svg)](RELEASE_NOTES.md)
+[![Tests](https://img.shields.io/badge/tests-45%20passed-brightgreen.svg)](tests/)
 [![Compatibility](https://img.shields.io/badge/FL27%20%7C%20FL26%20%7C%20PES2021-Compatible-blue.svg)](AGENTS.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 

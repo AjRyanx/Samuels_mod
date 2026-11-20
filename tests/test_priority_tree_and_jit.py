@@ -1,12 +1,12 @@
-"""test_priority_tree_and_jit.py - Verify multi-tier kit generation priority tree and JIT scheduling.
+"""test_priority_tree_and_jit.py - Verify baseline + JIT kit generation scheduling.
 
 Verifies:
-  1. League discovery: get_league_teams identifies intra-league clubs accurately.
-  2. Lua league background queueing: ensure_season_deal writes league request.
-  3. Lua calendar schedule JIT queueing: set_teams in ML triggers JIT for scheduled opponents without p2 kits.
+  1. League discovery still works for manual/legacy tooling.
+  2. Lua no longer queues league pre-generation; season rollover is baseline-only.
+  3. Lua calendar schedule JIT queueing: set_teams in ML triggers JIT for scheduled opponents with missing slots.
   4. Master League scope protection: Exhibition matches and Season 1 AI clubs never trigger dynamic JIT requests.
-  5. Missing kit intercept: make_key triggers JIT when p2/p3/g2 is requested and absent.
-  6. Python priority queue: watch_signed prioritizes user requests -> JIT opponents -> user league -> rollover.
+  5. Missing kit intercept: make_key triggers JIT when an opponent slot is requested and absent.
+  6. Python priority queue: signed/force > baseline > seasonal club rebuild > opponent JIT; league requests retire.
 """
 import tempfile
 import shutil
@@ -82,15 +82,13 @@ def test_lua_queueing_and_jit():
         ctx, ui, calls, reg = setup(M, str(tmp) + "/")
         req_file = tmp / "content" / "KitGenerator" / "kit_request.txt"
 
-        # 1. League background queueing when user club is detected
+        # 1. No league pre-generation when user club is detected.  The
+        #    season rollover handles p1/g1 for everyone; the rest is JIT.
         M.debug_set_club(102) # Chelsea
         M.debug_set_date(2027, 8, 1) # Season 2027/28 (season 2028)
-        assert req_file.is_file()
-        lines = req_file.read_text().splitlines()
-        league_reqs = [l for l in lines if "league-102-2028" in l]
-        assert len(league_reqs) == 1, f"Expected 1 league request, got {lines}"
-        assert "|all|league|" in league_reqs[0]
-        print("PASS: User league background generation queued on season date refresh.")
+        lines = req_file.read_text().splitlines() if req_file.is_file() else []
+        assert not [l for l in lines if "|league|" in l], lines
+        print("PASS: League pre-generation is no longer queued.")
 
         # 2. Calendar schedule: set_teams with upcoming opponent without p2 kit in ML
         ml_ctx = lua.table_from({"tournament_id": 19, "sider_dir": str(tmp) + "/"})
@@ -135,52 +133,78 @@ def test_lua_queueing_and_jit():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
-def test_watch_signed_priority_order():
-    tmp = Path(tempfile.mkdtemp())
-    try:
-        content = tmp / "content" / "KitGenerator"
-        content.mkdir(parents=True, exist_ok=True)
-        req_file = content / "kit_request.txt"
-        state_file = content / "watcher_state.txt"
-        log_file = content / "watcher.log"
+def test_watch_signed_priority_order(tmp_path, monkeypatch):
+    sider = tmp_path / "SiderAddons"
+    content = sider / "content" / "KitGenerator"
+    (content / "active").mkdir(parents=True, exist_ok=True)
+    req_file = tmp_path / "kit_request.txt"
+    state_file = tmp_path / "watcher_state.txt"
+    log_file = content / "watcher.log"
 
-        # Write requests out of order: rollover first, then league, then jit, then user
-        req_file.write_text(
-            "season-2028|0|2028|all|balanced|2028-08-01 10:00:00|\n"
-            "league-102-2028|102|2028|all|league|2028-08-01 10:00:01|\n"
-            "jit-100-2028|100|2028|all|jit|2028-08-01 10:00:02|\n"
-            "rebuild-102-apple-2028|102|2028|apple|big|2028-08-01 10:00:03|\n"
-        )
+    # Deliberately out of order.  League pre-generation must be retired, not built.
+    req_file.write_text(
+        "season-2028|0|2028|all|balanced|2028-08-01 10:00:00|\n"
+        "league-102-2028|102|2028|all|league|2028-08-01 10:00:01|\n"
+        "jit-100-2028|100|2028|all|jit|2028-08-01 10:00:02|\n"
+        "rebuild-102-apple-2028|102|2028|apple|big|2028-08-01 10:00:03|\n"
+    )
 
-        seen = watch_signed._read_state(state_file)
-        lines = watch_signed.safe_read_lines(req_file)
-        user_requests, jit_requests, league_requests, rollover_requests = [], [], [], []
-        for line in lines:
-            req = watch_signed._parse_request(line)
-            is_jit = req["offer"].startswith("jit-") or req.get("tier") == "jit"
-            is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
-            is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
-            if is_jit:
-                jit_requests.append(req)
-            elif is_league:
-                league_requests.append(req)
-            elif is_rollover:
-                rollover_requests.append(req)
-            else:
-                user_requests.append(req)
+    calls = []
+    monkeypatch.setattr(
+        build_all_clubs, "refresh_season_kits",
+        lambda **kw: calls.append(("refresh", kw)) or
+        {"clubs": 0, "copied": 0, "pruned": 0, "aborted": False})
+    monkeypatch.setattr(
+        build_all_clubs, "generate_club_kits",
+        lambda **kw: calls.append(("generate", kw)) or {})
+    monkeypatch.setattr(build_all_clubs, "load_user_club_info",
+                        lambda _s: (105, "sharp", True))
+    monkeypatch.setattr(
+        watch_signed, "rebuild",
+        lambda *a, **kw: calls.append(("rebuild", a, kw)) or [])
 
-        queue = user_requests + jit_requests + league_requests + rollover_requests
-        assert queue[0]["offer"].startswith("rebuild-"), "User club must be priority #1"
-        assert queue[1]["offer"].startswith("jit-"), "JIT scheduled opponent must be priority #2"
-        assert queue[2]["offer"].startswith("league-"), "User league background must be priority #3"
-        assert queue[3]["offer"].startswith("season-"), "Bulk rollover must be priority #4"
-        print("PASS: Priority Queue order (User -> JIT -> League -> Rollover) verified.")
-    finally:
-        shutil.rmtree(tmp, ignore_errors=True)
+    assert watch_signed.process_pending(req_file, state_file, sider,
+                                        tmp_path, log_file) == 3
+    assert [c[0] for c in calls] == ["refresh", "rebuild", "generate"]
+    assert calls[1][1][:3] == (102, 2028, "apple")
+    assert calls[2][1]["slots"] == "1,g1,2,3,g2"   # only missing slots
+    assert "league-102-2028" in state_file.read_text()
+
+
+def test_duplicate_request_ids_are_only_built_once(tmp_path, monkeypatch):
+    sider = tmp_path / "SiderAddons"
+    content = sider / "content" / "KitGenerator"
+    (content / "active").mkdir(parents=True, exist_ok=True)
+    req_file = tmp_path / "kit_request.txt"
+    state_file = tmp_path / "watcher_state.txt"
+    log_file = content / "watcher.log"
+    line = ("season-ml_0105-2030|0|2030|all|balanced|"
+            "2026-11-20 19:00:00|ml_0105\n")
+    req_file.write_text(line + line)
+
+    calls = []
+    monkeypatch.setattr(
+        build_all_clubs, "refresh_season_kits",
+        lambda **kw: calls.append(kw) or
+        {"clubs": 0, "copied": 0, "pruned": 0, "aborted": False})
+
+    assert watch_signed.process_pending(req_file, state_file, sider,
+                                        tmp_path, log_file) == 1
+    assert len(calls) == 1
+
+
+def test_signed_deal_rebuild_is_urgent_but_seasonal_rebuild_is_not():
+    signed = watch_signed._parse_request(
+        "rebuild-105-kucoin-2030-t20261120200217|105|2030|kucoin|big|"
+        "2026-11-20 20:02:17|ml_0105\n")
+    seasonal = watch_signed._parse_request(
+        "rebuild-105-1xbet-2029|105|2029|1xbet|big|"
+        "2026-11-20 19:00:00|ml_0105\n")
+    assert watch_signed._is_urgent_user(signed)
+    assert not watch_signed._is_urgent_user(seasonal)
 
 
 if __name__ == "__main__":
     test_league_discovery()
     test_lua_queueing_and_jit()
-    test_watch_signed_priority_order()
     print("\nALL PRIORITY TREE AND JIT TESTS PASSED!")

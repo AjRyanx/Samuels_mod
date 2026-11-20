@@ -306,6 +306,37 @@ def test_master_league_only_scope():
     assert key_arsenal_missing_dyn == expected_gdb_key, f"Expected authentic GDB fallback when dynamic kit missing, got {key_arsenal_missing_dyn}"
     print("PASS 17G: Missing dynamic kit gracefully falls back to authentic GDB kit:", key_arsenal_missing_dyn)
 
+    # 18. A brand-new career must NOT inherit a stale global active_deal.txt
+    kg = tmp / "content" / "KitGenerator"
+    (kg / "active_deal.txt").write_text(
+        "101-2027-1|101|fly_emirates|2027|3|99000000|mid|2026-11-20 12:00:00|0\n")
+    fresh_dir = kg / "careers" / "ml_0101_freshsave"
+    fresh_dir.mkdir(parents=True, exist_ok=True)
+    M.debug_set_club(101)
+    M.debug_set_career("ml_0101_freshsave")
+    st_fresh = M.status()
+    assert st_fresh["deal"] is None, f"New career inherited a stale deal: {st_fresh['deal']}"
+    assert (kg / "active_deal.txt").read_text() == "", "Stale global deal file was not cleared"
+    print("PASS 18: New career ignores stale global deal (no free sponsor)")
+
+    # 19. Terminating a deal clears the stale club from opted_in.txt
+    M.debug_set_flag("CREDIT_BUDGET", False)
+    M.debug_clear_opted_in()
+    M.debug_set_opted_in(999, True)
+    M.debug_set_deal("fly_emirates", 101, 2027, 60000000, 3, 0)
+    M.debug_terminate()
+    opted = [l.strip() for l in (kg / "opted_in.txt").read_text().splitlines() if l.strip()]
+    assert "101" not in opted, f"Stale opted-in club survived termination: {opted}"
+    assert "999" in opted, f"Unrelated club was wrongly removed: {opted}"
+    print("PASS 19: Terminated deal clears its club from opted_in.txt")
+
+    # 20. Career-tagged payment ledger survives a hot career switch
+    (kg / "paid.txt").write_text("ml_0102_paidA:102:2028:three\n")
+    M.debug_set_career("ml_0102_paidA")
+    assert M.debug_is_paid("ml_0102_paidA:102:2028:three"), \
+        "Payment ledger was lost when switching careers (would re-credit income)"
+    print("PASS 20: Career-tagged payment ledger restored on career switch")
+
     shutil.rmtree(tmp, ignore_errors=True)
     print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")
 

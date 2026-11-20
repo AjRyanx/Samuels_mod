@@ -15,18 +15,26 @@
 
 ## 2. Copy the files
 
-From this repository copy:
+The easiest path is the bundled installer: run `install.bat` (or
+`powershell -File install.ps1`). It copies all runtime files and deploys the watcher.
 
-| From            | To                                |
-|-----------------|-----------------------------------|
-| `modules/`      | `SiderAddons/modules/`            |
-| `content/`      | `SiderAddons/content/`            |
-| `livecpk/`      | `SiderAddons/livecpk/`            |
+For a manual install, copy:
+
+| From                                  | To                                       |
+|---------------------------------------|------------------------------------------|
+| `modules/`                            | `SiderAddons/modules/`                   |
+| `content/KitGenerator/`               | `SiderAddons/content/KitGenerator/`      |
+| `livecpk/`                            | `SiderAddons/livecpk/`                   |
+| `generator/`                          | `SiderAddons/KitGenerator/generator/`    |
+
+`content/KitGenerator/logos`, `badges`, `sleeve_logos` and `suppliers` are all required by the
+renderer. Live state files, generated `.ftex` kits, logs and personal career data are **not**
+shipped in the release package.
 
 ## 3. Deploy the watcher (one-time)
 
-The background watcher rebuilds the kits when you sign a deal. Deploy it once (re-run after
-moving the mod or changing your Python install):
+`install.bat` / `install.ps1` run this automatically. To do it manually (re-run after moving the
+mod or changing your Python install):
 
 ```
 python generator/setup_watcher.py
@@ -68,6 +76,11 @@ cpk.root = ".\livecpk\SoundtrackServer"
 ```
 
 ## 5. First run
+
+Generation is deliberately lazy. Do **not** pre-generate five slots league-wide: season rollover
+builds only the lightweight `p1/g1` baseline for every club, and `p2/p3/g2` are generated only
+when that club is scheduled in a Master League fixture. The installer's optional `-PreGen` switch
+also generates only `p1/g1`.
 
 1. Start the game through Sider and begin a **Master League with any team**.
 2. Press **F8** to switch the office on (Master League detection is manual for now).

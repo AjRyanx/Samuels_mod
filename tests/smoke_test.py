@@ -9,6 +9,22 @@ from lupa import LuaRuntime
 
 root = Path(__file__).resolve().parent.parent
 tmp = Path(tempfile.mkdtemp()); shutil.copytree(root / "content", tmp / "content")
+
+# The release package intentionally omits generated brands.txt (setup_watcher.py
+# writes it at install time).  Recreate it from the shipped logos so this test
+# exercises the same synthetic-offer path on a clean checkout.
+logo_dir = tmp / "content" / "KitGenerator" / "logos"
+brands = sorted({
+    p.stem for p in logo_dir.glob("*.png")
+    if not p.stem.endswith("_white") and not p.stem.startswith("_")
+})
+(tmp / "content" / "KitGenerator" / "brands.txt").write_text(
+    "# brand pool - generated from shipped logos for smoke test\n"
+    + "".join(b + "\n" for b in brands),
+    encoding="utf-8",
+    newline="\n",
+)
+
 lua = LuaRuntime(unpack_returned_tuples=True)
 lua.execute('log=function(s) LOGS=(LOGS or "")..s.."\\n" end; ffi=nil')
 lua.execute('local _orig_open=io.open; io.open=function(p, m) return _orig_open(p:gsub("\\\\", "/"), m) end')

@@ -48,6 +48,11 @@ DEFAULT_GAME_ROOT = Path(r"C:\Games\SP Football Life 2027")
 LOCK_PORT = 51517
 POLL_SECONDS = 2.0
 
+# Club-level rebuilds stay at 2 workers so the game is never starved.  Bulk
+# rollovers are low-priority and get one extra pair once the optimized renderer
+# made each club ~4x cheaper; 8 workers previously exhausted memory.
+ROLLOVER_WORKERS = max(2, min(os.cpu_count() or 4, 4))
+
 # region the active .ftex files are installed into, relative to the game root
 ACTIVE_SUBDIR = Path("SiderAddons/content/KitGenerator/active")
 
@@ -230,6 +235,56 @@ def _parse_request(line):
     }
 
 
+def _is_force_clean(req):
+    return (req["offer"].startswith("clean-")
+            and (req.get("tier") or "").lower() == "force")
+
+
+def _is_signed_rebuild(req):
+    """Signed-deal rebuilds carry a -t<stamp> suffix; seasonal ones do not."""
+    offer = req["offer"]
+    if not offer.startswith("rebuild-") or "-t" not in offer:
+        return False
+    return offer.rsplit("-t", 1)[1].isdigit()
+
+
+def _is_urgent_user(req):
+    """Only user-driven work may interrupt the season baseline."""
+    return _is_force_clean(req) or _is_signed_rebuild(req)
+
+
+def _missing_jit_slots(active_dir: Path, club_id: int) -> str:
+    """Slot tokens still missing for a scheduled opponent.
+
+    p1/g1 normally arrive from the season baseline; p2/p3/g2 are generated
+    on demand.  Returning only the missing tokens keeps JIT work minimal while
+    still recovering a club that was missed by the baseline pass.
+    """
+    tokens = (("p1", "1"), ("g1", "g1"), ("p2", "2"), ("p3", "3"), ("g2", "g2"))
+    missing = []
+    for code, token in tokens:
+        path = active_dir / f"u{club_id:04d}{code}.ftex"
+        if not path.is_file() or path.stat().st_size <= 1000:
+            missing.append(token)
+    return ",".join(missing)
+
+
+def _urgent_requests_pending(req_file, state_file, exclude=None):
+    """True if signed-deal/force-clean work arrived during the baseline.
+
+    Opponent JIT and the user club's seasonal rebuild now run *after* the
+    baseline, so they must not abort it.  Only an actual user action does.
+    """
+    seen = _read_state(state_file)
+    for line in safe_read_lines(req_file, lock=False):
+        req = _parse_request(line)
+        if not req or req["offer"] == exclude or req["offer"] in seen:
+            continue
+        if _is_urgent_user(req):
+            return True
+    return False
+
+
 # --------------------------------------------------------------------------- #
 #  the actual rebuild
 # --------------------------------------------------------------------------- #
@@ -249,6 +304,7 @@ def rebuild(club_id, season, brand, sider, game_root, logfile, career_id=None):
         club, season, outdir,
         install=True, game_root=game_root, quiet=True,
         sponsor=brand, logo_dir=logos, badge_dir=badges,
+        previews=False,                    # runtime only needs the .ftex files
     )
     active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
     for slot, _atlas, ftex, design in results:
@@ -293,10 +349,11 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     if not lines:
         return 0
 
-    # Priority Queue: User club > JIT scheduled opponents > User league > Bulk rollover
+    # Priority: signed deals / forced cleans > season baseline > seasonal club
+    # rebuilds > scheduled-opponent JIT.  League pre-generation is retired.
+    urgent_user_requests = []
     user_requests = []
     jit_requests = []
-    league_requests = []
     rollover_requests = []
     active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
 
@@ -319,6 +376,13 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
         is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
 
+        # Obsolete league pre-generation requests are retired on sight.  The
+        # baseline + JIT model replaces them completely.
+        if is_league:
+            _mark_done(state_file, req["offer"])
+            seen.add(req["offer"])
+            continue
+
         if current_season and req["season"] < current_season and not is_rollover:
             _mark_done(state_file, req["offer"])   # retire stale-season work permanently
             seen.add(req["offer"])
@@ -327,7 +391,7 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         # A "force" clean comes from deal expiry/termination.  The branded file
         # still exists on disk, so the normal "already installed" shortcut must
         # not skip it -- otherwise the expired sponsor's logo would stay on.
-        force_clean = req["offer"].startswith("clean-") and (req.get("tier") or "").lower() == "force"
+        force_clean = _is_force_clean(req)
 
         if req["offer"].startswith("clean-") and req["club_id"] > 0 and not force_clean:
             target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
@@ -341,11 +405,8 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         if req["offer"] in seen:
             if req["club_id"] > 0:
                 if is_jit:
-                    target_ftex = active_dir / f"u{req['club_id']:04d}p2.ftex"
-                    if target_ftex.is_file() and target_ftex.stat().st_size > 1000:
+                    if not _missing_jit_slots(active_dir, req["club_id"]):
                         continue
-                elif is_league:
-                    continue
                 else:
                     target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
                     career_id = req.get("career_id")
@@ -359,18 +420,38 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
             else:
                 continue
 
-        if is_jit:
+        if _is_urgent_user(req):
+            urgent_user_requests.append(req)
+        elif is_jit:
             jit_requests.append(req)
-        elif is_league:
-            league_requests.append(req)
         elif is_rollover:
             rollover_requests.append(req)
         else:
             user_requests.append(req)
 
-    pending_queue = user_requests + jit_requests + league_requests + rollover_requests
+    # An urgent user action gets its own poll.  Starting the multi-minute
+    # baseline immediately afterwards would just waste work if another deal is
+    # signed moments later.  Normal seasonal/JIT work still queues behind it.
+    if urgent_user_requests and rollover_requests:
+        _log("season rollover deferred: %d urgent user request(s) processed first"
+             % len(urgent_user_requests), logfile)
+        rollover_requests = []
+
+    # The baseline is the foundation for every later dynamic kit, so it runs
+    # before opponent JIT and the user club's seasonal (non-urgent) rebuild.
+    pending_queue = (urgent_user_requests + rollover_requests
+                     + user_requests + jit_requests)
+
+    def _arrived(current_offer):
+        return _urgent_requests_pending(req_file, state_file, exclude=current_offer)
+
     done = 0
     for req in pending_queue:
+        # Duplicate request IDs are classified from the same snapshot.  Once the
+        # first copy completes, its ID is in `seen`; never build the same job a
+        # second time in this poll (this used to rerun a 17-minute baseline).
+        if req["offer"] in seen:
+            continue
         _log("processing request: offer=%s club=%d season=%d sponsor=%s"
              % (req["offer"], req["club_id"], req["season"], req["brand"]), logfile)
         try:
@@ -382,32 +463,34 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                      % req["club_id"], logfile)
 
             if is_jit:
-                _log("JIT opponent request: generating kits for scheduled club #%d (season %d)"
-                     % (req["club_id"], req["season"]), logfile)
                 import build_all_clubs
-                build_all_clubs.generate_club_kits(
-                    club_id=req["club_id"],
-                    season=req["season"],
-                    sider_dir=Path(sider),
-                    slots="1,2,3,g1,g2",
-                    skip_existing=False,
-                )
+                user_cid, user_sponsor, _ = build_all_clubs.load_user_club_info(Path(sider))
+                if req["club_id"] == user_cid:
+                    # Legacy JIT request for the human club (queued before the
+                    # Lua guard).  Route it through the career rebuild so the
+                    # signed sponsor - or no sponsor - is used and the isolated
+                    # career profile is refreshed too.
+                    _log("JIT request for human club #%d routed to career rebuild (sponsor=%s)"
+                         % (req["club_id"], user_sponsor or "none"), logfile)
+                    rebuild(req["club_id"], req["season"], user_sponsor,
+                            sider, game_root, logfile, career_id=req.get("career_id"))
+                else:
+                    missing_slots = _missing_jit_slots(active_dir, req["club_id"])
+                    if not missing_slots:
+                        _log("JIT opponent request: club #%d already has a complete kit set; retiring"
+                             % req["club_id"], logfile)
+                    else:
+                        _log("JIT opponent request: building missing slots %s for scheduled club #%d (season %d)"
+                             % (missing_slots, req["club_id"], req["season"]), logfile)
+                        build_all_clubs.generate_club_kits(
+                            club_id=req["club_id"],
+                            season=req["season"],
+                            sider_dir=Path(sider),
+                            slots=missing_slots,
+                            skip_existing=True,
+                        )
             elif is_league:
-                import kit_dna
-                import build_all_clubs
-                league_cids = kit_dna.get_league_teams(req["club_id"], sider_dir=sider)
-                _log("league background generation: FORCED refresh for %d clubs in league of club #%d (season %d)"
-                     % (len(league_cids), req["club_id"], req["season"]), logfile)
-                stats = build_all_clubs.refresh_season_kits(
-                    season=req["season"],
-                    sider_dir=Path(sider),
-                    slots="1,2,3,g1,g2",
-                    team_ids=league_cids,
-                    scope=f"league_{req['club_id']}",
-                    low_priority=True,
-                )
-                _log("  league refresh: %d clubs, %d kit files copied into active"
-                     % (stats["clubs"], stats["copied"]), logfile)
+                continue                              # defensive: already retired above
             elif is_rollover:
                 mode = (req.get("tier") or "balanced").lower()
                 import build_all_clubs
@@ -415,30 +498,28 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                     _log("season rollover: FORCED full 5-slot refresh for all clubs (mode=power)", logfile)
                     stats = build_all_clubs.refresh_season_kits(
                         season=req["season"], sider_dir=Path(sider),
-                        slots="1,2,3,g1,g2", scope="power", prune_secondary=False)
+                        slots="1,2,3,g1,g2", scope="power", prune_secondary=False,
+                        workers=ROLLOVER_WORKERS,
+                        abort_check=lambda: _arrived(req["offer"]))
+                    if stats.get("aborted"):
+                        _log("  power rollover interrupted by a higher-priority request; retrying later", logfile)
+                        continue
                     _log("  power rollover: %d clubs, %d kit files copied into active"
                          % (stats["clubs"], stats["copied"]), logfile)
                 else:
-                    _log("season rollover [priority 2]: FORCED scoutable baseline refresh (mode=balanced, slots=1,g1)", logfile)
+                    _log("season rollover: FORCED scoutable baseline refresh (mode=balanced, slots=1,g1)", logfile)
                     stats = build_all_clubs.refresh_season_kits(
                         season=req["season"], sider_dir=Path(sider),
                         slots="1,g1", scope="baseline", prune_secondary=True,
-                        low_priority=True)
+                        low_priority=True, workers=ROLLOVER_WORKERS,
+                        abort_check=lambda: _arrived(req["offer"]))
+                    if stats.get("aborted"):
+                        _log("  baseline refresh interrupted by a higher-priority request; retrying later", logfile)
+                        continue
                     _log("  baseline refresh: %d clubs, %d kit files copied, %d stale secondary files pruned"
                          % (stats["clubs"], stats["copied"], stats["pruned"]), logfile)
-                    # Next in priority tree: user's league background generation
-                    user_cid, _, _ = build_all_clubs.load_user_club_info(Path(sider))
-                    if user_cid:
-                        import kit_dna
-                        league_cids = kit_dna.get_league_teams(user_cid, sider_dir=sider)
-                        _log("season rollover [priority 3]: FORCED full kits for user's league (%d clubs)"
-                             % len(league_cids), logfile)
-                        stats = build_all_clubs.refresh_season_kits(
-                            season=req["season"], sider_dir=Path(sider),
-                            slots="1,2,3,g1,g2", team_ids=league_cids,
-                            scope=f"league_{user_cid}", low_priority=True)
-                        _log("  league refresh: %d clubs, %d kit files copied into active"
-                             % (stats["clubs"], stats["copied"]), logfile)
+                    # No league pre-generation follows the baseline.  Secondary
+                    # kits for AI clubs are built only when they are scheduled.
             else:
                 rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
         except Exception as exc:                      # noqa: BLE001 - keep watching

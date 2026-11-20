@@ -1,4 +1,4 @@
--- KitGenerator.lua  (v0.7)
+-- KitGenerator.lua  (v0.8.0-beta.1)
 -- SP Football Life 2027 sponsor / kit module.
 --
 --   * Sponsor Office (executive card UI) lists this season's offers for your
@@ -21,7 +21,7 @@
 --     scheduled opponents.  An expired deal leaves the user club sponsorless.
 --   * Two independent halves (CFG.ENABLE_KITS / CFG.ENABLE_SPONSORSHIP): use the
 --     kit half alone, the sponsorship half alone, or both together.
---   * v0.7: the club you manage is AUTO-DETECTED.  Start a Master League with
+--   * v0.8 beta: the club you manage is AUTO-DETECTED.  Start a Master League with
 --     any team and the mod follows it -- the club that turns up in every career
 --     match wins, its kit colours are read live from the game
 --     (ctx.kits.get) and written to content/KitGenerator/club.txt for the
@@ -31,7 +31,7 @@
 --
 -- Written for Sider's LuaJIT sandbox: no pcall, require, select, next or print.
 -- Uses the globals `ffi`, `memory` and `log`.
-local m = { version = '0.7' }
+local m = { version = '0.8.0-beta.1' }
 
 -- ===== config =============================================================
 -- Two independent halves -- set either off to use the other on its own:
@@ -75,7 +75,7 @@ local DEAL = nil                      -- active multi-season deal (or nil)
 local REQ_SEASONS, PAID, WARNED, CLEAN = {}, {}, {}, {}
 local REQ_LEAGUE, JIT_REQUESTED = {}, {}
 local CLEAN_PENDING = {}          -- club:season -> clean request id; blocks stale branded kits until the watcher finishes
-local club_id, start_watcher, load_deal
+local club_id, start_watcher, load_deal, reset_career_state
 
 local DIR, CAREER, SEASON = '', 'unknown', 2027
 local MONTH_NAMES = { 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' }
@@ -113,7 +113,13 @@ end
 -- ===== small helpers ======================================================
 -- All file paths go through here. Sider on Windows uses backslashes;
 -- on Unix/macOS test environments forward slashes are preserved.
-local IS_WINDOWS = (package.config and package.config:sub(1, 1) == '\\')
+-- Sider's Lua sandbox does not expose the `package` global. Plain Lua (used by
+-- the test suite) does, so prefer package.config there and default to Windows
+-- inside Sider (the game runs on Windows).
+local IS_WINDOWS = true
+if package and package.config then
+  IS_WINDOWS = (package.config:sub(1, 1) == '\\')
+end
 local function path(rel)
   local p = DIR .. 'content/KitGenerator/' .. rel
   return IS_WINDOWS and p:gsub('/', '\\') or p:gsub('\\', '/')
@@ -358,6 +364,7 @@ local function sync_career_identity(tid, y, raw)
     CAREER = active_id
     write_file('career.txt', CAREER .. '\n')
     L('career identity synced to memory: ' .. CAREER)
+    reset_career_state()
     if load_deal then load_deal() end
   end
 end
@@ -810,8 +817,15 @@ function load_deal()
   local lines = {}
   if CAREER and CAREER ~= 'unknown' then
     lines = read_lines(career_deal_rel())
-  end
-  if #lines == 0 then
+    if #lines == 0 then
+      -- This career has never signed a deal in this profile.  The shared global
+      -- file belongs to whichever career wrote it last - inheriting it would
+      -- hand a brand-new save a sponsor it never signed for.  Wipe it and start
+      -- clean: Season 2 then generates the sponsorless kit as intended.
+      write_file('active_deal.txt', '')
+      return
+    end
+  else
     lines = read_lines('active_deal.txt')
   end
   if #lines == 0 then return end
@@ -851,6 +865,24 @@ local function load_paid()
   for _, line in ipairs(read_lines('paid.txt')) do
     if #line > 0 then PAID[line] = true end
   end
+end
+
+-- A different career identity must never inherit the previous save's sponsor,
+-- opt-in marker, payment ledger or request-dedup flags.  The shared
+-- active_deal.txt is global (not career-owned), so clear it explicitly here;
+-- opted_in.txt / paid.txt keep their own history but the in-memory maps start
+-- fresh for the new save.
+reset_career_state = function()
+  DEAL = nil
+  write_file('active_deal.txt', '')
+  OPTED_IN = {}
+  -- paid.txt keys are career-tagged (<career>:<club>:<season>:<brand>), so reload
+  -- the ledger from disk instead of emptying it: switching back to an older save
+  -- in the same session must not re-credit a season it was already paid for.
+  load_paid()
+  REQ_SEASONS, REQ_LEAGUE, JIT_REQUESTED = {}, {}, {}
+  CLEAN, CLEAN_PENDING, WARNED = {}, {}, {}
+  L('per-career state cleared for ' .. tostring(CAREER))
 end
 
 -- ===== budget: capture the club-budget pointer, then credit ===============
@@ -1032,9 +1064,9 @@ end
 
 -- Clearing a deal is instant, but the watcher needs time to replace the old
 -- branded .ftex files.  Queue a FORCED clean rebuild (the watcher normally
--- skips clean requests when a file with that name already exists) and serve
--- authentic kits until the request is recorded in watcher_state.txt.  Without
--- this, an expired sponsor's logo can be served for a few seconds or a match.
+-- skips clean requests when a file with that name already exists).  The club
+-- keeps wearing the dynamic pool while this runs - from Season 2 onwards it
+-- must never fall back to an authentic kit because a rebuild is in flight.
 local function request_clean_kit(club, season)
   if not club or club <= 0 then return end
   local key = club .. ':' .. season
@@ -1076,7 +1108,9 @@ local function ensure_season_deal(season)
     DEAL = nil
     REQ_SEASONS = {}
     REQ_LEAGUE = {}
+    OPTED_IN[old] = nil
     save_deal()
+    save_opted_in()
     L('deal with ' .. tostring(brand) .. ' belongs to club #' .. tostring(old) ..
       ' - released (now following #' .. tostring(cid) .. ')')
     request_clean_kit(old, season)
@@ -1090,7 +1124,9 @@ local function ensure_season_deal(season)
     DEAL = nil
     REQ_SEASONS = {}
     REQ_LEAGUE = {}
+    OPTED_IN[old_club] = nil
     save_deal()                       -- blanks active_deal.txt
+    save_opted_in()
     L('deal expired: ' .. tostring(brand) .. ' ended after season ' .. tostring(ended) ..
       ' - offers are open again')
     request_clean_kit(old_club, season)
@@ -1100,16 +1136,10 @@ local function ensure_season_deal(season)
 
   local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
 
-  -- Queue background kit generation for the user club's league
-  -- ONLY from Season 2 onwards! In Season 1, league clubs wear authentic default kits.
-  local lkey = cid .. ':' .. season
-  if CFG.ENABLE_KITS and season >= start_season and not REQ_LEAGUE[lkey] then
-    REQ_LEAGUE[lkey] = true
-    local req_id = string.format('league-%d-%d', cid, season)
-    append_line('kit_request.txt', string.format('%s|%d|%d|all|league|%s|%s',
-      req_id, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
-    L(string.format('user league: queued background kit generation for league of club #%d (season %d)', cid, season))
-  end
+  -- The old user-league pre-generation is intentionally gone.  Season rollover
+  -- builds the lightweight p1/g1 baseline for every club; full secondary sets
+  -- for AI clubs are generated only when that club is scheduled in an ML match.
+  -- This keeps Exhibition authentic and avoids minutes of unused league work.
 
   if not deal_active(season) then
     -- Season 1: user team wears authentic default kit until a sponsor deal is signed.
@@ -1118,13 +1148,12 @@ local function ensure_season_deal(season)
       return
     end
 
-    -- Season 2+: user team gets a fresh sponsorless dynamic kit until a new deal is signed.
+    -- Season 2+: user team gets a fresh sponsorless dynamic kit until a new deal
+    -- is signed.  The clean rebuild is queued in the background; the existing
+    -- active kit stays visible so the club never drops back to an authentic kit.
     local ckey = cid .. ':' .. season
     if CFG.ENABLE_KITS and not CLEAN[ckey] then
-      CLEAN[ckey] = true
-      local req_id = string.format('clean-%d-%d-force', cid, season)
-      append_line('kit_request.txt', string.format('%s|%d|%d||force|%s|%s',
-        req_id, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
+      request_clean_kit(cid, season)
       L('no deal for season ' .. tostring(season) ..
         ': requested sponsorless kit for user club #' .. tostring(cid))
     end
@@ -1314,7 +1343,9 @@ local function terminate_deal()
   local club = DEAL.club
   DEAL = nil
   REQ_SEASONS = {}
+  OPTED_IN[club] = nil
   save_deal()                       -- blanks active_deal.txt
+  save_opted_in()
   request_clean_kit(club, season)    -- forced clean: the old branded file still exists
   SEL.credit_msg = 'terminated ' .. tostring(brand) .. (note ~= '' and ('; ' .. note) or '')
   L('terminated deal with ' .. tostring(brand) .. (note ~= '' and (' (' .. note .. ')') or ''))
@@ -1442,7 +1473,7 @@ local function build_office(ui, ctx)
   local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
   local pending_key = cid and (cid .. ':' .. SEASON) or nil
   if pending_key and CLEAN_PENDING[pending_key] then
-    ui:message('Contract ended. Authentic kit is shown while the sponsorless kit is rebuilt (next match).', 'info')
+    ui:message('Contract ended. A sponsorless kit is being rebuilt; it will appear at the next match.', 'info')
   elseif deal_active(SEASON) and DEAL then
     ui:message('Club is wearing the ' .. tostring(DEAL.brand) ..
       ' dynamic kit with sleeve branding. A fresh set is generated for each season of the deal.', 'ok')
@@ -1588,6 +1619,9 @@ local function ensure_opponent_kits(opp_id)
   if not opp_id or opp_id <= 0 then return end
   local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
   local cid = club_id()
+  -- From Season 2 the human club's kit is owned by the deal/clean rebuild path.
+  -- A JIT request would call generate_club_kits() with an AI sponsor and wipe it.
+  if SEASON >= start_season and opp_id == cid then return end
   -- In Season 1:
   -- - AI clubs wear authentic kits (no dynamic generation)
   -- - User club wears authentic unless they signed a deal
@@ -1597,10 +1631,11 @@ local function ensure_opponent_kits(opp_id)
   end
   if not CFG.ENABLE_KITS then return end
 
-  -- Matchday-only slots (p2/p3/g2) are built on demand.  ANY missing slot
-  -- means the scheduled opponent still needs a JIT rebuild; checking only p2
-  -- used to leave clubs with a partial set on away/third kits.
-  for _, scode in ipairs({ 'p2', 'p3', 'g2' }) do
+  -- The p1/g1 baseline comes from the season rollover, but a club may still be
+  -- new, missed by that pass, or missing a secondary slot.  ANY missing slot
+  -- means the scheduled opponent needs a JIT rebuild; checking only p2 used to
+  -- leave clubs with a partial set on away/third kits.
+  for _, scode in ipairs({ 'p1', 'g1', 'p2', 'p3', 'g2' }) do
     local sname = string.format("content/KitGenerator/active/u%04d%s.ftex", opp_id, scode)
     local full = (DIR .. sname):gsub('/', '\\')
     local f = io.open(full, "rb") or io.open(DIR .. sname, "rb") or io.open(sider_path(sname), "rb")
@@ -1721,9 +1756,10 @@ function m.make_key(ctx, filename)
     end
   end
 
-  -- A deal was just cleared/expired: keep serving authentic until the forced
-  -- clean rebuild is recorded as done, so an expired sponsor logo is never
-  -- shown for even one match.  The state-file check is throttled to 2 seconds.
+  -- Deal expiry only queues a background clean rebuild.  From Season 2 the
+  -- human club must stay in the dynamic pool, so never drop back to an
+  -- authentic kit while that rebuild is in flight.  This check just retires the
+  -- UI "rebuilding" notice once the watcher records the request as done.
   if is_user and cid then
     local pk = cid .. ':' .. SEASON
     local pending = CLEAN_PENDING[pk]
@@ -1733,7 +1769,6 @@ function m.make_key(ctx, filename)
         pending.at = now
         if clean_request_done(pending.id) then CLEAN_PENDING[pk] = nil end
       end
-      if CLEAN_PENDING[pk] then needs_authentic = true end
     end
   end
 
@@ -1802,7 +1837,11 @@ function m.make_key(ctx, filename)
     return rel_path
   else
     -- Fallback to authentic GDB kit if dynamic kit file is unexpectedly missing
-    if not needs_authentic and target_suffix == "" and (slot > 1 or slot_type == "g") then
+    -- JIT generation assigns an AI sponsor to whoever it builds for.  Never let
+    -- it touch the human club: that is how an un-signed sponsor kit appeared in
+    -- Season 2 and then kept coming back after a new deal was signed.
+    if not needs_authentic and target_suffix == "" and tid ~= cid
+       and (slot > 1 or slot_type == "g") then
       ensure_opponent_kits(tid)
     end
     local gdb_fb = resolve_authentic_gdb_kit(tid, slot_type, slot, target_suffix)
@@ -1939,6 +1978,7 @@ end
 function m.debug_set_career(career_id)
   CAREER = career_id
   write_file('career.txt', CAREER .. '\n')
+  reset_career_state()
   if load_deal then load_deal() end
   return true
 end
@@ -1957,6 +1997,10 @@ end
 function m.debug_credit_now()
   credit_now()
   return SEL.credit_msg
+end
+
+function m.debug_is_paid(key)
+  return PAID[key] == true
 end
 
 function m.debug_terminate()

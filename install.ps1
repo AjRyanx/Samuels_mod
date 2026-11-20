@@ -5,16 +5,17 @@
 
 .DESCRIPTION
     Automates prerequisite verification, SiderAddons synchronization, sider.ini registration,
-    directory scaffolding, and optional world pre-generation.
+    watcher deployment, and optional Master League baseline generation.
 
 .PARAMETER GamePath
     Path to SP Football Life 2027 / PES 2021 game directory containing SiderAddons.
 
 .PARAMETER SkipPreGen
-    Skip the bulk world kit pre-generation step.
+    Deprecated. Baseline generation is opt-in only; no bulk generation runs by default.
 
 .PARAMETER PreGen
-    Force pre-generation of all 587 clubs (outfield + GK kits).
+    Generate the lightweight p1/g1 baseline for all clubs. Secondary slots (p2/p3/g2)
+    are generated on demand for scheduled Master League opponents.
 
 .PARAMETER RunTests
     Execute test suite (tests/test_ml_only_kits.py, etc.) to verify architecture.
@@ -65,6 +66,7 @@ function Write-Fail {
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Header "DYNAMIC KIT & SPONSOR MOD - AUTOMATED INSTALLER"
+Write-Host " Mod Version: 0.8.0-beta.1 (Master League only)" -ForegroundColor DarkGray
 Write-Host " Target Game: PES 2021 / SP Football Life 2026/2027" -ForegroundColor DarkGray
 Write-Host " Mod Source : $ScriptDir" -ForegroundColor DarkGray
 
@@ -153,15 +155,17 @@ if ($Uninstall) {
 
 # 4. Scaffolding Target Directories
 Write-Step "Scaffolding runtime directory hierarchy..."
-$TargetContent = Join-Path $SiderDir "content\KitGenerator"
-$TargetActive  = Join-Path $TargetContent "active"
-$TargetLogos   = Join-Path $TargetContent "logos"
-$TargetBadges  = Join-Path $TargetContent "badges"
-$TargetModules = Join-Path $SiderDir "modules"
-$TargetGen     = Join-Path $SiderDir "KitGenerator\generator"
-$TargetLiveCPK = Join-Path $SiderDir "livecpk\KitGenerator"
+$TargetContent   = Join-Path $SiderDir "content\KitGenerator"
+$TargetActive    = Join-Path $TargetContent "active"
+$TargetLogos     = Join-Path $TargetContent "logos"
+$TargetBadges    = Join-Path $TargetContent "badges"
+$TargetSleeves   = Join-Path $TargetContent "sleeve_logos"
+$TargetSuppliers = Join-Path $TargetContent "suppliers"
+$TargetModules   = Join-Path $SiderDir "modules"
+$TargetGen       = Join-Path $SiderDir "KitGenerator\generator"
+$TargetLiveCPK   = Join-Path $SiderDir "livecpk\KitGenerator"
 
-foreach ($dir in @($TargetActive, $TargetLogos, $TargetBadges, $TargetModules, $TargetGen, $TargetLiveCPK)) {
+foreach ($dir in @($TargetActive, $TargetLogos, $TargetBadges, $TargetSleeves, $TargetSuppliers, $TargetModules, $TargetGen, $TargetLiveCPK)) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
@@ -185,6 +189,12 @@ if (Test-Path (Join-Path $SourceContent "logos")) {
 if (Test-Path (Join-Path $SourceContent "badges")) {
     Copy-Item (Join-Path $SourceContent "badges\*") -Destination $TargetBadges -Recurse -Force
 }
+if (Test-Path (Join-Path $SourceContent "sleeve_logos")) {
+    Copy-Item (Join-Path $SourceContent "sleeve_logos\*") -Destination $TargetSleeves -Recurse -Force
+}
+if (Test-Path (Join-Path $SourceContent "suppliers")) {
+    Copy-Item (Join-Path $SourceContent "suppliers\*") -Destination $TargetSuppliers -Recurse -Force
+}
 if (Test-Path (Join-Path $SourceContent "deals.txt")) {
     Copy-Item (Join-Path $SourceContent "deals.txt") -Destination (Join-Path $TargetContent "deals.txt") -Force
 }
@@ -193,6 +203,18 @@ if (Test-Path (Join-Path $SourceContent "brands.txt")) {
 }
 
 Write-Success "Files synchronized to SiderAddons."
+
+# 5b. Deploy the background watcher and regenerate brands.txt from the shipped logos
+$SetupWatcher = Join-Path $ScriptDir "generator\setup_watcher.py"
+if (Test-Path $SetupWatcher) {
+    Write-Step "Deploying background watcher and brand pool..."
+    & python $SetupWatcher --game-root $ResolvedGameRoot --sider $SiderDir
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Watcher deployment had an issue. You can re-run: python `"$SetupWatcher`" --game-root `"$ResolvedGameRoot`""
+    } else {
+        Write-Success "Watcher and brand pool deployed."
+    }
+}
 
 # 6. Configure sider.ini
 Write-Step "Configuring sider.ini hooks..."
@@ -258,19 +280,23 @@ if ($iniModified) {
     Write-Success "Updated sider.ini successfully."
 }
 
-# 7. Optional World Pre-Generation
-if ($PreGen -or (-not $SkipPreGen -and (Get-ChildItem -Path $TargetActive -Filter "*.ftex" | Measure-Object).Count -lt 50)) {
-    Write-Header "PRE-GENERATING MASTER LEAGUE KITS"
-    Write-Step "Generating authentic dynamic kits for all clubs in clubs.csv..."
+# 7. Optional Master League baseline (p1/g1) generation
+# Secondary slots (p2/p3/g2) are intentionally NOT pre-generated: they are built
+# on demand only when a club is scheduled in a Master League fixture.
+if ($PreGen) {
+    Write-Header "GENERATING MASTER LEAGUE BASELINE (p1/g1)"
+    Write-Step "Generating lightweight p1/g1 kits for clubs in clubs.csv..."
     $GenScript = Join-Path $ScriptDir "generator\build_all_clubs.py"
-    & python $GenScript --skip-existing --outdir $TargetActive
+    & python $GenScript --skip-existing --outdir $TargetActive --slots 1,g1
     if ($LASTEXITCODE -eq 0) {
-        Write-Success "Pre-generation finished successfully."
+        Write-Success "Baseline generation finished successfully."
     } else {
-        Write-Warn "Pre-generation encountered an issue (can be re-run at any time with generator/build_all_clubs.py)."
+        Write-Warn "Baseline generation encountered an issue (can be re-run at any time with generator/build_all_clubs.py --slots 1,g1)."
     }
 } else {
-    Write-Step "Active kit directory already populated with $((Get-ChildItem -Path $TargetActive -Filter '*.ftex' | Measure-Object).Count) textures."
+    $ActiveCount = (Get-ChildItem -Path $TargetActive -Filter "*.ftex" -ErrorAction SilentlyContinue | Measure-Object).Count
+    Write-Step "Skipping bulk generation by design. Active kit cache currently has $ActiveCount texture(s)."
+    Write-Step "Season rollover builds p1/g1 for every club; secondary slots are generated JIT for scheduled opponents."
 }
 
 # 8. Optional Test Suite

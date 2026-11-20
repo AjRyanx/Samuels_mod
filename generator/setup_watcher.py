@@ -33,12 +33,13 @@ COPY_FILES = ("*.py",)
 COPY_NAMES = ("clubs.csv",)
 COPY_DIRS = ("uv_masks",)
 
-# what we copy into <sider>\content\KitGenerator (logos + the offer list).  The
-# live state files there (career.txt, watcher_state.txt, kit_request.txt,
-# watcher.log) are never touched.  brands.txt is generated from the logos, not
-# copied, so it always matches the logos that actually shipped.
+# what we copy into <sider>\content\KitGenerator (brand, badge, sleeve and
+# supplier art plus the offer list).  The live state files there (career.txt,
+# watcher_state.txt, kit_request.txt, watcher.log) are never touched.
+# brands.txt is generated from the logos, not copied, so it always matches the
+# logos that actually shipped.
 CONTENT_FILES = ("deals.txt",)
-CONTENT_DIRS = ("logos",)
+CONTENT_DIRS = ("logos", "badges", "sleeve_logos", "suppliers")
 
 
 def brand_names(logo_dir):
@@ -94,7 +95,7 @@ def deploy_generator(dest):
 
 
 def deploy_content(sider):
-    """Copy logos/ and deals.txt into <sider>\\content\\KitGenerator.
+    """Copy logos/, badges/, sleeve_logos/, suppliers/ and deals.txt into <sider>\\content\\KitGenerator.
 
     Existing brand logos are overwritten with the mod's copies (the mod is the
     source of truth) but the live state files are left alone.  Returns the
@@ -162,7 +163,7 @@ def main(argv=None):
     cmd = write_cmd(sider, game_root)
 
     print(f"deployed {n} file(s) -> {dest}")
-    print(f"deployed {nc} file(s) -> {sider / 'content' / 'KitGenerator'} (logos, deals.txt)")
+    print(f"deployed {nc} file(s) -> {sider / 'content' / 'KitGenerator'} (logos, badges, sleeve_logos, suppliers, deals.txt)")
     print(f"wrote {nb} brand(s)  -> {brands}")
     print(f"wrote launcher        -> {cmd}")
     print(f"pythonw               -> {_pythonw()}")

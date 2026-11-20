@@ -1,0 +1,24 @@
+{
+  "name": "Dynamic Kit & Sponsor Mod",
+  "version": "0.8.0-beta.1",
+  "channel": "beta",
+  "codename": "Baseline + JIT",
+  "release_date": "2026-11-20",
+  "compatibility": {
+    "games": ["PES 2021", "SP Football Life 2026", "SP Football Life 2027"],
+    "sider": ">=7.3.3",
+    "python": ">=3.10",
+    "python_packages": ["Pillow>=9.0.0", "numpy>=1.20.0"]
+  },
+  "package": {
+    "format": "installer-source",
+    "install": ["install.bat", "install.ps1", "python setup.py install"],
+    "runtime_scope": "Master League only",
+    "baseline_slots": ["p1", "g1"],
+    "jit_slots": ["p2", "p3", "g2"]
+  },
+  "verification": {
+    "tests": 45,
+    "renderer_output": "pixel-identical and FTEX byte-identical to reference"
+  }
+}

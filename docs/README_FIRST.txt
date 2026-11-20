@@ -1,5 +1,5 @@
-KIT GENERATOR MOD for Football Life 2027  -  version 0.7
-========================================================
+KIT GENERATOR MOD for Football Life 2027  -  version 0.8.0-beta.1
+==============================================================
 
 WHAT THIS PACKAGE IS
   The sponsor / kit mod for Master League: the Sponsor Office (Sider Mod Menu page, or a
@@ -78,7 +78,7 @@ SPONSOR DEALS -> AUTO KIT REBUILD (the watcher)
   January is deliberately NOT a signing month: a season's kits can only be generated in the
   pre-season, so a mid-season deal can never silently swap the kits you are already wearing.
 
-YOUR CLUB IS AUTO-DETECTED (v0.7)
+YOUR CLUB IS AUTO-DETECTED (v0.8 beta)
   You no longer set CFG.MANAGED_CLUB.  Start a Master League with any team and the mod works
   out which club is yours.  The layers, most authoritative first:
     1. CFG.MANAGED_CLUB (a number)  a manual override in KitGenerator.lua always wins
@@ -115,7 +115,7 @@ BONUSES, TERMINATION AND USING ONE HALF ON ITS OWN
                         (no watcher, no Python, no livecpk needed).
     Both (default)   -> the full mod.
     The load line in sider.log states which halves are on, e.g.
-        loaded v0.7 (kits ON, sponsorship ON, budget crediting ON)
+        loaded v0.8.0-beta.1 (kits ON, sponsorship ON, budget crediting ON)
     Truly standalone use also works: the generator (build_kit.py / setup_watcher.py) rebuilds
     kits with no Lua module at all, and the Lua module credits money with no Python at all.
 

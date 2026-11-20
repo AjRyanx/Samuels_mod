@@ -81,6 +81,16 @@ def _load_alpha(path):
     return np.asarray(im)[:, :, 3] > 10
 
 
+class MaskSet(dict):
+    """dict of bool masks with cached derived geometry.
+
+    Rendering calls ``region_boxes()`` several times per kit.  Masks are built
+    once per worker and reused for every club, so compute the expensive
+    ``np.where`` bounding boxes once here instead of once per kit.
+    """
+    boxes = None
+
+
 def build_masks(mask_dir=None):
     """Return {region_name: bool mask} in 2048x2048 UV space."""
     d = Path(mask_dir) if mask_dir else MASK_DIR
@@ -101,7 +111,7 @@ def build_masks(mask_dir=None):
     body_back = comps[0][1]                 # upper hole  = back panel
     body_front = comps[-1][1]               # lower hole  = front panel
 
-    return {
+    result = MaskSet({
         "body_front": body_front,
         "body_back": body_back,
         "body": body_front | body_back,
@@ -109,11 +119,21 @@ def build_masks(mask_dir=None):
         "shorts": _load_alpha(d / "shorts.png"),
         "socks": _load_alpha(d / "socks.png"),
         "collar": _load_alpha(d / "collar.png"),
-    }
+    })
+    result.boxes = {}
+    for name, m in result.items():
+        ys, xs = np.where(m)
+        if len(xs):
+            result.boxes[name] = (int(xs.min()), int(ys.min()),
+                                  int(xs.max()), int(ys.max()))
+    return result
 
 
 def region_boxes(masks):
     """Return {region: (x0, y0, x1, y1)} for the given masks."""
+    cached = getattr(masks, "boxes", None)
+    if cached is not None:
+        return cached
     out = {}
     for name, m in masks.items():
         ys, xs = np.where(m)
