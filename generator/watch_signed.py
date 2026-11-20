@@ -306,6 +306,15 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
         is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
 
+        if req["offer"].startswith("clean-") and req["club_id"] > 0:
+            target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
+            career_id = req.get("career_id")
+            career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
+            if target_ftex.is_file() and (career_ftex is None or career_ftex.is_file()):
+                _mark_done(state_file, req["offer"])
+                seen.add(req["offer"])
+                continue
+
         if req["offer"] in seen:
             if req["club_id"] > 0:
                 if is_jit:

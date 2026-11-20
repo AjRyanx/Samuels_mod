@@ -1083,10 +1083,9 @@ local function ensure_season_deal(season)
 
     -- Season 2+: user team gets a fresh sponsorless dynamic kit until a new deal is signed.
     local ckey = cid .. ':' .. season
-    local kit_exists = has_user_kit(cid)
-    if CFG.ENABLE_KITS and (not CLEAN[ckey] or not kit_exists) then
+    if CFG.ENABLE_KITS and not CLEAN[ckey] then
       CLEAN[ckey] = true
-      local req_id = string.format('clean-%d-%d-t%s', cid, season, os.date('%Y%m%d%H%M%S'))
+      local req_id = string.format('clean-%d-%d', cid, season)
       append_line('kit_request.txt', string.format('%s|%d|%d|||%s|%s',
         req_id, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
       L('no deal for season ' .. tostring(season) ..
