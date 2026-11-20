@@ -134,53 +134,33 @@ def build_tile(design):
 
     canvas = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
 
-    # Base or Macro layout
+    # Always render the authentic curated pattern
+    kit_gen.draw_pattern(canvas, d["pattern"], body, second, d["var"],
+                         d["width_step"], third=d.get("third"))
+
+    # Optional authentic macro overlay
     if macro == "ombre_fade":
         grad = Image.new("RGBA", (kit_gen.W, kit_gen.H))
         draw_g = ImageDraw.Draw(grad)
         for y in range(kit_gen.H):
             t = y / float(max(1, kit_gen.H - 1))
-            c = (int(body[0] * (1 - t) + second[0] * t),
-                 int(body[1] * (1 - t) + second[1] * t),
-                 int(body[2] * (1 - t) + second[2] * t), 255)
-            draw_g.line([(0, y), (kit_gen.W, y)], fill=c)
-        canvas.paste(grad, (0, 0))
+            alpha = int(140 * t)
+            draw_g.line([(0, y), (kit_gen.W, y)], fill=second + (alpha,))
+        canvas.alpha_composite(grad)
     elif macro == "half_half":
-        draw_m = ImageDraw.Draw(canvas)
-        draw_m.rectangle([0, 0, kit_gen.W // 2, kit_gen.H], fill=body + (255,))
-        draw_m.rectangle([kit_gen.W // 2, 0, kit_gen.W, kit_gen.H], fill=second + (255,))
+        half_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_h = ImageDraw.Draw(half_img)
+        draw_h.rectangle([kit_gen.W // 2, 0, kit_gen.W, kit_gen.H], fill=second + (160,))
+        canvas.alpha_composite(half_img)
     elif macro == "chestband":
-        draw_m = ImageDraw.Draw(canvas)
-        draw_m.rectangle([0, 0, kit_gen.W, kit_gen.H], fill=body + (255,))
+        band_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_b = ImageDraw.Draw(band_img)
         y_b0, y_b1 = int(kit_gen.H * 0.38), int(kit_gen.H * 0.54)
-        draw_m.rectangle([0, y_b0, kit_gen.W, y_b1], fill=second + (255,))
+        draw_b.rectangle([0, y_b0, kit_gen.W, y_b1], fill=second + (255,))
         tip_c = d.get("third") or body
-        draw_m.line([(0, y_b0 - 2), (kit_gen.W, y_b0 - 2)], fill=tuple(tip_c) + (255,), width=3)
-        draw_m.line([(0, y_b1 + 2), (kit_gen.W, y_b1 + 2)], fill=tuple(tip_c) + (255,), width=3)
-    elif macro == "diagonal_sash":
-        draw_m = ImageDraw.Draw(canvas)
-        draw_m.rectangle([0, 0, kit_gen.W, kit_gen.H], fill=body + (255,))
-        sw = int(kit_gen.W * 0.22)
-        poly = [(-sw, 0), (kit_gen.W - sw, kit_gen.H), (kit_gen.W + sw, kit_gen.H), (sw, 0)]
-        draw_m.polygon(poly, fill=second + (255,))
-        tip_c = d.get("third") or body
-        draw_m.line([(-sw, 0), (kit_gen.W - sw, kit_gen.H)], fill=tuple(tip_c) + (255,), width=4)
-        draw_m.line([(sw, 0), (kit_gen.W + sw, kit_gen.H)], fill=tuple(tip_c) + (255,), width=4)
-    elif macro == "fade_geo":
-        draw_m = ImageDraw.Draw(canvas)
-        draw_m.rectangle([0, 0, kit_gen.W, kit_gen.H], fill=body + (255,))
-        n_bands = 8
-        for i in range(n_bands):
-            t = (i + 1) / float(n_bands)
-            c = (int(body[0] * (1 - t) + second[0] * t),
-                 int(body[1] * (1 - t) + second[1] * t),
-                 int(body[2] * (1 - t) + second[2] * t), 255)
-            y0 = int(kit_gen.H * 0.25 + i * (kit_gen.H * 0.70 / n_bands))
-            y1 = y0 + int(kit_gen.H * 0.70 / (n_bands * 2))
-            draw_m.rectangle([0, y0, kit_gen.W, y1], fill=c)
-    else:
-        kit_gen.draw_pattern(canvas, d["pattern"], body, second, d["var"],
-                             d["width_step"], third=d.get("third"))
+        draw_b.line([(0, y_b0 - 2), (kit_gen.W, y_b0 - 2)], fill=tuple(tip_c) + (255,), width=3)
+        draw_b.line([(0, y_b1 + 2), (kit_gen.W, y_b1 + 2)], fill=tuple(tip_c) + (255,), width=3)
+        canvas.alpha_composite(band_img)
 
     # Optional Micro Jacquard Layer overlay
     if micro:
@@ -207,10 +187,6 @@ def build_tile(design):
         tiled.paste(half, (0, TILE // 2))
         tiled.paste(half, (TILE // 2, TILE // 2))
         return tiled
-    elif abs(scale - 2.0) < 0.1:
-        sw, sh = shirt.size
-        macro_crop = shirt.crop((sw // 4, sh // 4, 3 * sw // 4, 3 * sh // 4))
-        return macro_crop.resize((TILE, TILE), Image.LANCZOS)
 
     return shirt.resize((TILE, TILE), Image.LANCZOS)
 

@@ -1,4 +1,4 @@
-"""generate_showcase_html.py - Generates an interactive, premium HTML showcase for all 147 sponsor logos."""
+"""generate_showcase_html.py - Generates an interactive, premium HTML showcase for all 177 sponsor logos."""
 
 from pathlib import Path
 import json
@@ -171,7 +171,39 @@ SPONSORS_META = [
     ("mahou", "Mahou", "Beverages & Lifestyle", "Crimson heraldic crown crest + vintage athletic script"),
     ("peroni", "Peroni", "Beverages & Lifestyle", "Italian ribbon crest + elegant modern serif"),
     ("budweiser", "Budweiser", "Beverages & Lifestyle", "Iconic red bowtie banner + classic script/sans"),
-    ("pepsi", "Pepsi", "Beverages & Lifestyle", "Red/white/blue wave globe + modern rounded lowercase")
+    ("pepsi", "Pepsi", "Beverages & Lifestyle", "Red/white/blue wave globe + modern rounded lowercase"),
+
+    # Iconic Emblems & Specials (Logo-Only / Artist Takeovers)
+    ("spotify_icon", "Spotify Icon", "Iconic Emblems & Specials", "Barcelona-style pure circular 3-wave soundmark"),
+    ("drake_owl", "OVO Owl", "Iconic Emblems & Specials", "Barcelona El Clásico Drake gold owl silhouette"),
+    ("rolling_stones", "Rolling Stones Tongue", "Iconic Emblems & Specials", "Barcelona El Clásico hot red tongue & lips"),
+    ("rosalia_motomami", "Motomami Butterfly", "Iconic Emblems & Specials", "Barcelona El Clásico Rosalia butterfly-M wings"),
+    ("karol_g_heart", "Karol G Heart", "Iconic Emblems & Specials", "Barcelona El Clásico thorny barbed-wire heart"),
+    ("coldplay_moon", "Coldplay Moon Music", "Iconic Emblems & Specials", "Barcelona El Clásico celestial crescent orbit"),
+    ("playstation_shapes", "PlayStation Shapes", "Iconic Emblems & Specials", "Sony iconic controller symbols (△ ◯ ✕ □)"),
+    ("apple_logo", "Apple", "Iconic Emblems & Specials", "Ultra-minimalist monochrome silhouette with bite & leaf"),
+    ("mastercard_circles", "Mastercard Circles", "Iconic Emblems & Specials", "Interlocking scarlet & amber dual circles"),
+    ("jumpman", "Air Jordan Jumpman", "Iconic Emblems & Specials", "Michael Jordan flight silhouette (PSG kit style)"),
+    ("redbull_emblem", "Red Bull Pure Emblem", "Iconic Emblems & Specials", "Twin charging muscular bulls colliding at sunrise"),
+    ("autobot_crest", "Autobots Crest", "Iconic Emblems & Specials", "Transformers mechanical crest (Inter Milan kit)"),
+    ("paramount_peak", "Paramount Mountain", "Iconic Emblems & Specials", "Snow-capped peak ringed by 11 stars (Inter kit)"),
+    ("target_bullseye", "Target Bullseye", "Iconic Emblems & Specials", "Bold concentric circular rings (Minnesota/streetwear)"),
+    ("one_and_one", "1&1 Square", "Iconic Emblems & Specials", "Borussia Dortmund minimalist blue cube mark"),
+    ("o2_bubbles", "O2 Bubbles", "Iconic Emblems & Specials", "Arsenal historic era O2 with luminous bubble rings"),
+    ("mercedes_star", "Mercedes Star", "Iconic Emblems & Specials", "Three-pointed star inside precision ring"),
+    ("audi_rings", "Audi Rings", "Iconic Emblems & Specials", "Four horizontally interlocking luxury rings"),
+    ("mitsubishi_diamonds", "Mitsubishi 3 Diamonds", "Iconic Emblems & Specials", "Three red faceted rhombuses (classic 90s kit)"),
+    ("tesla_crest", "Tesla Crest", "Iconic Emblems & Specials", "Minimalist futuristic T-sword shield"),
+    ("ethereum_prism", "Ethereum Crystal", "Iconic Emblems & Specials", "Geometric 3D diamond crystal octahedron"),
+    ("bitcoin_symbol", "Bitcoin Coin", "Iconic Emblems & Specials", "Golden coin ring with double-stroke ₿ cutout"),
+    ("xbox_sphere", "Xbox Sphere", "Iconic Emblems & Specials", "3D sphere with sculpted diagonal X channels"),
+    ("unicef_emblem", "UNICEF Emblem", "Iconic Emblems & Specials", "Barcelona classic humanitarian laurel & globe mark"),
+    ("volkswagen_roundel", "Volkswagen Roundel", "Iconic Emblems & Specials", "Wolfsburg classic interlocking V & W badge"),
+    ("shell_pecten", "Shell Pecten", "Iconic Emblems & Specials", "Fluted scallop seashell with red trim"),
+    ("bayer_cross", "Bayer Cross", "Iconic Emblems & Specials", "Bayer Leverkusen intersecting cross in ring"),
+    ("snapdragon_icon", "Snapdragon Ball", "Iconic Emblems & Specials", "Fiery cyber dragon ball fireball mark"),
+    ("atari_fuji", "Atari Fuji Crest", "Iconic Emblems & Specials", "Iconic retro gaming tri-line wing crest"),
+    ("nasa_worm", "NASA Vector Orbit", "Iconic Emblems & Specials", "Supersonic red chevron & planetary orbit")
 ]
 
 HTML_TEMPLATE = """<!DOCTYPE html>
@@ -179,7 +211,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Kit & Sponsor Mod — 147 Premier Sponsor Logos</title>
+    <title>Dynamic Kit & Sponsor Mod — 177 Premier Sponsor Logos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -488,9 +520,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <p>Premier Real-World Sponsor Logo Library — Authentic Master League Sponsorships</p>
             </div>
             <div class="stats-pill">
-                <span><strong>147</strong> Sponsors</span>
+                <span><strong>177</strong> Sponsors</span>
                 <span>•</span>
-                <span><strong>294</strong> Logos (Color + White Silhouettes)</span>
+                <span><strong>354</strong> Logos (Color + White Silhouettes)</span>
                 <span>•</span>
                 <span class="badge-verified">4x Supersampled</span>
             </div>
@@ -499,7 +531,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <!-- Controls -->
         <div class="controls-bar">
             <div class="search-row">
-                <input type="text" id="searchInput" class="search-input" placeholder="Search sponsor, industry, or key (e.g. Emirates, Betway, Barclays, Crypto)...">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search sponsor, industry, or key (e.g. Spotify, Chelsea, Drake, Apple, Emirates)...">
                 <div class="mode-toggles">
                     <button class="mode-btn active" data-mode="split">Split View (Both)</button>
                     <button class="mode-btn" data-mode="light">Light Kits (Color)</button>
@@ -507,7 +539,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 </div>
             </div>
             <div class="category-filters" id="categoryFilters">
-                <button class="filter-btn active" data-category="all">All Categories (147)</button>
+                <button class="filter-btn active" data-category="all">All Categories (177)</button>
+                <button class="filter-btn" data-category="Iconic Emblems & Specials">Iconic Emblems & Specials (30)</button>
                 <button class="filter-btn" data-category="Airlines & Tourism">Airlines & Tourism (16)</button>
                 <button class="filter-btn" data-category="Betting & Gaming">Betting & Gaming (20)</button>
                 <button class="filter-btn" data-category="Banking & Finance">Banking & Finance (20)</button>

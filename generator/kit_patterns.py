@@ -369,9 +369,16 @@ def f_cubist(p, d, img, n=22):
               _shade(p.second, r.uniform(0.7, 1.2)), 220)
 
 
-def f_stars4(p, d, img, s=70, r=30, a=220):
+def f_stars4(p, d, img, s=48, r=12, a=45):
+    """Delicate geometric micro-diamond lattice with calm chest sponsor zone."""
     def st(x, y, ix, iy):
-        _star(d, x + (s / 2 if iy % 2 else 0), y, r, p.second, 4, 0.30, 0, a)
+        cx = x + (s / 2 if iy % 2 else 0)
+        cy = y
+        if 0.28 * p.h < cy < 0.56 * p.h:
+            return
+        # Subtle micro-diamond accent
+        _poly(d, [(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], p.second, a)
+        _dot(d, cx, cy, 1.0, p.third, max(20, a - 15))
     _tiles(p, s, s, st)
 
 
@@ -414,17 +421,11 @@ def f_tangram(p, d, img):
 
 
 def f_peaks(p, d, img, bands=4):
-    r = p.rng
+    """Subtle tonal horizon chevron layers with calm sponsor zone."""
     for b in range(bands):
-        y = p.h * (0.35 + b * 0.16)
-        pts = [(0, y)]
-        x = 0
-        while x < p.w:
-            x += r.uniform(0.10, 0.24) * p.w
-            pts.append((x, y - r.uniform(0.06, 0.18) * p.h))
-            pts.append((x + r.uniform(0.06, 0.14) * p.w, y))
-        pts += [(p.w, p.h), (0, p.h)]
-        _poly(d, pts, p.second if b % 2 else _shade(p.second, 0.85), 220)
+        y = p.h * (0.62 + b * 0.10)
+        pts = [(0, y), (p.w * 0.5, y - 25), (p.w, y), (p.w, p.h), (0, p.h)]
+        _poly(d, pts, p.second if b % 2 else _shade(p.second, 0.9), 45)
 
 
 def f_sash_slices(p, d, img, n=15, width=0.32, off=10):
@@ -623,17 +624,20 @@ def f_chrome(p, d, img, arms=7, turns=2.6, r1=560, thick=14):
         _line(d, pts, col, thick * (0.6 + 0.4 * (k % 2)), 210)
 
 
-def f_bloom(p, d, img, n=10, rmin=0.10, rmax=0.32, cols=2, a=155, seed=0):
+def f_bloom(p, d, img, n=8, rmin=0.08, rmax=0.20, cols=2, a=45, seed=0):
+    """Subtle atmospheric watercolor haze with calm chest sponsor zone."""
     r = p.rng
     palette = [p.second, p.third, p.mid, p.lo]
     for i in range(n):
         cx, cy = r.uniform(0, p.w), r.uniform(0, p.h)
+        if 0.28 * p.h < cy < 0.56 * p.h:
+            continue
         rad = r.uniform(rmin, rmax) * p.w
         col = palette[(i + seed) % max(1, cols)]
-        pts = [(cx + rad * math.cos(2 * math.pi * k / 9) * (0.7 + r.random() * 0.6),
-                cy + rad * math.sin(2 * math.pi * k / 9) * (0.7 + r.random() * 0.6))
-               for k in range(9)]
-        _poly(d, pts, col, a)
+        # Soft feathered rings rather than giant solid discs
+        for st in range(3):
+            rr = rad * (1.0 - st * 0.25)
+            _ring(d, cx, cy, rr, col, w=1.5, a=max(15, int(a * (0.8 - st * 0.2))))
 
 
 def f_topo(p, d, img, levels=18, step=26, thick=2, a=200, cx=0.55, cy=0.5):
@@ -785,15 +789,15 @@ def f_vstripes(p, d, img, count=9, width=0.5, mode="plain", color=None, fade=0.0
                 _rect(d, [x + jx, k, x + jx + w, k + 5], color, 235)
             continue
         if mode == "taper":
-            _poly(d, [(x, p.h), (x + w, p.h), (x + w * 0.12, 0), (x + 0.12 * w, 0)], color)
+            # Elegant athletic vertical pinstripe with subtle variable width
+            _line(d, [(x + w * 0.5, 0), (x + w * 0.5, p.h * 0.28)], color, max(1, int(w * 0.6)), 180)
+            _line(d, [(x + w * 0.5, p.h * 0.58), (x + w * 0.5, p.h)], color, max(1, int(w * 0.6)), 180)
             continue
         if mode == "glitch":
-            y = 0
-            while y < p.h:
-                seg = r.uniform(0.05, 0.18) * p.h
-                sh = r.uniform(-0.6, 0.6) * w
-                _rect(d, [x + sh, y, x + sh + w, y + seg], color)
-                y += seg
+            # Modern barcode / rhythm pinstripe (straight, elegant pinstripes with varied widths)
+            pw = max(1.5, (1.0 + (i % 3) * 1.5))
+            _line(d, [(x + w * 0.5, 0), (x + w * 0.5, p.h * 0.28)], color, int(pw), 160)
+            _line(d, [(x + w * 0.5, p.h * 0.58), (x + w * 0.5, p.h)], color, int(pw), 160)
             continue
         if mode == "wavy":
             pts = [(x + math.sin(k / p.h * math.pi * 4 + i * 0.5) * w * 1.2, k)
@@ -1125,34 +1129,14 @@ def f_glitch(p, d, img, mode="vhs", bars=10):
 
 
 def f_circuit(p, d, img, mode="pcb", nodes=40):
-    r = p.rng
-    if mode == "pcb":
-        for _ in range(nodes):
-            x, y = r.uniform(0, p.w), r.uniform(0, p.h)
-            pts = [(x, y)]
-            for _ in range(r.randint(2, 5)):
-                if r.random() < 0.5:
-                    x += r.choice([-1, 1]) * r.uniform(20, 70)
-                else:
-                    y += r.choice([-1, 1]) * r.uniform(20, 70)
-                pts.append((x, y))
-            _line(d, pts, p.second, 3, 220)
-            for px, py in pts:
-                _dot(d, px, py, 4, p.third, 235)
-    elif mode == "isometric":
-        s = 60
-        def iso(x, y, ix, iy):
-            _poly(d, [(x, y), (x + s, y), (x + s, y + s * 0.6), (x, y + s * 0.6)],
-                  p.second, 90 if (ix + iy) % 2 else 180)
-        _tiles(p, s, s * 0.6, iso)
-    elif mode == "neural":
-        pts = [(r.uniform(0, p.w), r.uniform(0, p.h)) for _ in range(nodes)]
-        for i, (x, y) in enumerate(pts):
-            near = sorted(pts, key=lambda q: (q[0] - x) ** 2 + (q[1] - y) ** 2)[1:4]
-            for nx, ny in near:
-                _line(d, [(x, y), (nx, ny)], p.second, 1, 120)
-        for x, y in pts:
-            _dot(d, x, y, r.uniform(2, 5), p.third, 230)
+    """Architectural diagonal micro-lattice knit texture with calm chest sponsor zone (no motherboard traces/dots)."""
+    step = 36.0
+    for y in range(0, int(p.h), int(step)):
+        if 0.28 * p.h < y < 0.56 * p.h:
+            continue
+        # Refined diagonal tonal weave
+        _line(d, [(0, y), (p.w, y + p.w * 0.35)], p.second, 1.5, a=65)
+        _line(d, [(0, y + p.w * 0.35), (p.w, y)], p.second, 1.5, a=45)
 
 
 def f_rain2(p, d, img, mode="matrix", cols=24, a=210):
@@ -1163,67 +1147,39 @@ def f_rain2(p, d, img, mode="matrix", cols=24, a=210):
         if mode == "matrix":
             y = r.uniform(-0.3, 1.0) * p.h
             while y < p.h:
-                _rect(d, [x - 2, y, x + 2, y + 8], p.second, a)
-                _dot(d, x, y, 2, p.third, 200)
-                y += r.uniform(10, 20)
+                if not (0.28 * p.h < y < 0.56 * p.h):
+                    _rect(d, [x - 1, y, x + 1, y + 5], p.second, a=55)
+                    _dot(d, x, y, 1.0, p.third, a=45)
+                y += r.uniform(14, 28)
         elif mode == "binary":
-            for k in range(0, int(p.h), 12):
-                _rect(d, [x - 2, k, x + 2, k + 6], p.second if (c + k // 12) % 2 else p.third, a)
-        elif mode == "chevron":
+            # Engineered breathable micro-mesh pinpoint jacquard
             for k in range(0, int(p.h), 14):
-                off = abs(k - p.h / 2) * 0.5
-                _rect(d, [x - 2 + off * 0.0, k, x + 2, k + 7], p.second, a)
+                if not (0.28 * p.h < k < 0.56 * p.h):
+                    _dot(d, x, k, 1.2, p.second if (c + k // 14) % 2 else p.third, a=45)
+        elif mode == "chevron":
+            for k in range(0, int(p.h), 16):
+                if not (0.28 * p.h < k < 0.56 * p.h):
+                    _rect(d, [x - 1, k, x + 1, k + 4], p.second, a=50)
 
 
-def f_pixel(p, d, img, mode="dissolve", cell=26):
+def f_pixel(p, d, img, mode="dissolve", cell=24):
+    """Modern tonal digital pixel knit with calm chest sponsor zone (no QR codes/blocks)."""
     r = p.rng
-    if mode == "dissolve":
-        for iy, y in enumerate(range(0, int(p.h), cell)):
-            for ix, x in enumerate(range(0, int(p.w), cell)):
-                if r.random() < 1 - y / p.h:
-                    _rect(d, [x, y, x + cell - 3, y + cell - 3], p.second, r.randint(120, 235))
-    elif mode == "qr":
-        for iy, y in enumerate(range(0, int(p.h), cell)):
-            for ix, x in enumerate(range(0, int(p.w), cell)):
-                if r.random() < 0.5:
-                    _rect(d, [x, y, x + cell - 2, y + cell - 2], p.second)
-    elif mode == "hexcamo":
-        f_hexgrid(p, d, img, rad=22, gap=2, a=210, solid=2)
-    elif mode == "blocks":
-        for iy, y in enumerate(range(0, int(p.h), cell * 2)):
-            for ix, x in enumerate(range(0, int(p.w), cell * 2)):
-                _rect(d, [x, y, x + cell, y + cell], p.second, 220)
-                _rect(d, [x + cell, y + cell, x + cell * 2, y + cell * 2], p.third, 160)
-    elif mode == "camo":
-        for _ in range(70):
-            x, y = r.uniform(0, p.w), r.uniform(0, p.h)
-            s = r.uniform(16, 46)
-            _poly(d, [(x, y), (x + s, y + r.uniform(-10, 10)),
-                      (x + s * 0.7, y + s), (x - s * 0.3, y + s * 0.8)],
-                  p.second if r.random() < 0.6 else p.third, 210)
-    elif mode == "crypto":
-        for iy, y in enumerate(range(0, int(p.h), 70)):
-            for ix, x in enumerate(range(0, int(p.w), 70)):
-                _rect(d, [x + 4, y + 4, x + 62, y + 62], p.second, 150)
-                for k in range(4):
-                    _line(d, [(x + 12, y + 16 + k * 12), (x + 54, y + 16 + k * 12)], p.third, 2, 220)
+    for iy, y in enumerate(range(0, int(p.h), cell)):
+        if 0.28 * p.h < y < 0.56 * p.h:
+            continue
+        for ix, x in enumerate(range(0, int(p.w), cell)):
+            if (ix + iy) % 2 == 0 and r.random() < 0.35:
+                col = p.second if (ix + iy) % 4 == 0 else p.third
+                _rect(d, [x + 2, y + 2, x + cell - 4, y + cell - 4], col, a=40)
 
 
-def f_scan(p, d, img, mode="crt", step=6):
-    if mode == "crt":
-        for y in range(0, int(p.h), step):
-            _rect(d, [0, y, p.w, y + max(1, step // 2)], p.second, 70)
-    elif mode == "subpixel":
-        for y in range(0, int(p.h), 18):
-            for x in range(0, int(p.w), 3):
-                c = (p.second, p.third, p.mid)[(x // 3) % 3]
-                _rect(d, [x, y, x + 2, y + 12], c, 90)
-    elif mode == "lidar":
-        r = p.rng
-        for y in range(0, int(p.h), 10):
-            for _ in range(int(p.w / 8)):
-                x = r.uniform(0, p.w)
-                _dot(d, x, y + r.uniform(-3, 3), 1.5, p.second, 200)
+def f_scan(p, d, img, mode="crt", step=12):
+    """Refined engineered horizontal micro-rib knit texture with calm chest sponsor zone."""
+    for y in range(0, int(p.h), step):
+        if 0.28 * p.h < y < 0.56 * p.h:
+            continue
+        _line(d, [(0, y), (p.w, y)], p.second, 1.0, a=45)
 
 
 def f_grid(p, d, img, mode="wireframe", step=48):
@@ -1268,70 +1224,35 @@ def f_grid(p, d, img, mode="wireframe", step=48):
 
 
 def f_radar(p, d, img, mode="sonar", cx=0.5, cy=0.42):
+    """Subtle aerodynamic curved contour ribs with calm chest sponsor zone."""
     cx, cy = p.w * cx, p.h * cy
-    if mode == "sonar":
-        for k in range(1, 9):
-            _ring(d, cx, cy, k * 34, p.second, 2, 190)
-        _line(d, [(cx, cy), (cx + 300, cy - 140)], p.third, 3, 210)
-    elif mode == "hud":
-        for k in range(1, 6):
-            _ring(d, cx, cy, k * 50, p.second, 2, 170)
-        _line(d, [(cx - 200, cy), (cx + 200, cy)], p.second, 2, 190)
-        _line(d, [(cx, cy - 200), (cx, cy + 200)], p.second, 2, 190)
-        for k in range(12):
-            a = math.radians(k * 30)
-            _line(d, [(cx + 150 * math.cos(a), cy + 150 * math.sin(a)),
-                      (cx + 170 * math.cos(a), cy + 170 * math.sin(a))], p.third, 2, 220)
-    elif mode == "ecg":
-        for row in range(3):
-            base = p.h * (0.25 + row * 0.25)
-            _rect(d, [0, base - 46, p.w, base + 34], p.second, 45)
-            pts = []
-            x = 0
-            while x < p.w:
-                pts.append((x, base))
-                if (x // 20) % 6 == 0:
-                    pts += [(x + 5, base - 40), (x + 10, base + 24), (x + 15, base)]
-                    x += 15
-                x += 8
-            _line(d, pts, p.second, 4, 235)
+    for k in range(1, 6):
+        rad = k * 42
+        pts = []
+        for a_deg in range(210, 331, 10):
+            rad_a = math.radians(a_deg)
+            pts.append((cx + rad * math.cos(rad_a), cy + rad * 0.6 * math.sin(rad_a)))
+        _line(d, pts, p.second, 1.5, a=55)
 
 
-def f_plate(p, d, img, mode="armor", step=54):
-    if mode == "armor":
-        for iy, y in enumerate(range(0, int(p.h), step)):
-            for ix, x in enumerate(range(0, int(p.w), step)):
-                off = step / 2 if iy % 2 else 0
-                _poly(d, [(x + off + 4, y + 4), (x + off + step - 4, y + 4),
-                          (x + off + step - 8, y + step - 4), (x + off + 8, y + step - 4)],
-                      _shade(p.body, 1.14), 200)
-                _line(d, [(x + off + 4, y + 4), (x + off + step - 4, y + 4)], p.third, 2, 200)
-    elif mode == "carbon":
-        for iy, y in enumerate(range(-step, int(p.h) + step, 14)):
-            for x in range(-step, int(p.w) + step, 14):
-                off = 7 if iy % 2 else 0
-                _rect(d, [x + off, y, x + off + 8, y + 6], p.second, 90)
-    elif mode == "diamond":
-        for iy, y in enumerate(range(0, int(p.h) + step, step)):
-            for ix, x in enumerate(range(0, int(p.w) + step, step)):
-                off = step / 2 if iy % 2 else 0
-                cx, cy = x + off, y
-                _poly(d, [(cx, cy - 10), (cx + 26, cy), (cx, cy + 10), (cx - 26, cy)], p.second, 120)
+def f_plate(p, d, img, mode="armor", step=42):
+    """Refined carbon fiber and technical fabric micro-weave with calm sponsor zone."""
+    for iy, y in enumerate(range(0, int(p.h), step)):
+        if 0.28 * p.h < y < 0.56 * p.h:
+            continue
+        off = step / 2 if iy % 2 else 0
+        for ix, x in enumerate(range(0, int(p.w), step)):
+            cx, cy = x + off, y
+            _poly(d, [(cx, cy - 8), (cx + 18, cy), (cx, cy + 8), (cx - 18, cy)], p.second, a=45)
 
 
 def f_bars(p, d, img, mode="spectrum", bars=26):
-    r = p.rng
-    step = p.w / bars
-    if mode == "spectrum":
-        for i in range(bars):
-            hgt = r.uniform(0.1, 0.9) * p.h
-            _rect(d, [i * step + 2, p.h - hgt, i * step + step - 2, p.h], p.second, 200)
-    elif mode == "telemetry":
-        for row in range(4):
-            base = p.h * (0.2 + row * 0.2)
-            _rect(d, [0, base - 44, p.w, base + 22], p.second, 40)
-            pts = [(i * step, base - r.uniform(0, 40)) for i in range(bars)]
-            _line(d, pts, p.second if row % 2 else p.third, 4, 225)
+    """Subtle rhythm pin-stripes with calm chest zone."""
+    step = p.w / float(bars)
+    for i in range(bars):
+        x = i * step
+        _line(d, [(x, 0), (x, p.h * 0.28)], p.second, 1.5, a=70)
+        _line(d, [(x, p.h * 0.58), (x, p.h)], p.second, 1.5, a=70)
 
 
 def f_streak(p, d, img, mode="velocity", lines=40):
@@ -1943,18 +1864,13 @@ def f_halftone_dither(p, d, img, spacing=20, max_r=9.0):
 
 
 def f_soundwaves(p, d, img, bars=32, max_h=0.35):
-    """Urban soundwave spectrum / audio waveform chest & torso graphic."""
-    w_bar = (p.w * 0.85) / bars
-    x_start = p.w * 0.075
-    cy = p.h * 0.45
+    """Aerodynamic velocity micro-streaks with clean chest sponsor zone (no crude bar charts)."""
+    step = p.w / float(bars)
     for i in range(bars):
-        x = x_start + i * w_bar
-        t = i / float(bars - 1)
-        env = math.sin(t * math.pi)
-        harm = math.sin(t * 12.0 + p.var) * 0.4 + math.cos(t * 7.0) * 0.3 + 0.5
-        bh = max(6.0, p.h * max_h * env * harm)
-        col = p.second if i % 2 == 0 else p.third
-        _rect(d, [x, cy - bh, x + w_bar * 0.72, cy + bh], col, a=210)
+        x = i * step
+        # Keep chest sponsor zone calm
+        _line(d, [(x, 0), (x, p.h * 0.26)], p.second, 2, a=80)
+        _line(d, [(x, p.h * 0.58), (x, p.h)], p.second, 2, a=80)
 
 
 def f_couture_monogram(p, d, img, step=28):
@@ -1974,20 +1890,20 @@ def f_couture_monogram(p, d, img, step=28):
             _dot(d, x + step * 0.5, y + step * 0.5, 1.2, p.third, a=30)
 
 
-def f_sashiko_stitch(p, d, img, step=38):
-    """Japanese artisanal techwear cross-stitch geometric embroidery."""
+def f_sashiko_stitch(p, d, img, step=32):
+    """Refined tonal pique micro-stitch texture with calm chest sponsor zone."""
     ny = int(p.h / step) + 2
     nx = int(p.w / step) + 2
     for iy in range(ny):
         y = iy * step
+        if 0.28 * p.h < y < 0.56 * p.h:
+            continue
+        off = (step * 0.5) if (iy % 2 == 1) else 0.0
         for ix in range(nx):
-            x = ix * step
-            _line(d, [(x - 8, y), (x + 8, y)], p.second, w=2.5, a=200)
-            _line(d, [(x, y - 8), (x, y + 8)], p.second, w=2.5, a=200)
-            _line(d, [(x + step * 0.5 - 6, y + step * 0.5 - 6),
-                      (x + step * 0.5 + 6, y + step * 0.5 + 6)], p.third, w=2, a=160)
-            _line(d, [(x + step * 0.5 + 6, y + step * 0.5 - 6),
-                      (x + step * 0.5 - 6, y + step * 0.5 + 6)], p.third, w=2, a=160)
+            x = ix * step + off
+            # Delicate micro-dash stitches (tonal woven feel, no crude tablecloth crosses)
+            _line(d, [(x - 3, y), (x + 3, y)], p.second, w=1.0, a=45)
+            _dot(d, x, y, 0.8, p.third, a=35)
 
 
 def f_velocity_warp(p, d, img, n=24, angle=0.45):

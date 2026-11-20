@@ -1003,7 +1003,35 @@ def build_telekom():
 BUILDERS['telekom'] = build_telekom
 
 def build_three():
-    return draw_wordmark('3', (18, 18, 18), style='sans_heavy', size=150)
+    # Authentic Chelsea Three UK geometric stencil '3'
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = W // 2, H // 2
+    # Upper horizontal bar
+    d.polygon([
+        (cx - 75 * SS, cy - 105 * SS),
+        (cx + 65 * SS, cy - 105 * SS),
+        (cx + 65 * SS, cy - 65 * SS),
+        (cx - 20 * SS, cy - 65 * SS),
+        (cx - 50 * SS, cy - 105 * SS)
+    ], fill=255)
+    # Diagonal connector
+    d.polygon([
+        (cx + 15 * SS, cy - 65 * SS),
+        (cx + 65 * SS, cy - 65 * SS),
+        (cx + 5 * SS, cy + 10 * SS),
+        (cx - 35 * SS, cy + 10 * SS)
+    ], fill=255)
+    # Bottom bowl (thick curve with inner cutout)
+    d.pieslice([cx - 75 * SS, cy - 35 * SS, cx + 75 * SS, cy + 105 * SS], start=280, end=190, fill=255)
+    # Inner cutout
+    d.pieslice([cx - 35 * SS, cy + 5 * SS, cx + 35 * SS, cy + 70 * SS], start=280, end=190, fill=0)
+    # Angled stencil slash
+    d.line([(cx - 45 * SS, cy + 5 * SS), (cx + 15 * SS, cy + 5 * SS)], fill=0, width=12 * SS)
+    col_img = Image.new('RGBA', (W, H), (18, 18, 22, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
 BUILDERS['three'] = build_three
 
 def build_zain():
@@ -1515,6 +1543,508 @@ def build_pepsi():
     
     return draw_lockup(col_img, 'pepsi', (0, 75, 147), style='sans_heavy', size=96, emblem_w=140, emblem_h=140)
 BUILDERS['pepsi'] = build_pepsi
+
+# ------------------------------------------------------------------------------
+# 11. ICONIC EMBLEMS & ARTIST TAKEOVERS (BARCA SPOTIFY / CHELSEA 3 VIBE)
+# ------------------------------------------------------------------------------
+
+def build_spotify_icon():
+    # Pure Spotify 3-wave sound circle (Barcelona El Clásico style)
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy, r = W // 2, H // 2, 115 * SS
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
+    d.arc([cx - 85 * SS, cy - 70 * SS, cx + 85 * SS, cy + 50 * SS], start=210, end=330, fill=0, width=19 * SS)
+    d.arc([cx - 70 * SS, cy - 45 * SS, cx + 70 * SS, cy + 60 * SS], start=210, end=330, fill=0, width=17 * SS)
+    d.arc([cx - 55 * SS, cy - 20 * SS, cx + 55 * SS, cy + 70 * SS], start=210, end=330, fill=0, width=15 * SS)
+    col_img = Image.new('RGBA', (W, H), (30, 215, 96, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['spotify_icon'] = build_spotify_icon
+
+def build_drake_owl():
+    # Drake OVO Owl silhouette (Barcelona El Clásico takeover)
+    W, H = 280 * SS, 280 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = W // 2, H // 2
+    d.polygon([
+        (cx, cy - 110 * SS), (cx + 35 * SS, cy - 110 * SS), (cx + 50 * SS, cy - 90 * SS),
+        (cx + 70 * SS, cy - 30 * SS), (cx + 65 * SS, cy + 60 * SS),
+        (cx + 35 * SS, cy + 110 * SS), (cx, cy + 115 * SS),
+        (cx - 35 * SS, cy + 110 * SS), (cx - 65 * SS, cy + 60 * SS),
+        (cx - 70 * SS, cy - 30 * SS), (cx - 50 * SS, cy - 90 * SS), (cx - 35 * SS, cy - 110 * SS)
+    ], fill=255)
+    d.ellipse([cx - 45 * SS, cy - 65 * SS, cx - 5 * SS, cy - 25 * SS], fill=0)
+    d.ellipse([cx + 5 * SS, cy - 65 * SS, cx + 45 * SS, cy - 25 * SS], fill=0)
+    d.ellipse([cx - 30 * SS, cy - 50 * SS, cx - 20 * SS, cy - 40 * SS], fill=255)
+    d.ellipse([cx + 20 * SS, cy - 50 * SS, cx + 30 * SS, cy - 40 * SS], fill=255)
+    d.polygon([(cx, cy - 35 * SS), (cx - 8 * SS, cy - 18 * SS), (cx + 8 * SS, cy - 18 * SS)], fill=0)
+    d.arc([cx - 80 * SS, cy - 10 * SS, cx - 15 * SS, cy + 85 * SS], start=280, end=70, fill=0, width=7 * SS)
+    d.arc([cx + 15 * SS, cy - 10 * SS, cx + 80 * SS, cy + 85 * SS], start=110, end=260, fill=0, width=7 * SS)
+    for y in [cy + 10 * SS, cy + 40 * SS, cy + 70 * SS]:
+        d.arc([cx - 30 * SS, y - 10 * SS, cx + 30 * SS, y + 15 * SS], start=20, end=160, fill=0, width=7 * SS)
+    col_img = Image.new('RGBA', (W, H), (218, 165, 32, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['drake_owl'] = build_drake_owl
+
+def build_rolling_stones():
+    # Rolling Stones Tongue & Lips (Barcelona El Clásico takeover)
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = W // 2, H // 2
+    d.ellipse([cx - 85 * SS, cy - 75 * SS, cx + 85 * SS, cy + 15 * SS], fill=255)
+    d.ellipse([cx - 70 * SS, cy - 15 * SS, cx + 70 * SS, cy + 85 * SS], fill=255)
+    d.pieslice([cx - 45 * SS, cy - 20 * SS, cx + 45 * SS, cy + 115 * SS], start=0, end=180, fill=255)
+    d.ellipse([cx - 65 * SS, cy - 45 * SS, cx + 65 * SS, cy + 25 * SS], fill=0)
+    d.line([(cx, cy + 10 * SS), (cx, cy + 90 * SS)], fill=0, width=6 * SS)
+    d.polygon([(cx - 15 * SS, cy - 80 * SS), (cx + 15 * SS, cy - 80 * SS), (cx, cy - 55 * SS)], fill=0)
+    col_img = Image.new('RGBA', (W, H), (227, 6, 19, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['rolling_stones'] = build_rolling_stones
+
+def build_rosalia_motomami():
+    # Rosalia Motomami butterfly-M (Barcelona El Clásico takeover)
+    W, H = 340 * SS, 240 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    col = (229, 27, 36, 255)
+    d.polygon([(cx, cy - 20 * SS), (cx - 140 * SS, cy - 85 * SS), (cx - 85 * SS, cy + 80 * SS), (cx - 30 * SS, cy + 10 * SS)], fill=col)
+    d.polygon([(cx, cy - 20 * SS), (cx + 140 * SS, cy - 85 * SS), (cx + 85 * SS, cy + 80 * SS), (cx + 30 * SS, cy + 10 * SS)], fill=col)
+    d.polygon([(cx - 15 * SS, cy - 75 * SS), (cx + 15 * SS, cy - 75 * SS), (cx, cy + 95 * SS)], fill=col)
+    return finalize_logo(im)
+BUILDERS['rosalia_motomami'] = build_rosalia_motomami
+
+def build_karol_g_heart():
+    # Karol G Barbed-Wire Heart (Barcelona El Clásico takeover)
+    W, H = 260 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    col = (255, 51, 102, 255)
+    d.ellipse([cx - 80 * SS, cy - 75 * SS, cx - 5 * SS, cy], outline=col, width=14 * SS)
+    d.ellipse([cx + 5 * SS, cy - 75 * SS, cx + 80 * SS, cy], outline=col, width=14 * SS)
+    d.line([(cx - 80 * SS, cy - 35 * SS), (cx, cy + 90 * SS)], fill=col, width=14 * SS)
+    d.line([(cx + 80 * SS, cy - 35 * SS), (cx, cy + 90 * SS)], fill=col, width=14 * SS)
+    spikes = [
+        (cx - 65 * SS, cy - 50 * SS), (cx - 80 * SS, cy + 10 * SS), (cx - 40 * SS, cy + 55 * SS),
+        (cx + 65 * SS, cy - 50 * SS), (cx + 80 * SS, cy + 10 * SS), (cx + 40 * SS, cy + 55 * SS)
+    ]
+    for sx, sy in spikes:
+        d.line([(sx - 15 * SS, sy - 15 * SS), (sx + 15 * SS, sy + 15 * SS)], fill=col, width=8 * SS)
+        d.line([(sx - 15 * SS, sy + 15 * SS), (sx + 15 * SS, sy - 15 * SS)], fill=col, width=8 * SS)
+    return finalize_logo(im)
+BUILDERS['karol_g_heart'] = build_karol_g_heart
+
+def build_coldplay_moon():
+    # Coldplay Moon Music celestial orbit (Barcelona El Clásico takeover)
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = W // 2, H // 2
+    d.ellipse([cx - 90 * SS, cy - 90 * SS, cx + 90 * SS, cy + 90 * SS], fill=255)
+    d.ellipse([cx - 50 * SS, cy - 85 * SS, cx + 115 * SS, cy + 85 * SS], fill=0)
+    d.ellipse([cx - 110 * SS, cy - 40 * SS, cx + 110 * SS, cy + 40 * SS], outline=255, width=8 * SS)
+    col_img = Image.new('RGBA', (W, H), (157, 114, 255, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['coldplay_moon'] = build_coldplay_moon
+
+def build_playstation_shapes():
+    # Sony PlayStation Iconic 4 Controller Shapes (△ ◯ ✕ □)
+    W, H = 760 * SS, 220 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cy = H // 2
+    size, sw = 48 * SS, 12 * SS
+    c1x = 120 * SS
+    d.polygon([(c1x, cy - size), (c1x + size, cy + size - 8 * SS), (c1x - size, cy + size - 8 * SS)], outline=(0, 175, 155, 255), width=sw)
+    c2x = 290 * SS
+    d.ellipse([c2x - size + 4 * SS, cy - size + 4 * SS, c2x + size - 4 * SS, cy + size - 4 * SS], outline=(235, 60, 90, 255), width=sw)
+    c3x = 460 * SS
+    d.line([(c3x - size + 6 * SS, cy - size + 6 * SS), (c3x + size - 6 * SS, cy + size - 6 * SS)], fill=(90, 140, 250, 255), width=sw)
+    d.line([(c3x - size + 6 * SS, cy + size - 6 * SS), (c3x + size - 6 * SS, cy - size + 6 * SS)], fill=(90, 140, 250, 255), width=sw)
+    c4x = 630 * SS
+    d.rectangle([c4x - size + 6 * SS, cy - size + 6 * SS, c4x + size - 6 * SS, cy + size - 6 * SS], outline=(230, 95, 170, 255), width=sw)
+    return finalize_logo(im)
+BUILDERS['playstation_shapes'] = build_playstation_shapes
+
+def build_apple_logo():
+    # Minimalist Apple emblem with leaf and bite
+    W, H = 240 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = W // 2, H // 2 + 10 * SS
+    d.ellipse([cx - 75 * SS, cy - 65 * SS, cx + 5 * SS, cy + 65 * SS], fill=255)
+    d.ellipse([cx - 5 * SS, cy - 65 * SS, cx + 75 * SS, cy + 65 * SS], fill=255)
+    d.ellipse([cx - 55 * SS, cy + 20 * SS, cx + 55 * SS, cy + 85 * SS], fill=255)
+    d.ellipse([cx + 25 * SS, cy - 35 * SS, cx + 105 * SS, cy + 45 * SS], fill=0)
+    d.ellipse([cx - 20 * SS, cy + 70 * SS, cx + 20 * SS, cy + 95 * SS], fill=0)
+    d.pieslice([cx - 10 * SS, cy - 110 * SS, cx + 50 * SS, cy - 50 * SS], start=180, end=270, fill=255)
+    d.pieslice([cx - 30 * SS, cy - 90 * SS, cx + 30 * SS, cy - 30 * SS], start=0, end=90, fill=255)
+    col_img = Image.new('RGBA', (W, H), (24, 24, 28, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['apple_logo'] = build_apple_logo
+
+def build_mastercard_circles():
+    # Mastercard interlocking dual circles with vertical grill center
+    W, H = 340 * SS, 240 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cy, r = H // 2, 75 * SS
+    c1x, c2x = 115 * SS, 225 * SS
+    d.ellipse([c1x - r, cy - r, c1x + r, cy + r], outline=(235, 0, 27, 255), width=16 * SS)
+    d.ellipse([c2x - r, cy - r, c2x + r, cy + r], outline=(247, 158, 27, 255), width=16 * SS)
+    for x in range(c1x + int(r * 0.4), c2x - int(r * 0.4) + 1, 16 * SS):
+        d.line([(x, cy - 45 * SS), (x, cy + 45 * SS)], fill=(255, 95, 0, 255), width=8 * SS)
+    return finalize_logo(im)
+BUILDERS['mastercard_circles'] = build_mastercard_circles
+
+def build_jumpman():
+    # Air Jordan Flight silhouette (PSG kit aesthetic)
+    W, H = 260 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    col = (209, 38, 64, 255)
+    d.ellipse([cx - 65 * SS, cy - 105 * SS, cx - 40 * SS, cy - 80 * SS], fill=col)
+    d.ellipse([cx - 15 * SS, cy - 75 * SS, cx + 10 * SS, cy - 50 * SS], fill=col)
+    d.line([(cx - 5 * SS, cy - 55 * SS), (cx - 50 * SS, cy - 85 * SS)], fill=col, width=11 * SS)
+    d.line([(cx + 10 * SS, cy - 50 * SS), (cx + 65 * SS, cy - 35 * SS)], fill=col, width=10 * SS)
+    d.polygon([(cx - 12 * SS, cy - 50 * SS), (cx + 12 * SS, cy - 50 * SS), (cx + 8 * SS, cy + 10 * SS), (cx - 8 * SS, cy + 10 * SS)], fill=col)
+    d.line([(cx - 5 * SS, cy + 10 * SS), (cx - 85 * SS, cy + 70 * SS), (cx - 95 * SS, cy + 65 * SS)], fill=col, width=13 * SS)
+    d.line([(cx + 5 * SS, cy + 10 * SS), (cx + 85 * SS, cy + 75 * SS), (cx + 95 * SS, cy + 85 * SS)], fill=col, width=13 * SS)
+    return finalize_logo(im)
+BUILDERS['jumpman'] = build_jumpman
+
+def build_redbull_emblem():
+    # Pure Red Bull twin charging bulls colliding with sun
+    W, H = 360 * SS, 240 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    d.ellipse([cx - 65 * SS, cy - 65 * SS, cx + 65 * SS, cy + 65 * SS], fill=(245, 168, 0, 255))
+    d.polygon([
+        (cx - 140 * SS, cy + 25 * SS), (cx - 80 * SS, cy - 25 * SS), (cx - 15 * SS, cy + 5 * SS),
+        (cx - 30 * SS, cy + 45 * SS), (cx - 95 * SS, cy + 50 * SS)
+    ], fill=(219, 10, 64, 255))
+    d.polygon([
+        (cx + 140 * SS, cy + 25 * SS), (cx + 80 * SS, cy - 25 * SS), (cx + 15 * SS, cy + 5 * SS),
+        (cx + 30 * SS, cy + 45 * SS), (cx + 95 * SS, cy + 50 * SS)
+    ], fill=(219, 10, 64, 255))
+    d.line([(cx - 45 * SS, cy - 10 * SS), (cx - 10 * SS, cy - 40 * SS)], fill=(245, 168, 0, 255), width=6 * SS)
+    d.line([(cx + 45 * SS, cy - 10 * SS), (cx + 10 * SS, cy - 40 * SS)], fill=(245, 168, 0, 255), width=6 * SS)
+    return finalize_logo(im)
+BUILDERS['redbull_emblem'] = build_redbull_emblem
+
+def build_autobot_crest():
+    # Transformers Autobot crest (Inter Milan Paramount+ special)
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = W // 2, H // 2
+    d.polygon([
+        (cx, cy - 105 * SS), (cx + 45 * SS, cy - 105 * SS), (cx + 45 * SS, cy - 75 * SS),
+        (cx + 85 * SS, cy - 45 * SS), (cx + 85 * SS, cy + 30 * SS), (cx + 50 * SS, cy + 65 * SS),
+        (cx + 25 * SS, cy + 105 * SS), (cx, cy + 105 * SS),
+        (cx - 25 * SS, cy + 105 * SS), (cx - 50 * SS, cy + 65 * SS), (cx - 85 * SS, cy + 30 * SS),
+        (cx - 85 * SS, cy - 45 * SS), (cx - 45 * SS, cy - 75 * SS), (cx - 45 * SS, cy - 105 * SS)
+    ], fill=255)
+    d.polygon([(cx - 45 * SS, cy - 15 * SS), (cx - 15 * SS, cy - 15 * SS), (cx - 30 * SS, cy + 5 * SS)], fill=0)
+    d.polygon([(cx + 15 * SS, cy - 15 * SS), (cx + 45 * SS, cy - 15 * SS), (cx + 30 * SS, cy + 5 * SS)], fill=0)
+    d.rectangle([cx - 8 * SS, cy - 65 * SS, cx + 8 * SS, cy + 20 * SS], fill=0)
+    d.rectangle([cx - 35 * SS, cy + 40 * SS, cx - 12 * SS, cy + 70 * SS], fill=0)
+    d.rectangle([cx + 12 * SS, cy + 40 * SS, cx + 35 * SS, cy + 70 * SS], fill=0)
+    col_img = Image.new('RGBA', (W, H), (215, 25, 32, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['autobot_crest'] = build_autobot_crest
+
+def build_paramount_peak():
+    # Paramount mountain peak ringed with stars (Inter Milan special)
+    W, H = 280 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = W // 2, H // 2 + 10 * SS
+    d.polygon([(cx, cy - 75 * SS), (cx + 80 * SS, cy + 65 * SS), (cx - 80 * SS, cy + 65 * SS)], fill=255)
+    d.polygon([(cx, cy - 75 * SS), (cx + 30 * SS, cy - 25 * SS), (cx + 10 * SS, cy - 35 * SS), (cx - 10 * SS, cy - 25 * SS), (cx - 30 * SS, cy - 25 * SS)], fill=0)
+    for i in range(11):
+        angle = math.radians(200 + i * 14)
+        sx = cx + int(105 * SS * math.cos(angle))
+        sy = cy + int(105 * SS * math.sin(angle))
+        d.ellipse([sx - 7 * SS, sy - 7 * SS, sx + 7 * SS, sy + 7 * SS], fill=255)
+    col_img = Image.new('RGBA', (W, H), (0, 100, 255, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['paramount_peak'] = build_paramount_peak
+
+def build_target_bullseye():
+    # Target concentric bullseye rings (Minnesota United / streetwear)
+    W, H = 260 * SS, 260 * SS
+    cx, cy, r = W // 2, H // 2, 110 * SS
+    col = (204, 0, 0, 255)
+    mask = Image.new('L', (W, H), 0)
+    dm = ImageDraw.Draw(mask)
+    dm.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
+    dm.ellipse([cx - int(r * 0.65), cy - int(r * 0.65), cx + int(r * 0.65), cy + int(r * 0.65)], fill=0)
+    dm.ellipse([cx - int(r * 0.35), cy - int(r * 0.35), cx + int(r * 0.35), cy + int(r * 0.35)], fill=255)
+    col_img = Image.new('RGBA', (W, H), col)
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['target_bullseye'] = build_target_bullseye
+
+def build_one_and_one():
+    # Dortmund 1&1 square logo outline with bold typography
+    W, H = 260 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy, s = W // 2, H // 2, 95 * SS
+    col = (0, 32, 91, 255)
+    d.rounded_rectangle([cx - s, cy - s, cx + s, cy + s], radius=24 * SS, outline=col, width=14 * SS)
+    f = get_font(72 * SS, style='sans_heavy')
+    tw = d.textlength('1&1', font=f)
+    d.text((cx - int(tw // 2), cy - 42 * SS), '1&1', font=f, fill=col)
+    return finalize_logo(im)
+BUILDERS['one_and_one'] = build_one_and_one
+
+def build_o2_bubbles():
+    # Arsenal historic O2 with rising bubbles
+    W, H = 320 * SS, 220 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    col = (0, 85, 165, 255)
+    f = get_font(120 * SS, style='modern')
+    d.text((45 * SS, 35 * SS), 'O', font=f, fill=col)
+    f2 = get_font(70 * SS, style='modern')
+    d.text((165 * SS, 95 * SS), '2', font=f2, fill=col)
+    d.ellipse([215 * SS, 45 * SS, 275 * SS, 105 * SS], outline=col, width=9 * SS)
+    d.ellipse([255 * SS, 25 * SS, 285 * SS, 55 * SS], outline=col, width=6 * SS)
+    return finalize_logo(im)
+BUILDERS['o2_bubbles'] = build_o2_bubbles
+
+def build_mercedes_star():
+    # Mercedes-Benz 3-pointed star in precision ring
+    W, H = 260 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy, r = W // 2, H // 2, 105 * SS
+    col = (0, 163, 224, 255)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=col, width=11 * SS)
+    for deg in [270, 30, 150]:
+        rad = math.radians(deg)
+        tx = cx + int(r * 0.95 * math.cos(rad))
+        ty = cy + int(r * 0.95 * math.sin(rad))
+        l_rad = math.radians(deg + 120)
+        lx = cx + int(14 * SS * math.cos(l_rad))
+        ly = cy + int(14 * SS * math.sin(l_rad))
+        d.polygon([(cx, cy), (lx, ly), (tx, ty)], fill=col)
+    return finalize_logo(im)
+BUILDERS['mercedes_star'] = build_mercedes_star
+
+def build_audi_rings():
+    # Audi 4 horizontally interlocking precision rings
+    W, H = 540 * SS, 200 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cy, r = H // 2, 58 * SS
+    col = (187, 10, 48, 255)
+    sw = 10 * SS
+    xs = [110 * SS, 195 * SS, 280 * SS, 365 * SS]
+    for x in xs:
+        d.ellipse([x - r, cy - r, x + r, cy + r], outline=col, width=sw)
+    return finalize_logo(im)
+BUILDERS['audi_rings'] = build_audi_rings
+
+def build_mitsubishi_diamonds():
+    # Mitsubishi 3 red rhombuses
+    W, H = 280 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2 - 10 * SS
+    col = (230, 0, 18, 255)
+    s = 48 * SS
+    d.polygon([(cx, cy), (cx - s, cy - int(s * 1.73)), (cx, cy - int(s * 3.46)), (cx + s, cy - int(s * 1.73))], fill=col)
+    d.polygon([(cx, cy), (cx - int(s * 2), cy), (cx - int(s * 3), cy + int(s * 1.73)), (cx - s, cy + int(s * 1.73))], fill=col)
+    d.polygon([(cx, cy), (cx + s, cy + int(s * 1.73)), (cx + int(s * 3), cy + int(s * 1.73)), (cx + int(s * 2), cy)], fill=col)
+    return finalize_logo(im)
+BUILDERS['mitsubishi_diamonds'] = build_mitsubishi_diamonds
+
+def build_tesla_crest():
+    # Tesla T-sword futuristic shield
+    W, H = 260 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    col = (232, 33, 39, 255)
+    d.chord([cx - 95 * SS, cy - 105 * SS, cx + 95 * SS, cy - 25 * SS], start=210, end=330, fill=col)
+    d.polygon([
+        (cx - 75 * SS, cy - 50 * SS), (cx + 75 * SS, cy - 50 * SS),
+        (cx + 65 * SS, cy - 35 * SS), (cx + 18 * SS, cy - 30 * SS),
+        (cx + 12 * SS, cy + 95 * SS), (cx, cy + 105 * SS), (cx - 12 * SS, cy + 95 * SS),
+        (cx - 18 * SS, cy - 30 * SS), (cx - 65 * SS, cy - 35 * SS)
+    ], fill=col)
+    return finalize_logo(im)
+BUILDERS['tesla_crest'] = build_tesla_crest
+
+def build_ethereum_prism():
+    # Ethereum 3D crystal diamond octahedron
+    W, H = 220 * SS, 280 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    col_light = (140, 160, 245, 255)
+    col_dark = (75, 95, 205, 255)
+    d.polygon([(cx, cy - 110 * SS), (cx - 65 * SS, cy - 10 * SS), (cx, cy + 25 * SS)], fill=col_light)
+    d.polygon([(cx, cy - 110 * SS), (cx + 65 * SS, cy - 10 * SS), (cx, cy + 25 * SS)], fill=col_dark)
+    d.polygon([(cx, cy + 45 * SS), (cx - 65 * SS, cy + 10 * SS), (cx, cy + 115 * SS)], fill=col_light)
+    d.polygon([(cx, cy + 45 * SS), (cx + 65 * SS, cy + 10 * SS), (cx, cy + 115 * SS)], fill=col_dark)
+    return finalize_logo(im)
+BUILDERS['ethereum_prism'] = build_ethereum_prism
+
+def build_bitcoin_symbol():
+    # Bitcoin coin ring with double-stroke ₿ cutout
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy, r = W // 2, H // 2, 105 * SS
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
+    f = get_font(125 * SS, style='sans_heavy')
+    tw = d.textlength('B', font=f)
+    d.text((cx - int(tw // 2) - 5 * SS, cy - 72 * SS), 'B', font=f, fill=0)
+    d.rectangle([cx - 15 * SS, cy - 85 * SS, cx - 5 * SS, cy + 85 * SS], fill=0)
+    d.rectangle([cx + 10 * SS, cy - 85 * SS, cx + 20 * SS, cy + 85 * SS], fill=0)
+    col_img = Image.new('RGBA', (W, H), (247, 147, 26, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['bitcoin_symbol'] = build_bitcoin_symbol
+
+def build_xbox_sphere():
+    # Xbox 3D sculpted X sphere
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy, r = W // 2, H // 2, 110 * SS
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
+    d.polygon([(cx - 75 * SS, cy - 90 * SS), (cx, cy + 10 * SS), (cx - 95 * SS, cy + 55 * SS)], fill=0)
+    d.polygon([(cx + 75 * SS, cy - 90 * SS), (cx, cy + 10 * SS), (cx + 95 * SS, cy + 55 * SS)], fill=0)
+    d.polygon([(cx, cy - 85 * SS), (cx - 20 * SS, cy - 95 * SS), (cx + 20 * SS, cy - 95 * SS)], fill=0)
+    col_img = Image.new('RGBA', (W, H), (16, 124, 16, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['xbox_sphere'] = build_xbox_sphere
+
+def build_unicef_emblem():
+    # UNICEF mother and child silhouette with laurel branches
+    W, H = 280 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    col = (0, 174, 239, 255)
+    d.ellipse([cx - 65 * SS, cy - 65 * SS, cx + 65 * SS, cy + 65 * SS], outline=col, width=8 * SS)
+    d.ellipse([cx - 28 * SS, cy - 65 * SS, cx + 28 * SS, cy + 65 * SS], outline=col, width=6 * SS)
+    d.line([(cx - 65 * SS, cy), (cx + 65 * SS, cy)], fill=col, width=6 * SS)
+    d.ellipse([cx - 15 * SS, cy - 40 * SS, cx + 5 * SS, cy - 20 * SS], fill=col)
+    d.ellipse([cx + 10 * SS, cy - 25 * SS, cx + 25 * SS, cy - 10 * SS], fill=col)
+    d.polygon([(cx - 22 * SS, cy - 15 * SS), (cx + 12 * SS, cy - 15 * SS), (cx - 5 * SS, cy + 30 * SS)], fill=col)
+    d.arc([cx - 95 * SS, cy - 65 * SS, cx - 45 * SS, cy + 85 * SS], start=45, end=270, fill=col, width=9 * SS)
+    d.arc([cx + 45 * SS, cy - 65 * SS, cx + 95 * SS, cy + 85 * SS], start=-90, end=135, fill=col, width=9 * SS)
+    return finalize_logo(im)
+BUILDERS['unicef_emblem'] = build_unicef_emblem
+
+def build_volkswagen_roundel():
+    # Volkswagen circular badge with stacked V and W
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy, r = W // 2, H // 2, 105 * SS
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
+    d.ellipse([cx - r + 14 * SS, cy - r + 14 * SS, cx + r - 14 * SS, cy + r - 14 * SS], fill=0)
+    d.polygon([(cx - 55 * SS, cy - 70 * SS), (cx - 30 * SS, cy - 70 * SS), (cx, cy - 5 * SS), (cx + 30 * SS, cy - 70 * SS), (cx + 55 * SS, cy - 70 * SS), (cx, cy + 35 * SS)], fill=255)
+    d.polygon([(cx - 65 * SS, cy - 10 * SS), (cx - 45 * SS, cy - 10 * SS), (cx - 20 * SS, cy + 65 * SS), (cx, cy + 20 * SS), (cx + 20 * SS, cy + 65 * SS), (cx + 45 * SS, cy - 10 * SS), (cx + 65 * SS, cy - 10 * SS), (cx + 25 * SS, cy + 85 * SS), (cx - 25 * SS, cy + 85 * SS)], fill=255)
+    col_img = Image.new('RGBA', (W, H), (0, 30, 80, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['volkswagen_roundel'] = build_volkswagen_roundel
+
+def build_shell_pecten():
+    # Shell scallop pecten with radiating fluted ridges
+    W, H = 260 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2 + 5 * SS
+    col_yel = (251, 206, 7, 255)
+    col_red = (218, 41, 28, 255)
+    d.pieslice([cx - 95 * SS, cy - 95 * SS, cx + 95 * SS, cy + 95 * SS], start=190, end=350, fill=col_yel, outline=col_red, width=9 * SS)
+    d.polygon([(cx - 45 * SS, cy + 35 * SS), (cx + 45 * SS, cy + 35 * SS), (cx + 65 * SS, cy + 85 * SS), (cx - 65 * SS, cy + 85 * SS)], fill=col_red)
+    for deg in [215, 240, 270, 300, 325]:
+        rad = math.radians(deg)
+        tx = cx + int(90 * SS * math.cos(rad))
+        ty = cy + int(90 * SS * math.sin(rad))
+        d.line([(cx, cy + 35 * SS), (tx, ty)], fill=col_red, width=7 * SS)
+    return finalize_logo(im)
+BUILDERS['shell_pecten'] = build_shell_pecten
+
+def build_bayer_cross():
+    # Bayer cross emblem inside circle
+    W, H = 260 * SS, 260 * SS
+    mask = Image.new('L', (W, H), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy, r = W // 2, H // 2, 105 * SS
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
+    d.rectangle([cx - r + 15 * SS, cy - 22 * SS, cx + r - 15 * SS, cy + 22 * SS], fill=0)
+    d.rectangle([cx - 22 * SS, cy - r + 15 * SS, cx + 22 * SS, cy + r - 15 * SS], fill=0)
+    col_img = Image.new('RGBA', (W, H), (0, 145, 223, 255))
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['bayer_cross'] = build_bayer_cross
+
+def build_snapdragon_icon():
+    # Snapdragon pure cyber dragon ball fireball icon
+    W, H = 260 * SS, 260 * SS
+    cx, cy, r = W // 2, H // 2, 105 * SS
+    col = (224, 26, 34, 255)
+    mask = Image.new('L', (W, H), 0)
+    dm = ImageDraw.Draw(mask)
+    dm.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
+    dm.arc([cx - 75 * SS, cy - 75 * SS, cx + 75 * SS, cy + 75 * SS], start=180, end=270, fill=0, width=15 * SS)
+    dm.arc([cx - 45 * SS, cy - 75 * SS, cx + 105 * SS, cy + 75 * SS], start=270, end=360, fill=0, width=15 * SS)
+    dm.ellipse([cx - 35 * SS, cy - 10 * SS, cx - 15 * SS, cy + 10 * SS], fill=0)
+    dm.ellipse([cx + 15 * SS, cy - 10 * SS, cx + 35 * SS, cy + 10 * SS], fill=0)
+    col_img = Image.new('RGBA', (W, H), col)
+    col_img.putalpha(mask)
+    return finalize_logo(col_img)
+BUILDERS['snapdragon_icon'] = build_snapdragon_icon
+
+def build_atari_fuji():
+    # Atari Fuji retro tri-line crest
+    W, H = 260 * SS, 260 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    col = (228, 27, 19, 255)
+    d.rectangle([cx - 10 * SS, cy - 95 * SS, cx + 10 * SS, cy + 95 * SS], fill=col)
+    d.arc([cx - 95 * SS, cy - 95 * SS, cx + 25 * SS, cy + 95 * SS], start=90, end=270, fill=col, width=22 * SS)
+    d.arc([cx - 25 * SS, cy - 95 * SS, cx + 95 * SS, cy + 95 * SS], start=-90, end=90, fill=col, width=22 * SS)
+    return finalize_logo(im)
+BUILDERS['atari_fuji'] = build_atari_fuji
+
+def build_nasa_worm():
+    # NASA supersonic vector planet orbit
+    W, H = 320 * SS, 240 * SS
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = W // 2, H // 2
+    d.ellipse([cx - 85 * SS, cy - 85 * SS, cx + 85 * SS, cy + 85 * SS], fill=(11, 61, 145, 255))
+    d.polygon([(cx - 110 * SS, cy + 30 * SS), (cx + 35 * SS, cy - 65 * SS), (cx + 105 * SS, cy - 75 * SS), (cx - 15 * SS, cy + 10 * SS)], fill=(252, 61, 33, 255))
+    d.ellipse([cx - 120 * SS, cy - 35 * SS, cx + 120 * SS, cy + 35 * SS], outline=(255, 255, 255, 255), width=7 * SS)
+    return finalize_logo(im)
+BUILDERS['nasa_worm'] = build_nasa_worm
 
 
 # ==============================================================================
