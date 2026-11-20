@@ -329,6 +329,10 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                     career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
                     if target_ftex.is_file() and (career_ftex is None or career_ftex.is_file()):
                         continue
+            elif is_rollover:
+                # If active directory does not have baseline kits (< 100 clubs), do not skip
+                if len(list(active_dir.glob("*p1.ftex"))) >= 100:
+                    continue
             else:
                 continue
 

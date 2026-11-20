@@ -1130,7 +1130,7 @@ local function refresh_date(ctx)
     if prev ~= SEASON then
       L(string.format('season %d  (game date %04d-%02d-%02d)', SEASON, y, mo, d))
       if CFG.ENABLE_KITS and prev and prev > 0 then
-        local req_id = string.format('season-%d', SEASON)
+        local req_id = string.format('season-%s-%d', CAREER or 'global', SEASON)
         local mode = CFG.ROLLOVER_MODE or "balanced"
         append_line('kit_request.txt', string.format('%s|0|%d|all|%s|%s|%s',
           req_id, SEASON, mode, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
