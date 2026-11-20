@@ -94,6 +94,11 @@ DEFAULT_DESIGN = {
     "sleeve_sponsor": None,       # path to a PNG logo or key (player's left sleeve)
     "sleeve_sponsor_angle": 0.0,  # wrap angle slope along sleeve (default: 0.0 degrees / upright)
     "sleeve_sponsor_white": False,# True = flatten sleeve logo to white
+    "fabric_texture": True,       # True = render micro-knit textile weave across all garment panels
+    "heat_press_relief": True,    # True = render 3D contact shadow and specular rim on crests & logos
+    "construction_seams": True,   # True = render athletic raglan, flank, and twin-needle hem stitching
+    "tech_callout": True,         # True = render supplier fabric tech stamp (HEAT.RDY, DRI-FIT ADV, etc.)
+    "inner_neck_tape": True,      # True = render authentic collar neck tape and size print on back panel
 }
 
 
@@ -619,6 +624,232 @@ def _apply_engineered_collar(atlas, d, masks):
             atlas.paste(Image.fromarray(arr, "RGBA"), (0, 0))
 
 
+
+# --------------------------------------------------------------------------- #
+#  Authentic Garment Details, Seams, Micro-Textures & 3D Relief
+# --------------------------------------------------------------------------- #
+def _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, highlight_opacity=35, mask=None):
+    """Composite logo with subtle 3D contact shadow and specular rim light (silicone heat-press relief)."""
+    if img is None:
+        return
+    w, h = img.size
+    alpha = np.array(img.split()[-1], dtype=np.float32)
+    if not np.any(alpha > 10):
+        if mask is not None:
+            layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+            layer.paste(img, (x, y), img)
+            _composite_layer(atlas, layer, mask)
+        else:
+            atlas.alpha_composite(img, (x, y))
+        return
+
+    # 1. Contact drop shadow (offset +1, +relief_depth)
+    sh_alpha = (alpha * (shadow_opacity / 255.0)).astype(np.uint8)
+    shadow_arr = np.zeros((h, w, 4), dtype=np.uint8)
+    shadow_arr[:, :, :3] = (15, 15, 20)
+    shadow_arr[:, :, 3] = sh_alpha
+    shadow_img = Image.fromarray(shadow_arr, "RGBA")
+
+    # 2. Specular top-edge rim highlight (offset -1, -1)
+    hl_alpha = (alpha * (highlight_opacity / 255.0)).astype(np.uint8)
+    hl_arr = np.zeros((h, w, 4), dtype=np.uint8)
+    hl_arr[:, :, :3] = (255, 255, 255)
+    hl_arr[:, :, 3] = hl_alpha
+    hl_img = Image.fromarray(hl_arr, "RGBA")
+
+    layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    layer.paste(shadow_img, (x + 1, y + relief_depth), shadow_img)
+    layer.paste(hl_img, (x - 1, y - 1), hl_img)
+    layer.paste(img, (x, y), img)
+
+    if mask is not None:
+        _composite_layer(atlas, layer, mask)
+    else:
+        atlas.alpha_composite(layer)
+
+
+def _apply_fabric_microtexture(atlas, d, masks):
+    """Apply authentic micro-knit textile weave across all garment fabric panels.
+
+    Subtly modulates fabric luminance by +/- 2.5%, producing a rich, tactile,
+    matte athletic cloth appearance in 3D replays and close-ups without altering team colors.
+    """
+    if not d.get("fabric_texture", True):
+        return
+
+    fabric_mask = np.zeros((ATLAS, ATLAS), dtype=bool)
+    for key in ("body_front", "body_back", "sleeve", "shorts", "socks", "collar"):
+        m = masks.get(key)
+        if m is not None:
+            fabric_mask |= m
+
+    if not np.any(fabric_mask):
+        return
+
+    kernel_4x4 = np.array([
+        [ 3.0, -3.0,  2.0, -2.0],
+        [-2.0,  3.0, -3.0,  2.0],
+        [ 2.0, -2.0,  3.0, -3.0],
+        [-3.0,  2.0, -2.0,  3.0],
+    ], dtype=np.float32)
+
+    weave_tile = np.tile(kernel_4x4, (ATLAS // 4, ATLAS // 4))
+
+    arr = np.array(atlas, dtype=np.float32)
+    rgb = arr[:, :, :3]
+    rgb[fabric_mask] = np.clip(rgb[fabric_mask] + weave_tile[fabric_mask, None], 0, 255)
+    arr[:, :, :3] = rgb
+
+    atlas.paste(Image.fromarray(arr.astype(np.uint8), "RGBA"), (0, 0))
+
+
+def _apply_construction_seams(atlas, d, masks):
+    """Render athletic panel construction lines, raglan seams, and twin-needle hem stitching."""
+    if not d.get("construction_seams", True):
+        return
+
+    body = tuple(d["body"])
+    dark_stitch = (max(0, int(body[0] * 0.74)), max(0, int(body[1] * 0.74)), max(0, int(body[2] * 0.74)), 180)
+    light_stitch = (min(255, int(body[0] * 1.15) + 15), min(255, int(body[1] * 1.15) + 15), min(255, int(body[2] * 1.15) + 15), 120)
+
+    seam_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(seam_layer)
+
+    bf = masks.get("body_front")
+    bb = masks.get("body_back")
+    sleeve_m = masks.get("sleeve")
+    shorts_m = masks.get("shorts")
+
+    # 1. Torso flank side seams (front: y: 1180..1845, back: y: 280..900)
+    for sx in (724, 1324):
+        draw.line([(sx, 1180), (sx, 1845)], fill=dark_stitch, width=1)
+        draw.line([(sx + 1, 1180), (sx + 1, 1845)], fill=light_stitch, width=1)
+        draw.line([(sx, 280), (sx, 900)], fill=dark_stitch, width=1)
+        draw.line([(sx + 1, 280), (sx + 1, 900)], fill=light_stitch, width=1)
+
+    # 2. Raglan shoulder/armhole seams
+    draw.line([(870, 1020), (724, 1180)], fill=dark_stitch, width=1)
+    draw.line([(871, 1021), (725, 1181)], fill=light_stitch, width=1)
+    draw.line([(1178, 1020), (1324, 1180)], fill=dark_stitch, width=1)
+    draw.line([(1177, 1021), (1323, 1181)], fill=light_stitch, width=1)
+
+    draw.line([(870, 120), (724, 280)], fill=dark_stitch, width=1)
+    draw.line([(871, 121), (725, 281)], fill=light_stitch, width=1)
+    draw.line([(1178, 120), (1324, 280)], fill=dark_stitch, width=1)
+    draw.line([(1177, 121), (1323, 281)], fill=light_stitch, width=1)
+
+    # 3. Twin-needle lower hem stitching
+    draw.line([(724, 1838), (1324, 1838)], fill=dark_stitch, width=1)
+    draw.line([(724, 1844), (1324, 1844)], fill=dark_stitch, width=1)
+    draw.line([(724, 896), (1324, 896)], fill=dark_stitch, width=1)
+    draw.line([(724, 902), (1324, 902)], fill=dark_stitch, width=1)
+
+    # 4. Sleeve cuff twin-needle hem stitching
+    if sleeve_m is not None:
+        draw.line([(40, 658), (640, 658)], fill=dark_stitch, width=1)
+        draw.line([(40, 663), (640, 663)], fill=dark_stitch, width=1)
+        draw.line([(1400, 658), (2000, 658)], fill=dark_stitch, width=1)
+        draw.line([(1400, 663), (2000, 663)], fill=dark_stitch, width=1)
+
+    # 5. Shorts bottom leg hem stitching
+    if shorts_m is not None:
+        draw.line([(45, 1932), (590, 1932)], fill=dark_stitch, width=1)
+        draw.line([(45, 1938), (590, 1938)], fill=dark_stitch, width=1)
+        draw.line([(1455, 1932), (2000, 1932)], fill=dark_stitch, width=1)
+        draw.line([(1455, 1938), (2000, 1938)], fill=dark_stitch, width=1)
+
+    garment_mask = (bf | bb | sleeve_m | shorts_m) if bf is not None else None
+    _composite_layer(atlas, seam_layer, garment_mask)
+
+
+def _render_inner_neck_detail(atlas, d, masks):
+    """Render authentic collar inner neck tape ribbon and size/authenticity print on upper back panel."""
+    if not d.get("inner_neck_tape", True):
+        return
+
+    bb = masks.get("body_back")
+    if bb is None:
+        return
+
+    tape_col = tuple(d.get("second") or d.get("accent") or (240, 240, 245)) + (235,)
+    tip_col = tuple(d.get("accent") or d.get("third") or d["body"]) + (255,)
+
+    tape_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(tape_layer)
+
+    tape_y = 80
+    draw.rectangle([964, tape_y, 1084, tape_y + 10], fill=tape_col)
+    draw.line([(964, tape_y), (1084, tape_y)], fill=tip_col, width=2)
+    draw.line([(964, tape_y + 9), (1084, tape_y + 9)], fill=tip_col, width=2)
+
+    body = tuple(d["body"])
+    l_b = _col_lum(body)
+    label_col = (235, 235, 240, 190) if l_b < 128 else (30, 35, 45, 190)
+
+    try:
+        font = ImageFont.load_default()
+        draw.text((1002, 98), "AUTHENTIC", fill=label_col, font=font)
+        draw.rectangle([1016, 114, 1032, 126], outline=label_col, width=1)
+        draw.text((1021, 115), "M", fill=label_col, font=font)
+    except Exception:
+        draw.rectangle([1004, 102, 1044, 116], outline=label_col, width=1)
+
+    _composite_layer(atlas, tape_layer, bb)
+
+
+def _render_tech_callout(atlas, d, masks):
+    """Render authentic supplier fabric performance technology heat-stamp at lower right hem."""
+    if not d.get("tech_callout", True):
+        return
+
+    bf = masks.get("body_front")
+    if bf is None:
+        return
+
+    supp = str(d.get("supplier_name") or d.get("supplier") or "").lower()
+    if "nike" in supp:
+        tech_text = "DRI-FIT ADV"
+    elif "adidas" in supp:
+        tech_text = "HEAT.RDY"
+    elif "puma" in supp:
+        tech_text = "ULTRAWEAVE"
+    elif "hummel" in supp:
+        tech_text = "BEECOOL"
+    elif "umbro" in supp:
+        tech_text = "PRO WEAVE"
+    elif "kappa" in supp:
+        tech_text = "KOMBAT PRO"
+    elif "macron" in supp:
+        tech_text = "M-PERFORMANCE"
+    elif "castore" in supp:
+        tech_text = "PRO PRECISION"
+    else:
+        tech_text = "PRO ATHLETIC"
+
+    cx, cy = 775, 1835
+    w, h = 90, 20
+    x0, y0 = int(cx - w / 2), int(cy - h / 2)
+
+    body = tuple(d["body"])
+    l_b = _col_lum(body)
+    text_col = (220, 225, 235, 210) if l_b < 128 else (35, 40, 48, 210)
+    accent_dot = (212, 175, 55, 230) if l_b < 128 else (180, 140, 40, 230)
+
+    tech_img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(tech_img)
+
+    draw.rectangle([2, 8, 8, 12], fill=accent_dot)
+    try:
+        font = ImageFont.load_default()
+        draw.text((12, 4), tech_text, fill=text_col, font=font)
+    except Exception:
+        draw.line([(12, 10), (w - 4, 10)], fill=text_col, width=2)
+
+    tech_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    tech_layer.paste(tech_img, (x0, y0), tech_img)
+    _composite_layer(atlas, tech_layer, bf)
+
+
 # --------------------------------------------------------------------------- #
 #  main painter
 # --------------------------------------------------------------------------- #
@@ -702,6 +933,18 @@ def render_kit(design, out_png, masks=None):
     _apply_engineered_shorts(atlas, d, masks)
     _apply_engineered_socks(atlas, d, masks)
 
+    # ----------------------------------------------------------------------- #
+    #  Authentic Garment Construction, Seams & Micro-Texture
+    # ----------------------------------------------------------------------- #
+    # 6. Athletic panel construction lines & twin-needle hem stitching
+    _apply_construction_seams(atlas, d, masks)
+
+    # 7. Collar inner neck tape ribbon & match sizing print
+    _render_inner_neck_detail(atlas, d, masks)
+
+    # 8. Procedural micro-knit textile weave across all garment panels
+    _apply_fabric_microtexture(atlas, d, masks)
+
     # logos with runtime UV validation & collision adjustment
     sp_item = None
     if d.get("sponsor"):
@@ -770,15 +1013,21 @@ def render_kit(design, out_png, masks=None):
             draw.rectangle([x - pad_x, y - pad_y, x + cur_w + pad_x, y + cur_h + pad_y],
                            fill=tuple(item["plate"]) + (255,))
 
-        atlas.alpha_composite(img, (x, y))
+        if d.get("heat_press_relief", True):
+            _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, highlight_opacity=35)
+        else:
+            atlas.alpha_composite(img, (x, y))
 
-    # 6. Shorts branding (Right leg club badge, Left leg supplier mark)
+    # 9. Shorts branding (Right leg club badge, Left leg supplier mark)
     _render_shorts_branding(atlas, d, masks)
 
-    # 7. Lower shirt hem authenticity jocktag
+    # 10. Lower shirt hem authenticity jocktag
     _render_jocktag(atlas, d, masks)
 
-    # 8. Sleeve secondary sponsor (Left sleeve UV island: Component 2)
+    # 11. Supplier performance fabric tech stamp (HEAT.RDY, DRI-FIT ADV, etc.)
+    _render_tech_callout(atlas, d, masks)
+
+    # 12. Sleeve secondary sponsor (Left sleeve UV island: Component 2)
     _render_sleeve_sponsor(atlas, d, masks)
 
     if out_png:
@@ -973,9 +1222,12 @@ def _render_shorts_branding(atlas, d, masks):
                 if (cur_w, cur_h) != img.size:
                     img = img.resize((cur_w, cur_h), Image.LANCZOS)
 
-                stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-                stamp_layer.paste(img, (adj["x"], adj["y"]), img)
-                _composite_layer(atlas, stamp_layer, shorts_mask)
+                if d.get("heat_press_relief", True):
+                    _composite_with_relief(atlas, img, adj["x"], adj["y"], relief_depth=1, shadow_opacity=55, highlight_opacity=30, mask=shorts_mask)
+                else:
+                    stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+                    stamp_layer.paste(img, (adj["x"], adj["y"]), img)
+                    _composite_layer(atlas, stamp_layer, shorts_mask)
 
     # 2. Shorts Supplier Logo (Left leg)
     if d.get("shorts_supplier", True) and d.get("supplier"):
@@ -1015,9 +1267,12 @@ def _render_shorts_branding(atlas, d, masks):
                 if (cur_w, cur_h) != img.size:
                     img = img.resize((cur_w, cur_h), Image.LANCZOS)
 
-                stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-                stamp_layer.paste(img, (adj["x"], adj["y"]), img)
-                _composite_layer(atlas, stamp_layer, shorts_mask)
+                if d.get("heat_press_relief", True):
+                    _composite_with_relief(atlas, img, adj["x"], adj["y"], relief_depth=1, shadow_opacity=55, highlight_opacity=30, mask=shorts_mask)
+                else:
+                    stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+                    stamp_layer.paste(img, (adj["x"], adj["y"]), img)
+                    _composite_layer(atlas, stamp_layer, shorts_mask)
 
 
 def _render_sleeve_sponsor(atlas, d, masks):
@@ -1098,7 +1353,9 @@ def _render_sleeve_sponsor(atlas, d, masks):
     stamp_layer.paste(img_rot, (rx, ry), img_rot)
 
     sleeve_mask = masks.get("sleeve") if masks else None
-    if sleeve_mask is not None:
+    if d.get("heat_press_relief", True):
+        _composite_with_relief(atlas, img_rot, rx, ry, relief_depth=1, shadow_opacity=55, highlight_opacity=30, mask=sleeve_mask)
+    elif sleeve_mask is not None:
         _composite_layer(atlas, stamp_layer, sleeve_mask)
     else:
         atlas.alpha_composite(stamp_layer)

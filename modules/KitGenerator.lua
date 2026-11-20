@@ -111,16 +111,18 @@ local function run_winexec(cmd)
 end
 
 -- ===== small helpers ======================================================
--- All file paths go through here.  Sider hands us a Windows path, so we keep
--- the whole thing in backslashes: both Lua's io.open and the menu DLL's image
--- loader then see one unambiguous native path.
+-- All file paths go through here. Sider on Windows uses backslashes;
+-- on Unix/macOS test environments forward slashes are preserved.
+local IS_WINDOWS = (package.config and package.config:sub(1, 1) == '\\')
 local function path(rel)
-  return (DIR .. 'content/KitGenerator/' .. rel):gsub('/', '\\')
+  local p = DIR .. 'content/KitGenerator/' .. rel
+  return IS_WINDOWS and p:gsub('/', '\\') or p:gsub('\\', '/')
 end
 
 -- a path relative to SiderAddons itself (for files outside content/KitGenerator)
 local function sider_path(rel)
-  return (DIR .. rel):gsub('/', '\\')
+  local p = DIR .. rel
+  return IS_WINDOWS and p:gsub('/', '\\') or p:gsub('\\', '/')
 end
 
 -- ===== low-level memory helpers ===========================================
