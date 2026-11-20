@@ -14,6 +14,11 @@
 --     released (offers reopen) and the logo comes off the kit.  You can also
 --     terminate early: an early-exit clause pays TERMINATION_PCT of the value
 --     still to run as a buyout and takes the logo off at once.
+--   * Season lifecycle: Season 1 keeps every club on its authentic licensed
+--     kit (the user club switches immediately if a deal is signed).  From
+--     Season 2 all clubs use generated kits: p1/g1 (the "scoutable roster") are
+--     built for every club at rollover, while p2/p3/g2 are built on demand for
+--     scheduled opponents.  An expired deal leaves the user club sponsorless.
 --   * Two independent halves (CFG.ENABLE_KITS / CFG.ENABLE_SPONSORSHIP): use the
 --     kit half alone, the sponsorship half alone, or both together.
 --   * v0.7: the club you manage is AUTO-DETECTED.  Start a Master League with
@@ -50,8 +55,8 @@ local CFG = {
   SALARY_DELTA       = 0x14,     -- salary budget sits this far past the transfer budget
   TRANSFER_SHARE     = 0.70,     -- share of each payment added to the transfer budget
   SALARY_SHARE       = 0.30,     -- ...and to the salary budget (must sum to 1.0)
-  AI_DYNAMIC_START_SEASON = 2028, -- Season 1 (2026/27) wears authentic kits; dynamic kits kick in from Season 2 (2027/28)
-  ROLLOVER_MODE      = "balanced", -- "balanced" (p1 + g1 Scoutable Roster, ~5 min, quiet) or "power" (all 5 slots upfront)
+  DYNAMIC_KIT_START_SEASON = 2028, -- Season 1 (2026/27) authentic; dynamic kits from Season 2 (2027/28)
+  ROLLOVER_MODE      = "balanced", -- "balanced" (p1 + g1 Scoutable Roster, ~5-10 min, quiet) or "power" (all 5 slots upfront)
 }
 m.CFG = CFG
 
@@ -69,6 +74,7 @@ local OPTED_IN = {}
 local DEAL = nil                      -- active multi-season deal (or nil)
 local REQ_SEASONS, PAID, WARNED, CLEAN = {}, {}, {}, {}
 local REQ_LEAGUE, JIT_REQUESTED = {}, {}
+local CLEAN_PENDING = {}          -- club:season -> clean request id; blocks stale branded kits until the watcher finishes
 local club_id, start_watcher, load_deal
 
 local DIR, CAREER, SEASON = '', 'unknown', 2027
@@ -1022,6 +1028,37 @@ local function has_user_kit(cid)
   return false
 end
 
+-- Clearing a deal is instant, but the watcher needs time to replace the old
+-- branded .ftex files.  Queue a FORCED clean rebuild (the watcher normally
+-- skips clean requests when a file with that name already exists) and serve
+-- authentic kits until the request is recorded in watcher_state.txt.  Without
+-- this, an expired sponsor's logo can be served for a few seconds or a match.
+local function request_clean_kit(club, season)
+  if not club or club <= 0 then return end
+  local key = club .. ':' .. season
+  local req_id = string.format('clean-%d-%d-t%s', club, season, os.date('%Y%m%d%H%M%S'))
+  CLEAN_PENDING[key] = { id = req_id, at = 0 }
+  CLEAN[key] = true
+  if CFG.ENABLE_KITS then
+    append_line('kit_request.txt', string.format('%s|%d|%d||force|%s|%s',
+      req_id, club, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
+  end
+  L('forced clean rebuild queued for club #' .. tostring(club) .. ' (season ' .. tostring(season) .. ')')
+end
+
+local function clean_request_done(req_id)
+  if not req_id then return false end
+  local f = io.open(DIR .. 'content/KitGenerator/watcher_state.txt', 'r')
+  if not f then return false end
+  local line
+  repeat
+    line = f:read('*l')
+    if line and line == req_id then f:close(); return true end
+  until not line
+  f:close()
+  return false
+end
+
 local function ensure_season_deal(season)
   season = season or SEASON or 2027
   -- Never act on a guessed season: at game load the calendar is not readable
@@ -1040,28 +1077,26 @@ local function ensure_season_deal(season)
     save_deal()
     L('deal with ' .. tostring(brand) .. ' belongs to club #' .. tostring(old) ..
       ' - released (now following #' .. tostring(cid) .. ')')
-    if CFG.ENABLE_KITS then
-      append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s|%s',
-        old, season, os.date('%Y%m%d%H%M%S'), old, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER))
-    end
+    request_clean_kit(old, season)
   end
 
   -- A contract that has run out must be released.  Otherwise `visible()` would
   -- keep hiding every offer (it returns nothing while DEAL is set) and the club
   -- could never sign a new sponsor again.  Persisted so it stays released.
   if DEAL and season > deal_end() then
-    local brand, ended = DEAL.brand, deal_end()
+    local brand, ended, old_club = DEAL.brand, deal_end(), DEAL.club
     DEAL = nil
     REQ_SEASONS = {}
     REQ_LEAGUE = {}
     save_deal()                       -- blanks active_deal.txt
     L('deal expired: ' .. tostring(brand) .. ' ended after season ' .. tostring(ended) ..
       ' - offers are open again')
+    request_clean_kit(old_club, season)
   end
 
   if not cid then return end          -- club not detected yet: nothing to build
 
-  local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
+  local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
 
   -- Queue background kit generation for the user club's league
   -- ONLY from Season 2 onwards! In Season 1, league clubs wear authentic default kits.
@@ -1085,8 +1120,8 @@ local function ensure_season_deal(season)
     local ckey = cid .. ':' .. season
     if CFG.ENABLE_KITS and not CLEAN[ckey] then
       CLEAN[ckey] = true
-      local req_id = string.format('clean-%d-%d', cid, season)
-      append_line('kit_request.txt', string.format('%s|%d|%d|||%s|%s',
+      local req_id = string.format('clean-%d-%d-force', cid, season)
+      append_line('kit_request.txt', string.format('%s|%d|%d||force|%s|%s',
         req_id, cid, season, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
       L('no deal for season ' .. tostring(season) ..
         ': requested sponsorless kit for user club #' .. tostring(cid))
@@ -1117,6 +1152,13 @@ local function ensure_season_deal(season)
   end
 end
 
+-- Bulk rollover is a Season-2+ concern only; Season 1 must keep every club on
+-- its authentic licensed kit.
+local function should_queue_rollover(season, prev)
+  return CFG.ENABLE_KITS and prev and prev > 0
+     and season >= (CFG.DYNAMIC_KIT_START_SEASON or 2028)
+end
+
 -- Refresh the in-game date/season from the ML calendar.  The season is named
 -- for the year it ENDS in (Football Life 2027 == the 2026/27 season) and rolls
 -- over in June, when the pre-season (Jun-Aug) opens.
@@ -1129,7 +1171,7 @@ local function refresh_date(ctx)
     SEASON = (mo >= 6) and (y + 1) or y
     if prev ~= SEASON then
       L(string.format('season %d  (game date %04d-%02d-%02d)', SEASON, y, mo, d))
-      if CFG.ENABLE_KITS and prev and prev > 0 then
+      if should_queue_rollover(SEASON, prev) then
         local req_id = string.format('season-%s-%d', CAREER or 'global', SEASON)
         local mode = CFG.ROLLOVER_MODE or "balanced"
         append_line('kit_request.txt', string.format('%s|0|%d|all|%s|%s|%s',
@@ -1171,6 +1213,7 @@ local function sign_offer(o)
            value = o.value or 0, tier = o.tier, signed_at = os.date('%Y-%m-%d %H:%M:%S'),
            bonus = o.bonus or 0 }
   REQ_SEASONS = {}
+  CLEAN_PENDING[o.club .. ':' .. o.season] = nil  -- a new deal supersedes any pending clean rebuild
   save_deal()
   if o.club and not OPTED_IN[o.club] then
     OPTED_IN[o.club] = true
@@ -1270,14 +1313,7 @@ local function terminate_deal()
   DEAL = nil
   REQ_SEASONS = {}
   save_deal()                       -- blanks active_deal.txt
-  if CFG.ENABLE_KITS then
-    CLEAN[club .. ':' .. season] = true   -- one clean rebuild now, logo off the shirts
-    -- a UNIQUE id: the season's earlier clean request (made before signing) may
-    -- already be in the watcher's done-list, which dedupes by id
-    append_line('kit_request.txt', string.format('clean-%d-%d-t%s|%d|%d||%s|%s',
-      club, season, os.date('%Y%m%d%H%M%S'), club, season,
-      os.date('%Y-%m-%d %H:%M:%S'), CAREER))
-  end
+  request_clean_kit(club, season)    -- forced clean: the old branded file still exists
   SEL.credit_msg = 'terminated ' .. tostring(brand) .. (note ~= '' and ('; ' .. note) or '')
   L('terminated deal with ' .. tostring(brand) .. (note ~= '' and (' (' .. note .. ')') or ''))
 end
@@ -1401,7 +1437,16 @@ local function build_office(ui, ctx)
   ui:section('Sponsor Offers', 'trophy', 'Season ' .. tostring(SEASON) .. '  -  ' .. plural(#list, 'offer'))
 
   local kit_ready = has_user_kit(cid)
-  if kit_ready then
+  local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
+  local pending_key = cid and (cid .. ':' .. SEASON) or nil
+  if pending_key and CLEAN_PENDING[pending_key] then
+    ui:message('Contract ended. Authentic kit is shown while the sponsorless kit is rebuilt (next match).', 'info')
+  elseif deal_active(SEASON) and DEAL then
+    ui:message('Club is wearing the ' .. tostring(DEAL.brand) ..
+      ' dynamic kit with sleeve branding. A fresh set is generated for each season of the deal.', 'ok')
+  elseif SEASON < start_season then
+    ui:message('Season 1: all clubs wear their authentic licensed kits. Sign an offer below to switch this club to a dynamic sponsored kit immediately.', 'info')
+  elseif kit_ready then
     ui:message('Club is wearing a sponsorless dynamic kit while awaiting a sponsor agreement. Sign an offer below to add a sponsor logo.', 'ok')
   else
     ui:message('Club dynamic kit is generating (sponsorless)... It will appear in your next match.', 'info')
@@ -1539,7 +1584,7 @@ end
 local function ensure_opponent_kits(opp_id)
   opp_id = tonumber(opp_id)
   if not opp_id or opp_id <= 0 then return end
-  local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
+  local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
   local cid = club_id()
   -- In Season 1:
   -- - AI clubs wear authentic kits (no dynamic generation)
@@ -1550,22 +1595,26 @@ local function ensure_opponent_kits(opp_id)
   end
   if not CFG.ENABLE_KITS then return end
 
-  -- Check if secondary kit (p2) exists in active directory
-  local p2_name = string.format("content/KitGenerator/active/u%04dp2.ftex", opp_id)
-  local full = (DIR .. p2_name):gsub('/', '\\')
-  local f = io.open(full, "rb") or io.open(DIR .. p2_name, "rb") or io.open(sider_path(p2_name), "rb")
-  if f then
+  -- Matchday-only slots (p2/p3/g2) are built on demand.  ANY missing slot
+  -- means the scheduled opponent still needs a JIT rebuild; checking only p2
+  -- used to leave clubs with a partial set on away/third kits.
+  for _, scode in ipairs({ 'p2', 'p3', 'g2' }) do
+    local sname = string.format("content/KitGenerator/active/u%04d%s.ftex", opp_id, scode)
+    local full = (DIR .. sname):gsub('/', '\\')
+    local f = io.open(full, "rb") or io.open(DIR .. sname, "rb") or io.open(sider_path(sname), "rb")
+    if not f then
+      local jkey = opp_id .. ':' .. SEASON
+      if not JIT_REQUESTED[jkey] then
+        JIT_REQUESTED[jkey] = true
+        local req_id = string.format('jit-%d-%d', opp_id, SEASON)
+        append_line('kit_request.txt', string.format('%s|%d|%d|all|jit|%s|%s',
+          req_id, opp_id, SEASON, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
+        L(string.format('calendar schedule: queued JIT kit generation for scheduled club #%d (season %d, missing %s)',
+          opp_id, SEASON, scode))
+      end
+      return
+    end
     f:close()
-    return -- already generated
-  end
-
-  local jkey = opp_id .. ':' .. SEASON
-  if not JIT_REQUESTED[jkey] then
-    JIT_REQUESTED[jkey] = true
-    local req_id = string.format('jit-%d-%d', opp_id, SEASON)
-    append_line('kit_request.txt', string.format('%s|%d|%d|all|jit|%s|%s',
-      req_id, opp_id, SEASON, os.date('%Y-%m-%d %H:%M:%S'), CAREER or ''))
-    L(string.format('calendar schedule: queued JIT kit generation for scheduled club #%d (season %d)', opp_id, SEASON))
   end
 end
 
@@ -1646,7 +1695,7 @@ function m.make_key(ctx, filename)
     cid = detect_club(ctx)
   end
   local needs_authentic = false
-  local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
+  local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
   local is_season_1 = (SEASON < start_season)
   local is_user = (cid and cid > 0 and tid == cid)
 
@@ -1667,6 +1716,22 @@ function m.make_key(ctx, filename)
     needs_authentic = false
     if is_user and (not STATE.date_ok or not has_user_kit(cid)) then
       refresh_date(ctx)
+    end
+  end
+
+  -- A deal was just cleared/expired: keep serving authentic until the forced
+  -- clean rebuild is recorded as done, so an expired sponsor logo is never
+  -- shown for even one match.  The state-file check is throttled to 2 seconds.
+  if is_user and cid then
+    local pk = cid .. ':' .. SEASON
+    local pending = CLEAN_PENDING[pk]
+    if pending then
+      local now = os.time()
+      if now - pending.at >= 2 then
+        pending.at = now
+        if clean_request_done(pending.id) then CLEAN_PENDING[pk] = nil end
+      end
+      if CLEAN_PENDING[pk] then needs_authentic = true end
     end
   end
 
@@ -1896,6 +1961,26 @@ function m.debug_terminate()
   SEL.term_confirm = false
   terminate_deal()
   return SEL.credit_msg
+end
+
+function m.debug_should_queue_rollover(season, prev)
+  return should_queue_rollover(season, prev)
+end
+
+-- Test hook: force the next make_key call to re-check watcher_state.txt for a
+-- pending clean rebuild (normally throttled to once every 2 seconds).
+function m.debug_reset_clean_check(club, season)
+  local p = CLEAN_PENDING[club .. ':' .. season]
+  if p then p.at = 0 end
+  return p ~= nil
+end
+
+-- Set the calendar only (SEASON is left untouched) so refresh_date() can be
+-- exercised with a real season transition in tests.
+function m.debug_set_game_date(y, mo, d)
+  STATE.year, STATE.month, STATE.day = y, mo, d
+  STATE.date_ok = (y ~= nil)
+  return true
 end
 
 -- diagnostic helpers for the managed-club auto-detection (used by the tests)

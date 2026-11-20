@@ -6,7 +6,7 @@ Pipeline
     club + season + slot  ->  kit_render.render_kit_set   (2048x2048 atlas PNGs)
                           ->  ftex_io.image_to_ftex        (BC3/DXT5, 12 mips)
                           ->  u<team>p<slot>.ftex
-                          ->  (optional) livecpk\KitGenerator override
+                          ->  (optional) SiderAddons/content/KitGenerator/active override
 
 The .ftex header (version / texture_type / hashes / size / format) is inherited
 from a real PES kit ("base"), so the output is byte-for-byte the same *kind* of
@@ -20,10 +20,11 @@ Usage
 
 Notes
 -----
-* Installing writes to
-      <game>\\SiderAddons\\livecpk\\KitGenerator\\Asset\\model\\character\\uniform\\texture\\#windx11\\
-  which must be listed BEFORE livecpk\\SoundtrackServer in sider.ini (Sider stops
-  at the first cpk.root that has the file).  See livecpk\\KitGenerator\\_README.txt.
+* Installing writes ONLY to
+      <game>\\SiderAddons\\content\\KitGenerator\\active\\
+  Sider's KitGenerator.lua serves that folder during Master League.  The static
+  licensed kits under content/kits are never overwritten, so Exhibition and
+  every other non-career mode keep their authentic kits.
 * Nothing is overwritten without a timestamped .bak next to it.
 """
 import argparse

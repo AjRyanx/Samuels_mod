@@ -134,7 +134,7 @@ def write_cmd(sider, game_root):
         "@echo off\r\n"
         "rem KitGenerator watcher - auto-started by KitGenerator.lua at game load.\r\n"
         "rem Regenerate with:  python \"%s\"\r\n"
-        "start \"\" /b \"%s\" \"%s\" --sider \"%s\" --game-root \"%s\"\r\n"
+        "start \"\" /low /b \"%s\" \"%s\" --sider \"%s\" --game-root \"%s\"\r\n"
         % (HERE / "setup_watcher.py", py, script, sider, game_root)
     )
     cmd.write_text(text, encoding="utf-8", newline="")

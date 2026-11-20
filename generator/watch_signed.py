@@ -14,10 +14,11 @@ For every request it has not seen before it regenerates that club's
 home/away/third kits with the signed sponsor (new design + sponsor logo) and
 installs them into
 
-    <game>\SiderAddons\livecpk\KitGenerator\Asset\...\#windx11\u<team>p<slot>.ftex
+    <game>\SiderAddons\content\KitGenerator\active\u<team>p<slot>.ftex
 
-so the new kits show at the next match.  Processed offer ids are remembered in
-watcher_state.txt, so a request is only ever built once.
+The static licensed kits under content/kits are never touched, so Exhibition
+and all other non-career modes keep their authentic kits.  Processed offer ids
+are remembered in watcher_state.txt, so a request is only ever built once.
 
 Only one watcher may run at a time: it holds a loopback TCP port and a second
 copy exits immediately.
@@ -305,8 +306,12 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         is_jit = req["offer"].startswith("jit-") or req.get("tier") == "jit"
         is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
         is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
+        # A "force" clean comes from deal expiry/termination.  The branded file
+        # still exists on disk, so the normal "already installed" shortcut must
+        # not skip it -- otherwise the expired sponsor's logo would stay on.
+        force_clean = req["offer"].startswith("clean-") and (req.get("tier") or "").lower() == "force"
 
-        if req["offer"].startswith("clean-") and req["club_id"] > 0:
+        if req["offer"].startswith("clean-") and req["club_id"] > 0 and not force_clean:
             target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
             career_id = req.get("career_id")
             career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
@@ -323,7 +328,7 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                         continue
                 elif is_league:
                     continue
-                else:
+                elif not force_clean:
                     target_ftex = active_dir / f"u{req['club_id']:04d}p1.ftex"
                     career_id = req.get("career_id")
                     career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
@@ -354,6 +359,9 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
             is_jit = req["offer"].startswith("jit-") or req.get("tier") == "jit"
             is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
             is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
+            if req["offer"].startswith("clean-") and (req.get("tier") or "").lower() == "force":
+                _log("forced clean rebuild: replacing old branded kit files for club #%d"
+                     % req["club_id"], logfile)
 
             if is_jit:
                 _log("JIT opponent request: generating kits for scheduled club #%d (season %d)"
