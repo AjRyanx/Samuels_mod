@@ -223,11 +223,14 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     # Tottenham Hotspur
     179: {
         1: {  # Home: Lilywhite body & sleeves with midnight navy shorts and socks
-            "body": (250, 250, 252), "second": (19, 34, 64), "third": (250, 250, 252),
-            "patterns": ["098", "085-E"],
-            "sleeve": (250, 250, 252), "shorts": (19, 34, 64),
-            "socks": (250, 250, 252), "collar": (19, 34, 64),
+            "body": (252, 252, 254), "second": (19, 34, 64), "third": (252, 252, 254),
+            "patterns": ["085-E", "090-E", "171-E", "046-E"],
+            "sleeve": (252, 252, 254), "shorts": (19, 34, 64),
+            "socks": (252, 252, 254), "collar": (19, 34, 64),
+            "collar_tip": (252, 252, 254),
             "cuff": (19, 34, 64),
+            "cuff_tip": (252, 252, 254),
+            "stripe_accent": (19, 34, 64),
             "gradient": 0, "supplier": "nike",
             "sponsor_dark": (19, 34, 64),
         },
@@ -303,30 +306,42 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
 
     # Real Madrid
     109: {
-        1: {  # Home: Pristine all-white luxury with royal gold & navy trim, Carrara marble jacquard
-            "body": (250, 250, 252), "second": (205, 168, 75), "third": (15, 25, 55),
-            "patterns": ["plain", "171-E", "219-E", "085-E"],
-            "sleeve": (250, 250, 252), "shorts": (250, 250, 252),
-            "socks": (250, 250, 252), "collar": (250, 250, 252),
-            "cuff": (205, 168, 75),
+        1: {  # Home: Pristine Royal White with majestic Gold, Castilian Violet & Midnight Navy rotations
+            "body": (252, 252, 254), "second": (212, 175, 55), "third": (15, 25, 55),
+            "patterns": ["171-E", "170-E", "085-E", "219-E", "046-E"],
+            "sleeve": (252, 252, 254), "shorts": (252, 252, 254),
+            "socks": (252, 252, 254), "collar": (252, 252, 254),
+            "collar_tip": (212, 175, 55),
+            "cuff": (212, 175, 55),
+            "cuff_tip": (15, 25, 55),
+            "stripe_accent": (212, 175, 55),
+            "supplier_color": (212, 175, 55),
             "gradient": 0, "supplier": "adidas",
             "sponsor_dark": (15, 25, 55),
         },
-        2: {  # Away: Vibrant royal purple / navy with refined luxury tonal patterns
-            "body": (45, 15, 80), "second": (250, 250, 252), "third": (205, 168, 75),
-            "patterns": ["019-E", "185-E", "040-C", "067-E"],
-            "sleeve": (45, 15, 80), "shorts": (45, 15, 80),
-            "socks": (45, 15, 80), "collar": (250, 250, 252),
-            "cuff": (205, 168, 75),
+        2: {  # Away: Royal Castilian Violet / Deep Purple with metallic gold & white accents
+            "body": (65, 25, 115), "second": (252, 252, 254), "third": (212, 175, 55),
+            "patterns": ["085-E", "185-E", "040-C", "067-E"],
+            "sleeve": (65, 25, 115), "shorts": (65, 25, 115),
+            "socks": (65, 25, 115), "collar": (252, 252, 254),
+            "collar_tip": (212, 175, 55),
+            "cuff": (212, 175, 55),
+            "cuff_tip": (252, 252, 254),
+            "stripe_accent": (212, 175, 55),
+            "supplier_color": (212, 175, 55),
             "gradient": 0, "supplier": "adidas",
         },
-        3: {  # Third: Haute Couture Noir - matte charcoal with metallic gold filigree
-            "body": (20, 22, 26), "second": (215, 180, 80), "third": (250, 250, 252),
+        3: {  # Third: Haute Couture Carbon Noir - matte black with liquid gold heraldry
+            "body": (20, 22, 26), "second": (212, 175, 55), "third": (252, 252, 254),
             "patterns": ["141-E", "170-E", "216-B", "220-B"],
             "sleeve": (20, 22, 26), "shorts": (20, 22, 26),
-            "socks": (215, 180, 80), "collar": (215, 180, 80),
-            "cuff": (215, 180, 80),
-            "gradient": 0, "supplier": "adidas",
+            "socks": (20, 22, 26), "collar": (212, 175, 55),
+            "collar_tip": (252, 252, 254),
+            "cuff": (212, 175, 55),
+            "cuff_tip": (252, 252, 254),
+            "stripe_accent": (212, 175, 55),
+            "supplier_color": (212, 175, 55),
+            "gradient": 1, "supplier": "adidas",
         },
     },
 
@@ -1751,6 +1766,40 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
                 so_idx = s_off % len(so_choices)
                 base_style["socks"] = so_choices[so_idx]
 
+        # Real Madrid iconic heritage aura seasonal rotation
+        if cid == 109 and slot == 1:
+            aura_cycle = s_off % 3
+            if aura_cycle == 0:
+                # Galácticos Pure Gold Era (2011/12, 2019/20, 2023/24)
+                base_style["second"] = (212, 175, 55)
+                base_style["third"] = (15, 25, 55)
+                base_style["collar"] = (252, 252, 254)
+                base_style["collar_tip"] = (212, 175, 55)
+                base_style["cuff"] = (212, 175, 55)
+                base_style["cuff_tip"] = (15, 25, 55)
+                base_style["stripe_accent"] = (212, 175, 55)
+                base_style["supplier_color"] = (212, 175, 55)
+            elif aura_cycle == 1:
+                # Castilian Violet / Royal Purple Heritage (La Séptima, La Duodécima, 2022/23)
+                base_style["second"] = (75, 40, 130)
+                base_style["third"] = (212, 175, 55)
+                base_style["collar"] = (252, 252, 254)
+                base_style["collar_tip"] = (75, 40, 130)
+                base_style["cuff"] = (75, 40, 130)
+                base_style["cuff_tip"] = (212, 175, 55)
+                base_style["stripe_accent"] = (75, 40, 130)
+                base_style["supplier_color"] = (75, 40, 130)
+            elif aura_cycle == 2:
+                # Sovereign Midnight Navy & Gold (2023/24)
+                base_style["second"] = (15, 25, 55)
+                base_style["third"] = (212, 175, 55)
+                base_style["collar"] = (15, 25, 55)
+                base_style["collar_tip"] = (212, 175, 55)
+                base_style["cuff"] = (15, 25, 55)
+                base_style["cuff_tip"] = (212, 175, 55)
+                base_style["stripe_accent"] = (212, 175, 55)
+                base_style["supplier_color"] = (15, 25, 55)
+
         pool = base_style.pop("patterns", None)
         if pool:
             # Deterministic progression with sponsor and club entropy with intra-league zero collision
@@ -1817,6 +1866,11 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
         p_idx = ((seed ^ (cid * 0x45D9F3B)) + s_off * 37) % len(pool)
         pattern = get_league_assigned_pattern(cid, 1, season, pool[p_idx], pool)
 
+        # White kit design enhancement: never flat plain, always rich tonal jacquard
+        if _lum(primary) > 220 and pattern in ("plain", "solid"):
+            p_jacq = POOL_LUXURY_JACQUARD[(seed + s_off * 17) % len(POOL_LUXURY_JACQUARD)]
+            pattern = get_league_assigned_pattern(cid, 1, season, p_jacq, POOL_LUXURY_JACQUARD)
+
         # Alternating shorts: Contrast vs Monochrome
         cycle = (seed + s_off) % 4
         if _lum(primary) < 140 and _lum(secondary) > 150:
@@ -1826,6 +1880,8 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
 
         socks_col = primary if (cycle % 3 != 1) else secondary
         collar_col = secondary if (cycle % 3 != 2) else (accent if _dist(accent, primary) > 70 else secondary)
+        if _lum(primary) > 220 and _lum(collar_col) > 220:
+            collar_col = secondary if _dist(secondary, primary) > 60 else (19, 34, 64)
 
         macro_cand = ["solid", "solid", "chestband", "ombre_fade", "solid"][(seed >> 6) % 5] if archetype == "SOLID" else "solid"
         micro_cand = POOL_LUXURY_JACQUARD[(seed + s_off * 13) % len(POOL_LUXURY_JACQUARD)] if archetype == "SOLID" and macro_cand != "solid" else None

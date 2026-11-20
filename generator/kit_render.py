@@ -33,6 +33,7 @@ Nothing is copied from a real club kit: the flat-colour template only tells us
 *where* the islands are, never *what* they look like.
 """
 from pathlib import Path
+import math
 import re
 import numpy as np
 
@@ -260,8 +261,7 @@ def _apply_vent_panels(atlas, d, masks):
     vent_mask[1100:1850, 1323:1374] = masks["body_front"][1100:1850, 1323:1374]
     vent_mask[100:850, 699:746] = masks["body_back"][100:850, 699:746]
     vent_mask[100:850, 1302:1349] = masks["body_back"][100:850, 1302:1349]
-    vent_mask[450:1120, 448:611] = masks["sleeve"][450:1120, 448:611]
-    vent_mask[450:1120, 1438:1601] = masks["sleeve"][450:1120, 1438:1601]
+    # Torso flank and underarm ventilation only - sleeves remain clean & tailored
 
     if not np.any(vent_mask):
         return
@@ -308,9 +308,11 @@ def _apply_brand_signatures(atlas, d, masks):
 
     base_col = d.get("sleeve") or d["body"]
     acc = d.get("stripe_accent") or d.get("second") or (245, 245, 245)
-    l_b = _col_lum(base_col)
-    l_a = _col_lum(acc)
-    if (max(l_b, l_a) + 12.5) / (min(l_b, l_a) + 12.5) < 2.2:
+    dist_acc = math.sqrt(sum((a - b) ** 2 for a, b in zip(base_col[:3], acc[:3])))
+    # Preserve intentional metallic gold, royal purple, and pastel trims on white/light kits
+    # Only override to contrast tone if accent is practically invisible (< 40 RGB distance)
+    if dist_acc < 40:
+        l_b = _col_lum(base_col)
         acc = (245, 245, 245) if l_b < 128 else (20, 25, 35)
     acc_rgba = tuple(acc) + (255,)
 
@@ -422,16 +424,14 @@ def _apply_brand_signatures(atlas, d, masks):
         if np.any(sh_puma):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(sh_puma))
 
-    # 6. NIKE: Aeroswift flank ribbing & split-cuff
+    # 6. NIKE: Aeroswift flank ribbing (torso underarm only, sleeves stay clean)
     elif "nike" in supp:
         nike_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_n = ImageDraw.Draw(nike_layer)
-        draw_n.line([(60, 665), (420, 665)], fill=acc_rgba, width=4)
-        draw_n.line([(1620, 665), (1980, 665)], fill=acc_rgba, width=4)
         for y in range(1120, 1820, 16):
             draw_n.line([(678, y), (718, y + 6)], fill=acc_rgba, width=3)
             draw_n.line([(1328, y), (1368, y + 6)], fill=acc_rgba, width=3)
-        _composite_layer(atlas, nike_layer, masks["body_front"] | sleeve_mask)
+        _composite_layer(atlas, nike_layer, masks["body_front"])
 
 
 def _apply_engineered_shorts(atlas, d, masks):
@@ -575,13 +575,14 @@ def render_kit(design, out_png, masks=None):
     # 2. Supplier signature languages (Adidas, Hummel, Kappa, Umbro, Puma, Nike)
     _apply_brand_signatures(atlas, d, masks)
 
-    # 3. Contrast sleeve cuff bands + engineered tipping line
+    # 3. Contrast sleeve cuff bands + engineered tipping line (slim, modern athletic cut)
     cuff = d.get("cuff")
     if cuff:
         cuff_col = tuple(cuff) + (255,)
         sleeve_mask = masks["sleeve"]
         cuff_mask = np.zeros_like(sleeve_mask)
-        cuff_mask[640:680, :] = sleeve_mask[640:680, :]
+        # Reduced slim cuff height: 16px (664..680) instead of bulky 40px band
+        cuff_mask[664:680, :] = sleeve_mask[664:680, :]
         if np.any(cuff_mask):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col),
                         (0, 0), _mask_img(cuff_mask))
@@ -589,7 +590,8 @@ def render_kit(design, out_png, masks=None):
         if cuff_tip and cuff_tip != cuff:
             tip_col = tuple(cuff_tip) + (255,)
             tip_mask = np.zeros_like(sleeve_mask)
-            tip_mask[674:680, :] = sleeve_mask[674:680, :]
+            # Engineered 4px micro-tipping along cuff hem edge
+            tip_mask[676:680, :] = sleeve_mask[676:680, :]
             if np.any(tip_mask):
                 atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col),
                             (0, 0), _mask_img(tip_mask))
@@ -624,8 +626,10 @@ def render_kit(design, out_png, masks=None):
                                       max_w=85, max_h=85, defringe=False)
     sup_item = None
     if d.get("supplier"):
+        sup_col = d.get("supplier_color")
         sup_item = _prepare_stamp_item(d["supplier"], *kit_regions.KIT_SUPPLIER,
-                                       white=d.get("supplier_white"),
+                                       white=d.get("supplier_white") if not sup_col else False,
+                                       dark=sup_col,
                                        max_w=90, max_h=48, defringe=True)
 
     # Validate against masks["body_front"] UV region and prevent inter-stamp collisions
@@ -965,6 +969,14 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
             design["supplier"] = str(cand_std)
         else:
             design["supplier"] = None
+
+        # Auto-tint supplier logo for light/white kits with distinct accent trims (e.g. Real Madrid gold)
+        if not design.get("supplier_color") and not is_dark_shirt:
+            str_acc = design.get("stripe_accent") or design.get("second")
+            if str_acc and kit_gen.lum(design["body"]) > 180:
+                d_dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(design["body"][:3], str_acc[:3])))
+                if d_dist > 50:
+                    design["supplier_color"] = str_acc
     return design
 
 
@@ -1033,7 +1045,8 @@ def mockup(design, club_name, season, out_png):
         import numpy as np
         sm = np.asarray(smask) > 10
         cm = np.zeros_like(sm)
-        cm[264:283, :] = sm[264:283, :]
+        # Reduced slim cuff height: 10px (273..283)
+        cm[273:283, :] = sm[273:283, :]
         if np.any(cm):
             cuff_col = tuple(cuff) + (255,)
             cimg = Image.fromarray((cm * 255).astype("uint8"), "L")
@@ -1041,7 +1054,7 @@ def mockup(design, club_name, season, out_png):
         cuff_tip = design.get("cuff_tip")
         if cuff_tip and cuff_tip != cuff:
             tip_mask = np.zeros_like(sm)
-            tip_mask[279:283, :] = sm[279:283, :]
+            tip_mask[280:283, :] = sm[280:283, :]
             if np.any(tip_mask):
                 timg = Image.fromarray((tip_mask * 255).astype("uint8"), "L")
                 canvas.paste(Image.new("RGBA", (W, H), tuple(cuff_tip) + (255,)), (0, 0), timg)
@@ -1051,9 +1064,9 @@ def mockup(design, club_name, season, out_png):
     # Brand signature languages on 2D mockup
     supp_m = str(design.get("supplier_name") or design.get("supplier") or "").lower()
     acc_cand = design.get("stripe_accent") or design.get("second") or design["body"]
-    l_b = 0.2126 * body[0] + 0.7152 * body[1] + 0.0722 * body[2]
-    l_a = 0.2126 * acc_cand[0] + 0.7152 * acc_cand[1] + 0.0722 * acc_cand[2]
-    if (max(l_b, l_a) + 12.5) / (min(l_b, l_a) + 12.5) < 2.2:
+    dist_c = math.sqrt(sum((a - b) ** 2 for a, b in zip(body[:3], acc_cand[:3])))
+    if dist_c < 40:
+        l_b = 0.2126 * body[0] + 0.7152 * body[1] + 0.0722 * body[2]
         acc_cand = (245, 245, 245) if l_b < 128 else (20, 25, 35)
     str_col = tuple(acc_cand) + (255,)
 
@@ -1109,7 +1122,9 @@ def mockup(design, club_name, season, out_png):
     if design.get("supplier"):
         try:
             s_logo = Image.open(design["supplier"]).convert("RGBA")
-            if design.get("supplier_white"):
+            if design.get("supplier_color"):
+                s_logo = _flatten_color(s_logo, design["supplier_color"])
+            elif design.get("supplier_white"):
                 s_logo = _flatten_white(s_logo)
             ss = min(38 / max(1, s_logo.width), 26 / max(1, s_logo.height))
             s_logo = s_logo.resize((max(1, int(s_logo.width * ss)), max(1, int(s_logo.height * ss))), Image.LANCZOS)

@@ -108,12 +108,22 @@ end
 -- the whole thing in backslashes: both Lua's io.open and the menu DLL's image
 -- loader then see one unambiguous native path.
 local function path(rel)
-  return (DIR .. 'content/KitGenerator/' .. rel):gsub('/', '\\')
+  local p = DIR .. 'content/KitGenerator/' .. rel
+  if (package and package.config and package.config:sub(1, 1) == '\\') or DIR:find('\\') then
+    return p:gsub('/', '\\')
+  else
+    return p:gsub('\\', '/')
+  end
 end
 
 -- a path relative to SiderAddons itself (for files outside content/KitGenerator)
 local function sider_path(rel)
-  return (DIR .. rel):gsub('/', '\\')
+  local p = DIR .. rel
+  if (package and package.config and package.config:sub(1, 1) == '\\') or DIR:find('\\') then
+    return p:gsub('/', '\\')
+  else
+    return p:gsub('\\', '/')
+  end
 end
 
 -- ===== low-level memory helpers ===========================================
