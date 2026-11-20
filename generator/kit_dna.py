@@ -609,9 +609,10 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
                 },
                 {  # Palette 1: Brazilian Canary Yellow (PSG Club Heritage Gold)
                     "body": (248, 215, 30), "second": (15, 25, 55), "third": (250, 250, 252),
-                    "patterns": ["208", "168-E", "219-E", "180"],
+                    "patterns": ["206", "208", "209", "168-E"],
                     "sleeve": (248, 215, 30), "shorts": (15, 25, 55),
                     "socks": (248, 215, 30), "collar": (15, 25, 55), "cuff": (15, 25, 55),
+                    "collar_style": "polo",
                     "gradient": 0, "supplier": "nike",
                 },
                 {  # Palette 2: Jordan Desert Sand / Warm Champagne Haute Couture
@@ -803,9 +804,10 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
         },
         2: {  # Away: Carmine red with dark charcoal stripes
             "body": (195, 20, 30), "second": (20, 20, 25), "third": (250, 250, 252),
-            "patterns": ["081", "082", "088", "083"],
+            "patterns": ["081", "093", "088", "083"],
             "sleeve": (195, 20, 30), "shorts": (20, 20, 25),
             "socks": (195, 20, 30), "collar": (250, 250, 252),
+            "collar_style": "crew",
             "gradient": 0, "supplier": "adidas",
         },
         3: {  # Third: Noir with diagonal radiant red sash
