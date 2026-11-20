@@ -66,21 +66,27 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "body": (195, 20, 30), "second": (250, 250, 250), "third": (20, 20, 25),
             "patterns": ["141-E", "095-E", "153-E"],
             "sleeve": (195, 20, 30), "shorts": (250, 250, 250),
-            "socks": (20, 20, 25), "collar": (20, 20, 25), "cuff": (250, 250, 250),
+            "socks": (20, 20, 25), "collar": (20, 20, 25),
+            "collar_style": "polo", "collar_tip": (250, 250, 250),
+            "cuff": (250, 250, 250),
             "gradient": 0, "supplier": "adidas",
         },
         2: {  # Away: Iconic European Navy Blue heritage (1968/1993/2024) - clean, NO stripes
             "body": (28, 55, 115), "second": (250, 250, 250), "third": (195, 20, 30),
             "patterns": ["088", "166-B"],
             "sleeve": (28, 55, 115), "shorts": (250, 250, 250),
-            "socks": (28, 55, 115), "collar": (250, 250, 250), "cuff": (195, 20, 30),
+            "socks": (28, 55, 115), "collar": (250, 250, 250),
+            "collar_style": "crew", "collar_tip": (195, 20, 30),
+            "cuff": (195, 20, 30),
             "gradient": 0, "supplier": "adidas",
         },
         3: {  # Third: Noir Luxury - matte black/charcoal with iridescent gold & crimson accents
             "body": (22, 24, 28), "second": (212, 175, 55), "third": (195, 20, 30),
             "patterns": ["219-B", "219-E"],
             "sleeve": (22, 24, 28), "shorts": (22, 24, 28),
-            "socks": (22, 24, 28), "collar": (212, 175, 55), "cuff": (212, 175, 55),
+            "socks": (22, 24, 28), "collar": (212, 175, 55),
+            "collar_style": "v_neck", "collar_tip": (195, 20, 30),
+            "cuff": (212, 175, 55),
             "gradient": 1, "supplier": "adidas",
         },
     },
@@ -92,6 +98,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["090-E", "170-E", "046-E"],
             "sleeve": (250, 250, 252), "shorts": (250, 250, 252),
             "socks": (250, 250, 252), "collar": (250, 250, 252),
+            "collar_style": "crew", "collar_tip": (190, 22, 34),
             "cuff": (190, 22, 34),
             "gradient": 0, "supplier": "adidas",
         },
@@ -100,6 +107,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["217-B", "085-E"],
             "sleeve": (18, 20, 22), "shorts": (18, 20, 22),
             "socks": (205, 255, 0), "collar": (205, 255, 0),
+            "collar_style": "v_neck", "collar_tip": (30, 80, 180),
             "gradient": 1, "supplier": "adidas",
         },
         3: {  # Third: Modern high-fashion pastel lilac / sand couture
@@ -107,6 +115,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["168-E", "220-B"],
             "sleeve": (215, 210, 230), "shorts": (15, 32, 67),
             "socks": (215, 210, 230), "collar": (15, 32, 67),
+            "collar_style": "polo", "collar_tip": (190, 22, 34),
             "gradient": 0, "supplier": "adidas",
         },
     },
@@ -118,6 +127,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["168-E", "042-E", "153-E"],
             "sleeve": (3, 70, 155), "shorts": (3, 70, 155),
             "socks": (250, 250, 252), "collar": (3, 70, 155),
+            "collar_style": "v_neck", "collar_tip": (212, 175, 55),
             "cuff": (250, 250, 252),
             "gradient": 0, "supplier": "nike",
         },
@@ -126,6 +136,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["097", "083-C"],
             "sleeve": (252, 222, 0), "shorts": (3, 70, 155),
             "socks": (252, 222, 0), "collar": (3, 70, 155),
+            "collar_style": "polo", "collar_tip": (18, 20, 24),
             "cuff": (3, 70, 155),
             "gradient": 0, "supplier": "nike",
         },
@@ -134,6 +145,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["216-B", "220-E"],
             "sleeve": (20, 24, 32), "shorts": (20, 24, 32),
             "socks": (20, 24, 32), "collar": (30, 185, 170),
+            "collar_style": "crew", "collar_tip": (3, 70, 155),
             "cuff": (30, 185, 170),
             "gradient": 1, "supplier": "nike",
         },
@@ -146,6 +158,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["145-E", "177-E", "067-E"],
             "sleeve": (190, 18, 30), "shorts": (190, 18, 30),
             "socks": (190, 18, 30), "collar": (190, 18, 30),
+            "collar_style": "crew", "collar_tip": (212, 175, 55),
             "cuff": (250, 250, 252),
             "gradient": 0, "supplier": "nike",
         },
@@ -954,14 +967,14 @@ _NEW_STREETWEAR_AWAY = [
     "218-B", "219-B", "220-B", "167-E", "085-E"
 ]
 _NEW_STREETWEAR_THIRD = [
-    "126", "166", "167", "168", "171", "177", "180", "184", "191", "197",
+    "126", "166", "167", "168", "171", "177", "214", "184", "191", "197",
     "204", "212", "211", "216", "217", "218",
     "219", "220", "126-B", "131-B", "166-B", "167-B", "168-B",
     "171-E", "204-B", "215-E", "211-B", "041-E",
     "216-B", "217-B", "218-B", "219-B", "220-B", "067-E", "141-E", "153-E"
 ]
 _NEW_HOME_SOLID = ["215-E", "219-E", "220-E", "212-E", "041-E"]
-_NEW_HOME_STRIPES = ["081", "082", "083", "088", "093", "105", "124"]
+_NEW_HOME_STRIPES = ["stripes", "081", "083", "088", "093", "105", "124"]
 
 def _enrich_bespoke_dna(dna: Dict[int, Any]) -> None:
     # Retained for backward-compatibility but disabled by default to preserve
@@ -977,9 +990,9 @@ def _enrich_bespoke_dna(dna: Dict[int, Any]) -> None:
 # High-Fashion Pattern Pools for General Clubs (2026/2027 Streetwear & Heritage):
 # Modern Stripe Archetypes
 POOL_STRIPES = [
-    "stripes", "081", "082", "083", "088", "093", "097", "105", "118", "124",
+    "stripes", "081", "083", "088", "093", "097", "105", "118", "124",
     "081-B", "083-C", "088-B", "097-E", "105-B", "118-E", "124-B",
-    "081-E", "082-E", "083-E", "088-C", "093-B", "097-B",
+    "081-E", "083-E", "088-C", "093-B", "097-B",
     "081-C", "083-B", "093-E", "105-E", "124-E"
 ]
 # Modern Hoops Archetypes
@@ -1529,6 +1542,7 @@ def _generate_gk_dna(club: Dict[str, Any], season: int, slot: str = "g1", sponso
         "socks_accent": gk_second if socks_col == gk_body else gk_body,
         "socks_tip": gk_third,
         "collar": collar_col,
+        "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 4) % 4],
         "collar_tip": gk_third if ((seed >> 2) % 2) else collar_col,
         "cuff": cuff_col,
         "cuff_tip": gk_third if ((seed >> 3) % 3 == 0) else cuff_col,
@@ -1782,6 +1796,7 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
                 base_style["second"] = (212, 175, 55)
                 base_style["third"] = (15, 25, 55)
                 base_style["collar"] = (252, 252, 254)
+                base_style["collar_style"] = "dual_tipped"
                 base_style["collar_tip"] = (212, 175, 55)
                 base_style["cuff"] = (212, 175, 55)
                 base_style["cuff_tip"] = (15, 25, 55)
@@ -1792,6 +1807,7 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
                 base_style["second"] = (75, 40, 130)
                 base_style["third"] = (212, 175, 55)
                 base_style["collar"] = (252, 252, 254)
+                base_style["collar_style"] = "v_neck"
                 base_style["collar_tip"] = (75, 40, 130)
                 base_style["cuff"] = (75, 40, 130)
                 base_style["cuff_tip"] = (212, 175, 55)
@@ -1802,6 +1818,7 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
                 base_style["second"] = (15, 25, 55)
                 base_style["third"] = (212, 175, 55)
                 base_style["collar"] = (15, 25, 55)
+                base_style["collar_style"] = "polo"
                 base_style["collar_tip"] = (212, 175, 55)
                 base_style["cuff"] = (15, 25, 55)
                 base_style["cuff_tip"] = (212, 175, 55)
@@ -1815,6 +1832,8 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
             base_style["pattern"] = get_league_assigned_pattern(cid, slot, season, pool[p_idx], pool)
 
         # Tailoring trims for bespoke clubs
+        if "collar_style" not in base_style:
+            base_style["collar_style"] = ["crew", "dual_tipped", "v_neck", "polo"][(salt_val // 19) % 4]
         if "cuff_tip" not in base_style:
             base_style["cuff_tip"] = base_style.get("third") or base_style.get("second")
         if "collar_tip" not in base_style:
@@ -1912,6 +1931,7 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
             "socks_accent": secondary,
             "socks_tip": accent,
             "collar": collar_col,
+            "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 4) % 4],
             "collar_tip": accent if ((seed >> 2) % 2) else collar_col,
             "cuff": secondary,
             "cuff_tip": accent if ((seed >> 3) % 3 == 0) else secondary,
@@ -1989,6 +2009,7 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
             "socks_accent": away_second,
             "socks_tip": away_third,
             "collar": away_collar,
+            "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 5) % 4],
             "collar_tip": away_third,
             "cuff": away_second,
             "cuff_tip": away_third,
@@ -2037,6 +2058,7 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
             "socks_accent": third_second if third_socks == third_body else third_third,
             "socks_tip": third_third,
             "collar": third_collar,
+            "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 6) % 4],
             "collar_tip": third_third,
             "cuff": third_cuff,
             "cuff_tip": third_third,
