@@ -248,8 +248,8 @@ def crop_torso(atlas_img):
 
 
 def crop_sleeve(atlas_img):
-    """Crop the left sleeve area (x: 1520..1980, y: 200..580) containing the sleeve sponsor mark."""
-    return atlas_img.crop((1520, 200, 1980, 580))
+    """Crop the left sleeve area (x: 1350..1680, y: 250..560) containing the sleeve sponsor mark."""
+    return atlas_img.crop((1350, 250, 1680, 560))
 
 
 def generate_html_gallery(audit_data, out_html_path):

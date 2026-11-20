@@ -92,7 +92,7 @@ DEFAULT_DESIGN = {
     "shorts_badge": True,         # True = render club crest on right shorts leg
     "shorts_supplier": True,      # True = render supplier logo on left shorts leg
     "sleeve_sponsor": None,       # path to a PNG logo or key (player's left sleeve)
-    "sleeve_sponsor_angle": 6.5,  # wrap angle slope along sleeve (default: 6.5 degrees)
+    "sleeve_sponsor_angle": 0.0,  # wrap angle slope along sleeve (default: 0.0 degrees / upright)
     "sleeve_sponsor_white": False,# True = flatten sleeve logo to white
 }
 
@@ -1046,8 +1046,8 @@ def _render_sleeve_sponsor(atlas, d, masks):
             return
 
     # Sample canvas background under sleeve sponsor region to guarantee WCAG high contrast
-    # Left sleeve anchor center: (1750, 385)
-    sample_arr = np.array(atlas)[340:430, 1690:1810, :3]
+    # Left sleeve anchor center: (1515, 405)
+    sample_arr = np.array(atlas)[350:460, 1450:1580, :3]
     sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
     bg_lum = float(np.mean(sample_lums))
 

@@ -98,10 +98,10 @@ def test_sleeve_sponsor_uv_containment():
     sleeve_mask = masks["sleeve"]
 
     cx, cy, area = kit_regions.SLEEVE_SPONSOR_LEFT
-    assert cx == 1750
-    assert cy == 385
+    assert cx == 1515
+    assert cy == 405
     assert area == 12000
-    assert kit_regions.SLEEVE_WRAP_ANGLE == 6.5
+    assert kit_regions.SLEEVE_WRAP_ANGLE == 0.0
 
     # Check containment of standard sleeve sponsor stamp item
     stamp_item = {"cx": cx, "cy": cy, "w": 160, "h": 70}
@@ -130,9 +130,9 @@ def test_sleeve_sponsor_rendering_contrast_and_rotation(tmp_path):
 
     im_dark = Image.open(out_dark)
     arr_dark = np.array(im_dark)
-    # Check pixels in sleeve sponsor zone (1720..1780, 360..410)
+    # Check pixels in sleeve sponsor zone (1485..1545, 380..430)
     # On dark fabric (20, 24, 32), white logo text should have luminance > 200
-    sub_dark = arr_dark[360:410, 1720:1780]
+    sub_dark = arr_dark[380:430, 1485:1545]
     high_lum = np.sum(sub_dark[:, :, :3] > 200)
     assert high_lum > 100, "White sleeve sponsor variant was not applied on dark kit"
 
@@ -150,6 +150,6 @@ def test_sleeve_sponsor_rendering_contrast_and_rotation(tmp_path):
     im_light = Image.open(out_light)
     arr_light = np.array(im_light)
     # HP logo blue is around (0, 150, 214)
-    sub_light = arr_light[360:410, 1720:1780]
+    sub_light = arr_light[380:430, 1485:1545]
     hp_blue_pixels = np.sum((sub_light[:, :, 0] < 50) & (sub_light[:, :, 1] > 100) & (sub_light[:, :, 2] > 180))
     assert hp_blue_pixels > 50, "Full-color sleeve sponsor variant was not applied on light kit"

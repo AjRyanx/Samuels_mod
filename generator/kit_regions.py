@@ -64,9 +64,11 @@ JOCKTAG_ANCHOR = (1270, 1835, 1400)
 # Left sleeve sponsor anchor:
 # In PES 2021 UV atlas (2048x2048), Component 2 of uv_masks/sleeves.png (x: 1350..2047, y: 105..679)
 # represents the player's Left Sleeve (where commercial sleeve sponsors reside in real leagues).
-# Center at (1750, 385) with target area 12000 px^2, oriented with +6.5 degree wrap angle.
-SLEEVE_SPONSOR_LEFT = (1750, 385, 12000)
-SLEEVE_WRAP_ANGLE = 6.5
+# Calibrated directly against authentic Premier League / La Liga kits (Real Madrid HP, Man City OKX,
+# Aston Villa Trade Nation, Arsenal Visit Rwanda):
+# The lateral/front visible face on the 3D player arm centers at (1515, 405) with target area 12000 px^2.
+SLEEVE_SPONSOR_LEFT = (1515, 405, 12000)
+SLEEVE_WRAP_ANGLE = 0.0
 
 # --- front / back panel boxes (for reference / debug) ---------------------- #
 FRONT_BOX = (660, 952, 1390, 1888)
@@ -406,13 +408,13 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
                 y1 = y0 + cur_h
                 if check_stamp_containment(sl, x0, y0, x1, y1, alpha=alpha, margin=margin):
                     break
-                if cur_cx < 1650:
+                if cur_cx < 1460:
                     cur_cx += 4
-                elif cur_cx > 1850:
+                elif cur_cx > 1580:
                     cur_cx -= 4
-                if cur_cy < 300:
+                if cur_cy < 330:
                     cur_cy += 4
-                elif cur_cy > 460:
+                elif cur_cy > 480:
                     cur_cy -= 4
                 cur_w = max(16, int(cur_w * 0.95))
                 cur_h = max(16, int(cur_h * 0.95))
