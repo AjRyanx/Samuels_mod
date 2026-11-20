@@ -11,6 +11,7 @@ root = Path(__file__).resolve().parent.parent
 tmp = Path(tempfile.mkdtemp()); shutil.copytree(root / "content", tmp / "content")
 lua = LuaRuntime(unpack_returned_tuples=True)
 lua.execute('log=function(s) LOGS=(LOGS or "")..s.."\\n" end; ffi=nil')
+lua.execute('local _orig_open=io.open; io.open=function(p, m) return _orig_open(p:gsub("\\\\", "/"), m) end')
 M = lua.eval('function(src) return load(src)() end')((root / "modules/KitGenerator.lua").read_text())
 
 setup = lua.eval('''function(M, dir)
