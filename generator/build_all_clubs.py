@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -355,8 +356,14 @@ def generate_club_kits(
     skip_existing: bool = False,
     sponsor: Optional[str] = None,
     outdir: Optional[Path] = None,
+    staging_dir: Optional[Path] = None,
+    install: bool = True,
 ) -> Dict[str, Any]:
-    """Generate all or missing kit slots for a single club (e.g. JIT scheduled opponent)."""
+    """Generate all or missing kit slots for a single club (e.g. JIT scheduled opponent).
+
+    `install=False` keeps the files in the staging folder only, which lets the
+    season refresh copy them into active as one fast batch.
+    """
     import build_kit
     sider_dir = Path(sider_dir or DEFAULT_GAME_ROOT / "SiderAddons")
     active_dir = Path(outdir or sider_dir / "content" / "KitGenerator" / "active")
@@ -377,8 +384,8 @@ def generate_club_kits(
         })
         sponsor = pick_ai_sponsor(club, season, brands) if brands else None
 
-    staging_dir = sider_dir / "content" / "KitGenerator" / "staging"
-    out_staging = staging_dir / f"season_{season}"
+    staging_root = sider_dir / "content" / "KitGenerator" / "staging"
+    out_staging = Path(staging_dir) if staging_dir else staging_root / f"season_{season}"
     out_staging.mkdir(parents=True, exist_ok=True)
 
     selected_slots = parse_slots(slots)
@@ -405,7 +412,7 @@ def generate_club_kits(
         season,
         out_staging,
         base_ftex=base_ftex,
-        install=True,
+        install=install,
         game_root=sider_dir.parent,
         quiet=True,
         sponsor=sponsor,
@@ -414,6 +421,110 @@ def generate_club_kits(
         slots=selected_slots,
     )
     return {"id": club_id, "sponsor": sponsor, "count": len(results), "skipped": False}
+
+
+def _ftex_club_id(name: str) -> Optional[int]:
+    """Extract the club id from u0105p1.ftex / u0105p1_back.ftex."""
+    digits = ""
+    for ch in name[1:]:
+        if not ch.isdigit():
+            break
+        digits += ch
+    return int(digits) if digits else None
+
+
+def _copy_staged_kits(staging: Path, active: Path, protected_ids: Set[int]) -> int:
+    copied = 0
+    for src in staging.glob("u*.ftex"):
+        cid = _ftex_club_id(src.name)
+        if cid in protected_ids:
+            continue                       # never clobber the human club's signed kit
+        dst = active / src.name
+        if dst.resolve() != src.resolve():
+            shutil.copy2(src, dst)
+            copied += 1
+    return copied
+
+
+def _prune_secondary_kits(active: Path, protected_ids: Set[int]) -> int:
+    """Drop last season's matchday-only slots so Lua's JIT check fires again."""
+    pruned = 0
+    for pattern in ("u*p2*.ftex", "u*p3*.ftex", "u*g2*.ftex"):
+        for f in list(active.glob(pattern)):
+            cid = _ftex_club_id(f.name)
+            if cid in protected_ids:
+                continue
+            try:
+                f.unlink()
+                pruned += 1
+            except OSError:
+                pass                       # file may be in use by the game; JIT will retry
+    return pruned
+
+
+def refresh_season_kits(
+    season: int,
+    sider_dir: Path,
+    slots: str = "1,g1",
+    team_ids: Optional[List[int]] = None,
+    scope: str = "baseline",
+    prune_secondary: bool = False,
+    low_priority: bool = True,
+) -> Dict[str, Any]:
+    """Force a fresh season render into staging, then copy it into active.
+
+    Unlike generate_all_kit's `skip_existing`, this ALWAYS rebuilds: a new
+    season must change designs and AI sponsors even though the old files still
+    exist.  The human club is protected because its branded kit is produced by
+    the separate career `rebuild` request.
+    """
+    sider_dir = Path(sider_dir)
+    content = sider_dir / "content" / "KitGenerator"
+    active = content / "active"
+    staging_root = content / "staging"
+    staging = staging_root / f"season_{season}" / f"refresh_{scope}"
+
+    if staging.exists():
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True, exist_ok=True)
+
+    user_cid, _, _ = load_user_club_info(sider_dir)
+    protected = {user_cid} if user_cid else set()
+
+    result: Dict[str, Any] = {"season": season, "scope": scope,
+                              "generated": 0, "copied": 0, "pruned": 0, "clubs": 0}
+    if team_ids is None:
+        result.update(generate_all_kits(
+            season=season,
+            sider_dir=sider_dir,
+            slots=slots,
+            skip_existing=False,
+            outdir=staging,
+            low_priority=low_priority,
+        ))
+        result["clubs"] = len(list(staging.glob("u*p1.ftex")))
+    else:
+        ids = [int(t) for t in team_ids if int(t) not in protected]
+        for cid in ids:
+            try:
+                generate_club_kits(
+                    club_id=cid,
+                    season=season,
+                    sider_dir=sider_dir,
+                    slots=slots,
+                    skip_existing=False,
+                    outdir=staging,
+                    install=False,
+                    staging_dir=staging,
+                )
+            except Exception as exc:                   # keep the rest of the league alive
+                print(f"  [refresh warning] club #{cid}: {exc}")
+        result["clubs"] = len(ids)
+
+    result["copied"] = _copy_staged_kits(staging, active, protected)
+    if prune_secondary:
+        result["pruned"] = _prune_secondary_kits(active, protected)
+    return result
 
 
 def main():

@@ -299,6 +299,18 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     league_requests = []
     rollover_requests = []
     active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
+
+    # A completed rollover is the season high-water mark.  Previous-season JIT
+    # and rebuild requests must stay retired even when a refresh prunes their
+    # on-disk "already built" marker (p2/p3/g2) - otherwise they regenerate
+    # last season's kits over the new season's baseline.
+    current_season = 0
+    for line in lines:
+        prior = _parse_request(line)
+        if (prior and prior["club_id"] == 0 and prior["offer"] in seen
+                and prior["season"] > current_season):
+            current_season = prior["season"]
+
     for line in lines:
         req = _parse_request(line)
         if not req:
@@ -306,6 +318,12 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         is_jit = req["offer"].startswith("jit-") or req.get("tier") == "jit"
         is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
         is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
+
+        if current_season and req["season"] < current_season and not is_rollover:
+            _mark_done(state_file, req["offer"])   # retire stale-season work permanently
+            seen.add(req["offer"])
+            continue
+
         # A "force" clean comes from deal expiry/termination.  The branded file
         # still exists on disk, so the normal "already installed" shortcut must
         # not skip it -- otherwise the expired sponsor's logo would stay on.
@@ -378,46 +396,49 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                 import kit_dna
                 import build_all_clubs
                 league_cids = kit_dna.get_league_teams(req["club_id"], sider_dir=sider)
-                _log("league background generation: refreshing kits for %d clubs in league of club #%d (season %d)"
+                _log("league background generation: FORCED refresh for %d clubs in league of club #%d (season %d)"
                      % (len(league_cids), req["club_id"], req["season"]), logfile)
-                build_all_clubs.generate_all_kits(
+                stats = build_all_clubs.refresh_season_kits(
                     season=req["season"],
                     sider_dir=Path(sider),
                     slots="1,2,3,g1,g2",
-                    skip_existing=True,
                     team_ids=league_cids,
+                    scope=f"league_{req['club_id']}",
                     low_priority=True,
                 )
+                _log("  league refresh: %d clubs, %d kit files copied into active"
+                     % (stats["clubs"], stats["copied"]), logfile)
             elif is_rollover:
                 mode = (req.get("tier") or "balanced").lower()
                 import build_all_clubs
                 if mode == "power":
-                    _log("season rollover: refreshing all clubs with full 5 slots (mode=power)", logfile)
-                    build_all_clubs.generate_all_kits(season=req["season"], sider_dir=Path(sider), slots="1,2,3,g1,g2")
+                    _log("season rollover: FORCED full 5-slot refresh for all clubs (mode=power)", logfile)
+                    stats = build_all_clubs.refresh_season_kits(
+                        season=req["season"], sider_dir=Path(sider),
+                        slots="1,2,3,g1,g2", scope="power", prune_secondary=False)
+                    _log("  power rollover: %d clubs, %d kit files copied into active"
+                         % (stats["clubs"], stats["copied"]), logfile)
                 else:
-                    _log("season rollover [priority 2]: refreshing scoutable baseline (mode=balanced, slots=1,g1)", logfile)
-                    build_all_clubs.generate_all_kits(
-                        season=req["season"],
-                        sider_dir=Path(sider),
-                        slots="1,g1",
-                        skip_existing=True,
-                        low_priority=True,
-                    )
+                    _log("season rollover [priority 2]: FORCED scoutable baseline refresh (mode=balanced, slots=1,g1)", logfile)
+                    stats = build_all_clubs.refresh_season_kits(
+                        season=req["season"], sider_dir=Path(sider),
+                        slots="1,g1", scope="baseline", prune_secondary=True,
+                        low_priority=True)
+                    _log("  baseline refresh: %d clubs, %d kit files copied, %d stale secondary files pruned"
+                         % (stats["clubs"], stats["copied"], stats["pruned"]), logfile)
                     # Next in priority tree: user's league background generation
                     user_cid, _, _ = build_all_clubs.load_user_club_info(Path(sider))
                     if user_cid:
                         import kit_dna
                         league_cids = kit_dna.get_league_teams(user_cid, sider_dir=sider)
-                        _log("season rollover [priority 3]: generating full kits for user's league (%d clubs)"
+                        _log("season rollover [priority 3]: FORCED full kits for user's league (%d clubs)"
                              % len(league_cids), logfile)
-                        build_all_clubs.generate_all_kits(
-                            season=req["season"],
-                            sider_dir=Path(sider),
-                            slots="1,2,3,g1,g2",
-                            skip_existing=True,
-                            team_ids=league_cids,
-                            low_priority=True,
-                        )
+                        stats = build_all_clubs.refresh_season_kits(
+                            season=req["season"], sider_dir=Path(sider),
+                            slots="1,2,3,g1,g2", team_ids=league_cids,
+                            scope=f"league_{user_cid}", low_priority=True)
+                        _log("  league refresh: %d clubs, %d kit files copied into active"
+                             % (stats["clubs"], stats["copied"]), logfile)
             else:
                 rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
         except Exception as exc:                      # noqa: BLE001 - keep watching
