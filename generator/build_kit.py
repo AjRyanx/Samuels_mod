@@ -222,7 +222,7 @@ def main(argv=None):
     p.add_argument("--game-root", default=str(DEFAULT_GAME_ROOT),
                    help="game install root (for --install)")
     p.add_argument("--sponsor", default=None,
-                   help="signed sponsor brand (logo file stem, e.g. dovrin); "
+                   help="signed sponsor brand (logo file stem, e.g. spotify, fly_emirates); "
                         "regenerates the kits with that sponsor and a fresh design")
     p.add_argument("--logos", default=None,
                    help="folder holding the sponsor logo PNGs (default: this mod's "

@@ -74,7 +74,7 @@ def test_gk_render_and_build():
             chelsea, 2027, tmp,
             slots=("g1", "g2"),
             quiet=True,
-            sponsor="aneno"
+            sponsor="three"
         )
         assert len(results) == 2, f"Expected 2 GK kits, got {len(results)}"
 

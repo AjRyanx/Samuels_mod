@@ -44,7 +44,7 @@ def clubs_data():
 
 def test_10000_kits_variety_and_integrity(clubs_data):
     logo_dir = GENERATOR_DIR / "logos"
-    sponsors = ["adenta", "zaltera", "aneno", "solis", "velox", "elysium", "aerion", None]
+    sponsors = ["fly_emirates", "spotify", "three", "barclays", "etihad", "stake", "apple_logo", None]
 
     # Pre-sample sponsor logo RGB colors for contrast check
     sponsor_colors = {}
@@ -127,30 +127,30 @@ def test_heritage_invariants(clubs_data):
     for season in range(2026, 2031):
         # 1. Arsenal (CID 101) Home kit: white sleeves
         if 101 in club_by_id:
-            d = kit_render.design_from_club(club_by_id[101], season, logo_dir, slot=1, sponsor="adenta")
+            d = kit_render.design_from_club(club_by_id[101], season, logo_dir, slot=1, sponsor="fly_emirates")
             assert d["sleeve"] == (250, 250, 252), f"Arsenal home season {season} must have white sleeves, got {d['sleeve']}"
 
         # 2. Boca Juniors (CID 139) Home kit: chestband heritage
         if 139 in club_by_id:
-            d = kit_render.design_from_club(club_by_id[139], season, logo_dir, slot=1, sponsor="adenta")
+            d = kit_render.design_from_club(club_by_id[139], season, logo_dir, slot=1, sponsor="fly_emirates")
             assert d["body"] == (15, 45, 120), f"Boca home season {season} body color error: {d['body']}"
 
         # 3. River Plate (CID 138) Home kit: white body & sash heritage
         if 138 in club_by_id:
-            d = kit_render.design_from_club(club_by_id[138], season, logo_dir, slot=1, sponsor="adenta")
+            d = kit_render.design_from_club(club_by_id[138], season, logo_dir, slot=1, sponsor="fly_emirates")
             assert d["body"] == (250, 250, 252), f"River home season {season} body color error: {d['body']}"
 
         # 4. AC Milan (CID 121) Home kit: Rossoneri stripes
         if 121 in club_by_id:
-            d = kit_render.design_from_club(club_by_id[121], season, logo_dir, slot=1, sponsor="adenta")
+            d = kit_render.design_from_club(club_by_id[121], season, logo_dir, slot=1, sponsor="fly_emirates")
             assert d["body"] == (195, 20, 30) and d["second"] == (18, 18, 20), f"Milan home season {season} colors error"
 
         # 5. Inter Milan (CID 119) Home kit: Nerazzurri blue & black
         if 119 in club_by_id:
-            d = kit_render.design_from_club(club_by_id[119], season, logo_dir, slot=1, sponsor="adenta")
+            d = kit_render.design_from_club(club_by_id[119], season, logo_dir, slot=1, sponsor="fly_emirates")
             assert d["body"] == (10, 50, 145) and d["second"] == (16, 18, 22), f"Inter home season {season} colors error"
 
         # 6. Ajax (CID 116) Home kit: white body with red central band
         if 116 in club_by_id:
-            d = kit_render.design_from_club(club_by_id[116], season, logo_dir, slot=1, sponsor="adenta")
+            d = kit_render.design_from_club(club_by_id[116], season, logo_dir, slot=1, sponsor="fly_emirates")
             assert d["body"] == (250, 250, 252) and d["second"] == (210, 20, 35), f"Ajax home season {season} colors error"

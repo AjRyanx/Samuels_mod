@@ -349,9 +349,10 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     108: {
         1: {  # Home: Iconic Blaugrana vertical stripes with Catalan micro-weave
             "body": (155, 15, 45), "second": (0, 75, 140), "third": (245, 195, 0),
-            "patterns": ["081", "082", "088", "093", "083", "097", "118"],
+            "patterns": ["stripes", "081", "088", "093", "083", "097", "118"],
             "sleeve": (0, 75, 140), "shorts": (0, 75, 140),
             "socks": (155, 15, 45), "collar": (245, 195, 0),
+            "collar_style": "crew",
             "cuff": (245, 195, 0),
             "gradient": 0, "supplier": "nike",
         },
@@ -360,13 +361,15 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["005", "022", "087", "095"],
             "sleeve": (245, 200, 30), "shorts": (0, 75, 140),
             "socks": (245, 200, 30), "collar": (155, 15, 45),
+            "collar_style": "polo",
             "gradient": 0, "supplier": "nike",
         },
         3: {  # Third: High-fashion Mediterranean mint / aqua streetwear
             "body": (130, 225, 205), "second": (0, 75, 140), "third": (155, 15, 45),
-            "patterns": ["041-E", "067-E", "043", "046-B", "171-E"],
+            "patterns": ["041-E", "067-E", "220-E", "046-B", "171-E"],
             "sleeve": (130, 225, 205), "shorts": (0, 75, 140),
             "socks": (130, 225, 205), "collar": (0, 75, 140),
+            "collar_style": "v_neck",
             "gradient": 0, "supplier": "nike",
         },
     },
@@ -375,17 +378,19 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     172: {
         1: {  # Home: Iconic red & white vertical stripes with royal blue shorts
             "body": (205, 25, 35), "second": (250, 250, 250), "third": (15, 40, 100),
-            "patterns": ["081", "082", "088", "093", "097", "118"],
+            "patterns": ["stripes", "081", "088", "093", "097", "118"],
             "sleeve": (205, 25, 35), "shorts": (15, 40, 100),
             "socks": (205, 25, 35), "collar": (15, 40, 100),
+            "collar_style": "v_neck",
             "cuff": (15, 40, 100),
             "gradient": 0, "supplier": "nike",
         },
         2: {  # Away: Deep navy with neon turquoise / infrared trim
             "body": (15, 25, 55), "second": (0, 225, 210), "third": (205, 25, 35),
-            "patterns": ["185-E", "171-E", "020", "041-E", "082"],
+            "patterns": ["185-E", "171-E", "020", "041-E", "214"],
             "sleeve": (15, 25, 55), "shorts": (15, 25, 55),
             "socks": (0, 225, 210), "collar": (0, 225, 210),
+            "collar_style": "crew",
             "gradient": 1, "supplier": "nike",
         },
         3: {  # Third: Vibrant volt & camouflage streetwear

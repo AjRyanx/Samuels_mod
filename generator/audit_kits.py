@@ -570,7 +570,7 @@ def main():
     parser.add_argument("--season", type=int, default=2027, help="Simulation season (default: 2027)")
     parser.add_argument("--seasons", help="Comma-separated or range of seasons to audit (e.g. 2026-2035 or 2027,2028)")
     parser.add_argument("--rotate-sponsors", action="store_true", help="Rotate realistic sponsors across seasons")
-    parser.add_argument("--sponsor", default="adenta", help="Sample sponsor name to attach (default: adenta)")
+    parser.add_argument("--sponsor", default="fly_emirates", help="Sample sponsor name to attach (default: fly_emirates)")
     parser.add_argument("--outdir", default=str(REPO_ROOT / "tests" / "visual_audit"),
                         help="Output directory for audit images & HTML report")
     parser.add_argument("--limit", type=int, default=0, help="Limit number of clubs to audit")
@@ -592,8 +592,8 @@ def main():
         seasons = [args.season]
 
     SPONSOR_ROSTER = [
-        "aneno", "zaltera", "oribel", "adenta", "solenta",
-        "elyenta", "cadola", "balix", "cresovo", "dorex"
+        "spotify", "fly_emirates", "etihad", "three", "barclays",
+        "stake", "betway", "apple_logo", "audi_rings", "redbull_emblem"
     ]
 
     # 1. Load clubs

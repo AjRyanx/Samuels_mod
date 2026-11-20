@@ -71,6 +71,8 @@ DEFAULT_DESIGN = {
     "socks_accent": None,         # contrast hoop/band colour on socks
     "socks_tip": None,            # contrast tipping on socks turnover
     "collar": None,               # None = same as body
+    "collar_style": "crew",       # "crew", "v_neck", "polo", "dual_tipped"
+    "collar_model": 1,            # 3D Kitserver collar model: 1=crew, 2=dual_tipped, 3=v_neck, 13=polo
     "collar_tip": None,           # contrast tipping on collar ribbing
     "sponsor": None,              # path to a PNG logo (chest)
     "badge": None,                # path to a PNG logo (club badge)
@@ -520,6 +522,97 @@ def _apply_engineered_socks(atlas, d, masks):
         _composite_layer(atlas, fade_so, masks["socks"])
 
 
+def _apply_engineered_collar(atlas, d, masks):
+    """Render authentic collar styling: crew, v_neck, polo (with placket), or dual_tipped."""
+    style = d.get("collar_style", "crew")
+    collar_mask = masks["collar"]
+    body_front = masks["body_front"]
+
+    collar = tuple(d.get("collar") or d["body"])
+    tip1 = tuple(d.get("collar_tip") or d.get("second") or collar)
+    tip2 = tuple(d.get("third") or d.get("second") or tip1)
+
+    c_rgba = collar + (255,)
+    t1_rgba = tip1 + (255,)
+    t2_rgba = tip2 + (255,)
+
+    if style == "dual_tipped":
+        # Two-tone engineered tipping band along outer ribbing edge (y: 1868..1884)
+        t1_mask = np.zeros_like(collar_mask)
+        t1_mask[1868:1874, :] = collar_mask[1868:1874, :]
+        if np.any(t1_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t1_mask))
+
+        t2_mask = np.zeros_like(collar_mask)
+        t2_mask[1878:1884, :] = collar_mask[1878:1884, :]
+        if np.any(t2_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t2_rgba), (0, 0), _mask_img(t2_mask))
+
+    elif style == "v_neck":
+        # Tipped outer ribbing edge
+        t_mask = np.zeros_like(collar_mask)
+        t_mask[1868:1880, :] = collar_mask[1868:1880, :]
+        if np.any(t_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        # Sharp triangular crossover wedge / insert at chest apex of body_front (centered at x=1024, y=1000..1058)
+        v_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_v = ImageDraw.Draw(v_layer)
+        draw_v.polygon([(994, 1000), (1054, 1000), (1024, 1058)], fill=c_rgba)
+        draw_v.line([(994, 1000), (1024, 1058)], fill=t1_rgba, width=3)
+        draw_v.line([(1054, 1000), (1024, 1058)], fill=t1_rgba, width=3)
+        _composite_layer(atlas, v_layer, body_front)
+
+    elif style == "polo":
+        # Shaded fold crease on collar island
+        crease_mask = np.zeros_like(collar_mask)
+        crease_mask[1945:1950, :] = collar_mask[1945:1950, :]
+        if np.any(crease_mask):
+            crease_col = (max(0, int(collar[0] * 0.75)),
+                          max(0, int(collar[1] * 0.75)),
+                          max(0, int(collar[2] * 0.75)), 220)
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), crease_col), (0, 0), _mask_img(crease_mask))
+
+        # Outer tipping on the folded wings edge
+        t_mask = np.zeros_like(collar_mask)
+        t_mask[1868:1878, :] = collar_mask[1868:1878, :]
+        if np.any(t_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        # Engineered button placket down chest center (X: 1008..1040, Y: 1000..1095)
+        placket_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_p = ImageDraw.Draw(placket_layer)
+        draw_p.rectangle([1008, 1000, 1040, 1095], fill=c_rgba)
+        draw_p.rectangle([1008, 1000, 1040, 1095], outline=t1_rgba, width=2)
+        draw_p.line([(1024, 1000), (1024, 1092)], fill=t1_rgba, width=1)
+        btn_col = (245, 245, 248, 255) if _col_lum(collar) < 160 else (25, 25, 30, 255)
+        thread_col = (40, 40, 45, 255) if _col_lum(collar) < 160 else (240, 240, 245, 255)
+        for by in (1030, 1070):
+            draw_p.ellipse([1020, by - 4, 1028, by + 4], fill=btn_col, outline=t1_rgba, width=1)
+            draw_p.line([(1022, by), (1026, by)], fill=thread_col, width=1)
+            draw_p.line([(1024, by - 2), (1024, by + 2)], fill=thread_col, width=1)
+
+        _composite_layer(atlas, placket_layer, body_front)
+
+    else:
+        # Classic Crew / Round Neck: outer ribbing tipping band + subtle elastic ribbing
+        if tip1 != collar:
+            t_mask = np.zeros_like(collar_mask)
+            t_mask[1868:1882, :] = collar_mask[1868:1882, :]
+            if np.any(t_mask):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        y_c, x_c = np.where(collar_mask)
+        ribs = (x_c % 6 < 2)
+        if np.any(ribs):
+            rib_col = (max(0, int(collar[0] * 0.88)),
+                       max(0, int(collar[1] * 0.88)),
+                       max(0, int(collar[2] * 0.88)), 160)
+            arr = np.array(atlas)
+            arr[y_c[ribs], x_c[ribs]] = rib_col
+            atlas.paste(Image.fromarray(arr, "RGBA"), (0, 0))
+
+
 # --------------------------------------------------------------------------- #
 #  main painter
 # --------------------------------------------------------------------------- #
@@ -596,16 +689,8 @@ def render_kit(design, out_png, masks=None):
                 atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col),
                             (0, 0), _mask_img(tip_mask))
 
-    # 4. Collar tipping / engineered two-tone ribbing
-    collar_tip = d.get("collar_tip")
-    if collar_tip and collar_tip != collar:
-        col_tip_col = tuple(collar_tip) + (255,)
-        collar_mask = masks["collar"]
-        col_tip_mask = np.zeros_like(collar_mask)
-        col_tip_mask[1868:1882, :] = collar_mask[1868:1882, :]
-        if np.any(col_tip_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), col_tip_col),
-                        (0, 0), _mask_img(col_tip_mask))
+    # 4. Tailored collar architecture (crew, v_neck, polo, dual_tipped)
+    _apply_engineered_collar(atlas, d, masks)
 
     # 5. Tailored shorts & socks
     _apply_engineered_shorts(atlas, d, masks)
@@ -614,6 +699,30 @@ def render_kit(design, out_png, masks=None):
     # logos with runtime UV validation & collision adjustment
     sp_item = None
     if d.get("sponsor"):
+        # Sample actual rendered canvas background under chest sponsor to guarantee high contrast
+        if not d.get("sponsor_plate"):
+            sample_arr = np.array(atlas)[1250:1370, 880:1168, :3]
+            sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
+            bg_lum = float(np.mean(sample_lums))
+            if bg_lum < 130:
+                d["sponsor_white"] = True
+                d.pop("sponsor_dark", None)
+                p_obj = Path(d["sponsor"])
+                if not p_obj.stem.endswith("_white"):
+                    cand_w = p_obj.parent / f"{p_obj.stem}_white.png"
+                    if cand_w.is_file():
+                        d["sponsor"] = str(cand_w)
+            else:
+                d["sponsor_white"] = False
+                p_obj = Path(d["sponsor"])
+                if p_obj.stem.endswith("_white"):
+                    orig_stem = p_obj.stem[:-6]
+                    cand_d = p_obj.parent / f"{orig_stem}.png"
+                    if cand_d.is_file():
+                        d["sponsor"] = str(cand_d)
+                    else:
+                        d["sponsor_dark"] = (15, 25, 45)
+
         sp_item = _prepare_stamp_item(d["sponsor"], *kit_regions.CHEST_SPONSOR,
                                       white=d.get("sponsor_white"),
                                       dark=d.get("sponsor_dark"),
@@ -1102,11 +1211,33 @@ def mockup(design, club_name, season, out_png):
         d.rectangle([108, 150, 118, 440], fill=v_rgba)
         d.rectangle([362, 150, 372, 440], fill=v_rgba)
     trim = tuple(design.get("collar") or body)
-    d.polygon([(200, 40), (240, 86), (280, 40), (268, 40), (240, 70), (212, 40)],
-              fill=trim + (255,))
+    c_style = design.get("collar_style", "crew")
     collar_tip = design.get("collar_tip")
-    if collar_tip and collar_tip != trim:
-        d.line([(200, 40), (240, 86), (280, 40)], fill=tuple(collar_tip) + (255,), width=2)
+    tip_col = tuple(collar_tip) + (255,) if (collar_tip and collar_tip != trim) else (tuple(trim) + (255,))
+
+    if c_style == "polo":
+        # Folded wings contour
+        d.polygon([(194, 40), (216, 68), (236, 52), (244, 52), (264, 68), (286, 40), (272, 38), (240, 44), (208, 38)],
+                  fill=trim + (255,), outline=tip_col)
+        # Button placket down chest
+        d.rectangle([236, 50, 244, 94], fill=trim + (255,), outline=tip_col, width=1)
+        btn_c = (245, 245, 248, 255) if _col_lum(trim) < 160 else (25, 25, 30, 255)
+        d.ellipse([238, 62, 242, 66], fill=btn_c)
+        d.ellipse([238, 80, 242, 84], fill=btn_c)
+    elif c_style == "v_neck":
+        d.polygon([(200, 40), (240, 86), (280, 40), (268, 40), (240, 70), (212, 40)],
+                  fill=trim + (255,))
+        if collar_tip and collar_tip != trim:
+            d.line([(200, 40), (240, 86), (280, 40)], fill=tuple(collar_tip) + (255,), width=2)
+    elif c_style == "dual_tipped":
+        d.arc([198, 26, 282, 78], 15, 165, fill=trim + (255,), width=8)
+        d.arc([198, 26, 282, 78], 15, 165, fill=tip_col, width=2)
+        tip2_c = tuple(design.get("third") or design.get("second") or trim) + (255,)
+        d.arc([204, 32, 276, 72], 15, 165, fill=tip2_c, width=2)
+    else:  # crew
+        d.arc([198, 26, 282, 78], 15, 165, fill=trim + (255,), width=8)
+        if collar_tip and collar_tip != trim:
+            d.arc([198, 26, 282, 78], 15, 165, fill=tuple(collar_tip) + (255,), width=2)
 
     if design.get("badge"):
         try:

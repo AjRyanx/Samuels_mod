@@ -2,7 +2,7 @@
 
 ## Project Overview
 This repository contains the **Dynamic Kit & Sponsor Mod** for **PES 2021 / SP Football Life 2027 (FL26/FL27)** running under **Sider 7.3.3+**.
-The mod allows Master League careers to sign real-world dynamic sponsors (ANENO, Zaltera, etc.), earn sponsorship budget income, and generate custom branded kit sets dynamically.
+The mod allows Master League careers to sign real-world dynamic sponsors (Spotify, Fly Emirates, etc.), earn sponsorship budget income, and generate custom branded kit sets dynamically.
 
 ---
 

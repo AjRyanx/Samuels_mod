@@ -793,21 +793,23 @@ def f_vstripes(p, d, img, count=9, width=0.5, mode="plain", color=None, fade=0.0
         if mode == "barcode":
             w = step * r.uniform(0.12, 0.95)
         if mode == "halftone":
-            for k in range(0, int(p.h), 6):
-                rad = w * 0.5 * (1 - 0.72 * k / p.h)
-                _dot(d, x + w * 0.5, k, rad, color, 255)
-            continue
-        if mode == "brush":
-            # Authentic artistic painted vertical brushstroke with soft feathered edges & calm sponsor zone
-            for k in range(0, int(p.h), 12):
+            # Elegant athletic vertical stripe with smooth gradient fade into the chest zone
+            for k in range(0, int(p.h), 4):
                 if 0.28 * p.h < k < 0.56 * p.h:
                     continue
-                # Main continuous vertical stroke band
-                _rect(d, [x + w * 0.15, k, x + w * 0.85, k + 12], color, 220)
-                # Soft vertical dry-brush bristle streaks along edges
-                for bristle in range(4):
-                    bx = x + w * (0.05 + bristle * 0.28) + r.uniform(-2, 2)
-                    _line(d, [(bx, k), (bx, k + 12)], color, w=1.5, a=r.randint(90, 180))
+                # Smooth alpha falloff toward chest sponsor area (clean vertical borders, no spiky cones)
+                dist_to_center = abs(k - 0.42 * p.h) / (0.42 * p.h)
+                alpha = int(220 * max(0.20, min(1.0, dist_to_center ** 1.4)))
+                _rect(d, [x + w * 0.2, k, x + w * 0.8, k + 4], color, alpha)
+            continue
+        if mode == "brush":
+            # Continuous artistic painted vertical stripe with soft feathered edges & calm sponsor zone
+            for y0, y1 in [(0, int(p.h * 0.28)), (int(p.h * 0.58), int(p.h))]:
+                # Main continuous vertical stroke band (never 12px stacked rectangles)
+                _rect(d, [x + w * 0.15, y0, x + w * 0.85, y1], color, 220)
+                # Delicate fine vertical brush bristle hairlines along outer edges
+                _line(d, [(x + w * 0.10, y0), (x + w * 0.10, y1)], color, w=1.5, a=140)
+                _line(d, [(x + w * 0.90, y0), (x + w * 0.90, y1)], color, w=1.5, a=140)
             continue
         if mode == "taper":
             # Elegant athletic vertical pinstripe with subtle variable width
