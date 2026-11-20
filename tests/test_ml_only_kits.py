@@ -83,25 +83,26 @@ def test_master_league_only_scope():
     assert fp == expected_fp, f"Expected {expected_fp}, got {fp}"
     print("PASS 6: get_filepath resolves absolute disk path correctly:", fp)
 
-    # 7. Sponsorless kit at new season (expired deal, opted-in): serves clean dynamic kit in ML, authentic in Exhibition
+    # 7. Season 1 without active sponsor: user club wears authentic default licensed kit!
     M.debug_clear_deal()
-    key_clean_ml = M.make_key(ml_ctx, "k108p1.ftex")
-    assert key_clean_ml == "content/KitGenerator/active/u0108p1.ftex", f"Expected clean dynamic kit in ML, got {key_clean_ml}"
+    key_clean_s1 = M.make_key(ml_ctx, "k108p1.ftex")
+    assert key_clean_s1 is None, f"Expected authentic kit in Season 1 for user club without deal, got {key_clean_s1}"
     key_clean_exh = M.make_key(exh_ctx, "k108p1.ftex")
-    assert key_clean_exh is None, f"Expected authentic kit in Exhibition even without deal, got {key_clean_exh}"
-    print("PASS 7: Sponsorless new-season dynamic kit active in ML, authentic kit preserved in Exhibition")
+    assert key_clean_exh is None, f"Expected authentic kit in Exhibition, got {key_clean_exh}"
+    print("PASS 7: Season 1 without active sponsor: user club wears authentic default kit in ML and Exhibition")
 
-    # 8. User club without sponsor (never signed a sponsor deal): serves dynamic sponsorless kit in ML, authentic in Exhibition!
-    M.debug_clear_opted_in()
-    key_unopted_ml = M.make_key(ml_ctx, "k108p1.ftex")
-    assert key_unopted_ml == "content/KitGenerator/active/u0108p1.ftex", f"Expected dynamic sponsorless kit in ML, got {key_unopted_ml}"
-    key_unopted_exh = M.make_key(exh_ctx, "k108p1.ftex")
-    assert key_unopted_exh is None, f"Expected authentic kit in Exhibition even without deal, got {key_unopted_exh}"
-    print("PASS 8: User club in ML receives dynamic sponsorless kit regardless of sponsor, authentic kit preserved in Exhibition")
+    # 8. Season 2 onwards: user club automatically changes kits and wears sponsorless dynamic kit until signing a deal!
+    M.debug_set_date(2027, 8, 1) # Aug 2027 -> Season 2028 (Season 2)
+    key_s2_ml = M.make_key(ml_ctx, "k108p1.ftex")
+    assert key_s2_ml == "content/KitGenerator/active/u0108p1.ftex", f"Expected dynamic sponsorless kit in Season 2 ML, got {key_s2_ml}"
+    key_s2_exh = M.make_key(exh_ctx, "k108p1.ftex")
+    assert key_s2_exh is None, f"Expected authentic kit in Exhibition even in Season 2, got {key_s2_exh}"
+    print("PASS 8: Season 2: User club receives dynamic sponsorless kit in ML, authentic kit strictly preserved in Exhibition")
 
     # 9. CPU Opponents: Original authentic kits in Season 1, dynamic kits kick in from Season 2 onwards
     (tmp / "content" / "KitGenerator" / "active" / "u0102p1.ftex").write_bytes(b"dummy_chelsea_ftex")
     # In Season 1 (2026/27, SEASON=2027): AI opponents wear authentic kits (yields nil)
+    M.debug_set_date(2026, 8, 1) # Back to Season 1
     key_cpu_s1 = M.make_key(ml_ctx, "k102p1.ftex")
     assert key_cpu_s1 is None, f"Expected authentic kit for AI team in Season 1, got {key_cpu_s1}"
     print("PASS 9A: CPU opponent in Season 1 (2026/27) wears original authentic kit")
@@ -212,13 +213,21 @@ def test_master_league_only_scope():
     assert st_b["deal"] == "yokohama", f"Expected Yokohama deal in Save B, got {st_b['deal']}"
     print("PASS 16B: Hot-switching to Chelsea Save B instantly serves Save B's isolated Yokohama kit")
 
-    # New Career C with Chelsea (no deal signed, no profile folder yet): falls back to active/ pool!
+    # New Career C with Chelsea (no deal signed, no profile folder yet):
+    # In Season 1: wears authentic default kit
     M.debug_set_career("ml_0102_saveC")
-    key_save_c = M.make_key(ml_ctx, "u0102p1.ftex")
-    assert key_save_c == "content/KitGenerator/active/u0102p1.ftex", f"Expected active kit in Save C, got {key_save_c}"
+    key_save_c_s1 = M.make_key(ml_ctx, "u0102p1.ftex")
+    assert key_save_c_s1 is None, f"Expected authentic kit in Save C Season 1, got {key_save_c_s1}"
     st_c = M.status()
     assert st_c["deal"] is None, f"Expected no deal in Save C, got {st_c['deal']}"
-    print("PASS 16C: New Chelsea Save C receives dynamic sponsorless kit from active/ pool")
+    print("PASS 16C-1: New Chelsea Save C in Season 1 wears authentic default kit without deal")
+
+    # In Season 2: falls back to active/ pool as sponsorless dynamic kit
+    M.debug_set_date(2027, 8, 1) # Season 2
+    key_save_c_s2 = M.make_key(ml_ctx, "u0102p1.ftex")
+    assert key_save_c_s2 == "content/KitGenerator/active/u0102p1.ftex", f"Expected active kit in Save C Season 2, got {key_save_c_s2}"
+    print("PASS 16C-2: Chelsea Save C in Season 2 receives dynamic sponsorless kit from active/ pool")
+    M.debug_set_date(2026, 8, 1) # Reset to Season 1
 
     # In Exhibition: Chelsea always wears authentic kit regardless of which save is active
     key_chelsea_exh = M.make_key(exh_ctx, "u0102p1.ftex")

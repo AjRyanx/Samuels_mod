@@ -1061,9 +1061,12 @@ local function ensure_season_deal(season)
 
   if not cid then return end          -- club not detected yet: nothing to build
 
+  local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
+
   -- Queue background kit generation for the user club's league
+  -- ONLY from Season 2 onwards! In Season 1, league clubs wear authentic default kits.
   local lkey = cid .. ':' .. season
-  if CFG.ENABLE_KITS and not REQ_LEAGUE[lkey] then
+  if CFG.ENABLE_KITS and season >= start_season and not REQ_LEAGUE[lkey] then
     REQ_LEAGUE[lkey] = true
     local req_id = string.format('league-%d-%d', cid, season)
     append_line('kit_request.txt', string.format('%s|%d|%d|all|league|%s|%s',
@@ -1072,7 +1075,13 @@ local function ensure_season_deal(season)
   end
 
   if not deal_active(season) then
-    -- No deal for this season: user team gets a sponsorless dynamic kit until a new deal is signed.
+    -- Season 1: user team wears authentic default kit until a sponsor deal is signed.
+    if season < start_season then
+      L('season 1 (no deal active): user club #' .. tostring(cid) .. ' wears authentic default kit')
+      return
+    end
+
+    -- Season 2+: user team gets a fresh sponsorless dynamic kit until a new deal is signed.
     local ckey = cid .. ':' .. season
     local kit_exists = has_user_kit(cid)
     if CFG.ENABLE_KITS and (not CLEAN[ckey] or not kit_exists) then
@@ -1533,8 +1542,13 @@ local function ensure_opponent_kits(opp_id)
   if not opp_id or opp_id <= 0 then return end
   local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
   local cid = club_id()
-  -- If AI club and in season 1, dynamic kits are not active for AI
-  if opp_id ~= cid and SEASON < start_season then return end
+  -- In Season 1:
+  -- - AI clubs wear authentic kits (no dynamic generation)
+  -- - User club wears authentic unless they signed a deal
+  if SEASON < start_season then
+    if opp_id ~= cid then return end
+    if not deal_active(SEASON) then return end
+  end
   if not CFG.ENABLE_KITS then return end
 
   -- Check if secondary kit (p2) exists in active directory
@@ -1633,18 +1647,27 @@ function m.make_key(ctx, filename)
     cid = detect_club(ctx)
   end
   local needs_authentic = false
-  if cid and cid > 0 and tid == cid then
-    -- User's managed club: receives dynamic kit in Master League regardless of
-    -- whether a sponsor deal is signed (sponsorless until signed).
-    needs_authentic = false
-    if not STATE.date_ok or not has_user_kit(cid) then
-      refresh_date(ctx)
+  local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
+  local is_season_1 = (SEASON < start_season)
+  local is_user = (cid and cid > 0 and tid == cid)
+
+  if is_season_1 then
+    if is_user and deal_active(SEASON) then
+      -- Season 1: User signed a sponsor deal -> wear dynamic kit with that sponsor
+      needs_authentic = false
+      if not STATE.date_ok or not has_user_kit(cid) then
+        refresh_date(ctx)
+      end
+    else
+      -- Season 1: All clubs (AI clubs and user club without an active deal) wear authentic default kits
+      needs_authentic = true
     end
   else
-    -- AI clubs: wear original authentic kits in Season 1; dynamic kits kick in from Season 2 onwards
-    local start_season = CFG.AI_DYNAMIC_START_SEASON or 2028
-    if SEASON < start_season then
-      needs_authentic = true
+    -- Season 2 onwards: All clubs (AI and user club) wear dynamic kits
+    -- User club gets sponsorless dynamic kit if no active deal, or branded kit if deal active
+    needs_authentic = false
+    if is_user and (not STATE.date_ok or not has_user_kit(cid)) then
+      refresh_date(ctx)
     end
   end
 

@@ -2173,5 +2173,5 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
     res = _get_club_style_impl(club, slot, season, sponsor)
     cid = int(club.get("id") or club.get("team_id", 0))
     if "sleeve_sponsor" not in res:
-        res["sleeve_sponsor"] = get_club_sleeve_sponsor(cid, season, sponsor)
+        res["sleeve_sponsor"] = get_club_sleeve_sponsor(cid, season, sponsor) if sponsor else None
     return res

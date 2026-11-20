@@ -45,11 +45,17 @@ The mod allows Master League careers to sign real-world dynamic sponsors (Spotif
    - Mod menu previews and 2D textures read from this folder.
    - Sider serves this active folder during Master League matches and Master League squad menus.
 
-5. **User Team Dynamic Kits (Master League):**
-   - The user's managed team in Master League receives a dynamic kit regardless of whether they have a sponsor or not.
-   - If no sponsor deal is signed (or an existing deal has expired), the club wears a **fresh sponsorless dynamic kit** until a new sponsor is signed.
-   - Once a sponsor deal is signed in the Sponsor Office, their dynamic kit is generated with that sponsor's logo and branding.
-   - In Exhibition (Friendlies), Database, Kick-off, and Edit Mode, teams MUST ALWAYS wear their **original, authentic licensed kits** (e.g. Spotify for Barcelona, Emirates for Arsenal). Dynamic kits must NEVER be active outside Master League.
+5. **Master League Season Lifecycle & Kit Scope:**
+   - **Season 1 (Career Start):**
+     - All clubs (both AI clubs and the user's managed club) wear their **authentic default licensed kits** (e.g. Spotify for Barcelona, Emirates for Arsenal, authentic default for Chelsea).
+     - If the user signs a sponsorship deal in the Sponsor Office during Season 1, their club immediately regenerates and switches to a dynamic kit with that signed sponsor and sleeve branding in-tact.
+   - **Season 2 onwards:**
+     - **All clubs automatically change their kits** for the new season.
+     - **AI Clubs:** Automatically wear dynamic kits with their assigned sponsors from the authentic brand library (maintaining multi-year contracts or realistically rotating as seasons progress).
+     - **User Club:** Automatically generates a fresh dynamic kit for the new season **without a sponsor (sponsorless)** until a sponsorship deal is signed in the mod menu. Once signed, the kit regenerates immediately with the signed sponsor and sleeve branding in-tact.
+     - **Deal Expiration:** When the user's sponsorship contract expires/retires, if they do not sign another deal by the following season, the kit generated for that next season will automatically be **sponsorless again**.
+   - **Outside Master League:**
+     - In Exhibition (Friendlies), Database, Kick-off, and Edit Mode, teams MUST ALWAYS wear their **original, authentic licensed kits**. Dynamic kits must NEVER be active outside Master League.
 
 ---
 
