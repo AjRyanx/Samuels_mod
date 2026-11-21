@@ -288,34 +288,87 @@ def _urgent_requests_pending(req_file, state_file, exclude=None):
 # --------------------------------------------------------------------------- #
 #  the actual rebuild
 # --------------------------------------------------------------------------- #
-def rebuild(club_id, season, brand, sider, game_root, logfile, career_id=None):
-    """Regenerate one club's kit set with `brand` and install it. Returns the
-    list of (slot, ftex, design) build_set produced."""
+def rebuild(club_id, season, brand, sider, game_root, logfile,
+            career_id=None, force_signature=False):
+    """Regenerate one club's kit set with `brand` and install it.
+
+    Returns the list of (slot, atlas, ftex, design) build_set produced.  An
+    identical repeat request is retired without rendering when the stored
+    signature and installed output bytes still match.
+    """
     import activate_season
     import build_kit
+    import kit_signature
 
     club = build_kit._load_club(club_id, sider)
     logos = Path(sider) / "content" / "KitGenerator" / "logos"
     badges = Path(sider) / "content" / "KitGenerator" / "badges"
-    staging_dir = Path(sider) / "content" / "KitGenerator" / "staging"
+    content_dir = Path(sider) / "content" / "KitGenerator"
+    sleeve_dir = content_dir / "sleeve_logos"
+    staging_dir = content_dir / "staging"
     outdir = staging_dir / f"season_{season}"
-
-    results = build_kit.build_set(
-        club, season, outdir,
-        install=True, game_root=game_root, quiet=True,
-        sponsor=brand, logo_dir=logos, badge_dir=badges,
-        previews=False,                    # runtime only needs the .ftex files
-    )
     active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
-    for slot, _atlas, ftex, design in results:
-        slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
-        _log("  built %s -> %s (pattern=%s sponsor=%s)"
-             % (slot_code, Path(ftex).name, design.get("pattern"), design.get("_brand")),
-             logfile)
+
+    base_ftex = build_kit.DEFAULT_BASE
+    if not base_ftex.is_file():
+        candidates = list(Path(sider).glob("content/kits/**/p1/*.ftex"))
+        if candidates:
+            base_ftex = candidates[0]
+
+    all_slots = (1, 2, 3, "g1", "g2")
+    signature_for = lambda slot: kit_signature.build_signature(
+        club_id=club_id,
+        season=season,
+        sponsor=brand,
+        slot=slot,
+        generator_dir=Path(__file__).resolve().parent,
+        base_ftex=base_ftex,
+        logo_dir=logos,
+        badge_dir=badges,
+        sleeve_dir=sleeve_dir,
+    )
+    signatures = {}
+    cached_slots = []
+    if not force_signature:
+        for slot in all_slots:
+            sig = signature_for(slot)
+            signatures[slot] = sig
+            key = kit_signature.key_for(active_dir, club_id, season, slot)
+            paths = kit_signature.target_files(active_dir, club_id, slot)
+            if kit_signature.matches(content_dir, key, sig, paths):
+                cached_slots.append(slot)
+
+    skipped = len(cached_slots) == len(all_slots)
+    if skipped:
+        _log("  kit set unchanged for club #%d (season %d, sponsor=%s); skipped %d slot render(s)"
+             % (club_id, season, brand or "none", len(all_slots)), logfile)
+        results = []
+        for slot in all_slots:
+            code = f"p{slot}" if isinstance(slot, int) else str(slot)
+            results.append((slot, "", str(active_dir / f"u{club_id:04d}{code}.ftex"), {}))
+    else:
+        results = build_kit.build_set(
+            club, season, outdir,
+            base_ftex=base_ftex,
+            install=True, game_root=game_root, quiet=True,
+            sponsor=brand, logo_dir=logos, badge_dir=badges,
+            previews=False,                # runtime only needs the .ftex files
+        )
+        for slot, _atlas, _ftex, _design in results:
+            sig = signatures.get(slot) or signature_for(slot)
+            key = kit_signature.key_for(active_dir, club_id, season, slot)
+            paths = kit_signature.target_files(active_dir, club_id, slot)
+            if all(path.is_file() for path in paths):
+                kit_signature.record(content_dir, key, sig, paths)
+        for slot, _atlas, ftex, design in results:
+            slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+            _log("  built %s -> %s (pattern=%s sponsor=%s)"
+                 % (slot_code, Path(ftex).name, design.get("pattern"), design.get("_brand")),
+                 logfile)
 
     # If tagged with a specific career profile, mirror to isolated career folder
     if career_id and career_id != "unknown":
-        career_dir = Path(sider) / "content" / "KitGenerator" / "careers" / career_id
+        career_dir = content_dir / "careers" / career_id
         career_dir.mkdir(parents=True, exist_ok=True)
         for slot, _atlas, _ftex, _design in results:
             slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
@@ -458,7 +511,9 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
             is_jit = req["offer"].startswith("jit-") or req.get("tier") == "jit"
             is_league = req["offer"].startswith("league-") or req.get("tier") == "league"
             is_rollover = req["club_id"] == 0 or (req["brand"] == "all" and not is_jit and not is_league) or req["offer"].startswith("season-")
-            if req["offer"].startswith("clean-") and (req.get("tier") or "").lower() == "force":
+            is_force_clean = (req["offer"].startswith("clean-")
+                              and (req.get("tier") or "").lower() == "force")
+            if is_force_clean:
                 _log("forced clean rebuild: replacing old branded kit files for club #%d"
                      % req["club_id"], logfile)
 
@@ -482,13 +537,16 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                     else:
                         _log("JIT opponent request: building missing slots %s for scheduled club #%d (season %d)"
                              % (missing_slots, req["club_id"], req["season"]), logfile)
-                        build_all_clubs.generate_club_kits(
+                        stats = build_all_clubs.generate_club_kits(
                             club_id=req["club_id"],
                             season=req["season"],
                             sider_dir=Path(sider),
                             slots=missing_slots,
                             skip_existing=True,
                         )
+                        if stats.get("skipped"):
+                            _log("JIT opponent request: club #%d signature-matched cached kit files; skipped render"
+                                 % req["club_id"], logfile)
             elif is_league:
                 continue                              # defensive: already retired above
             elif is_rollover:
@@ -506,6 +564,11 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                         continue
                     _log("  power rollover: %d clubs, %d kit files copied into active"
                          % (stats["clubs"], stats["copied"]), logfile)
+                    tm = stats.get("timings", {})
+                    _log("  power rollover timings: setup=%.1fs render=%.1fs copy=%.1fs prune=%.1fs total=%.1fs"
+                         % (tm.get("setup_s", 0.0), tm.get("render_s", 0.0),
+                            tm.get("copy_s", 0.0), tm.get("prune_s", 0.0),
+                            tm.get("total_s", 0.0)), logfile)
                 else:
                     _log("season rollover: FORCED scoutable baseline refresh (mode=balanced, slots=1,g1)", logfile)
                     stats = build_all_clubs.refresh_season_kits(
@@ -516,12 +579,22 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                     if stats.get("aborted"):
                         _log("  baseline refresh interrupted by a higher-priority request; retrying later", logfile)
                         continue
+                    if stats.get("resumed"):
+                        _log("  baseline refresh resumed from staging: %d cached club(s), %d invalid file(s) discarded"
+                             % (stats.get("skipped", 0), stats.get("invalid_removed", 0)), logfile)
                     _log("  baseline refresh: %d clubs, %d kit files copied, %d stale secondary files pruned"
                          % (stats["clubs"], stats["copied"], stats["pruned"]), logfile)
+                    tm = stats.get("timings", {})
+                    _log("  baseline timings: setup=%.1fs render=%.1fs copy=%.1fs prune=%.1fs total=%.1fs"
+                         % (tm.get("setup_s", 0.0), tm.get("render_s", 0.0),
+                            tm.get("copy_s", 0.0), tm.get("prune_s", 0.0),
+                            tm.get("total_s", 0.0)), logfile)
                     # No league pre-generation follows the baseline.  Secondary
                     # kits for AI clubs are built only when they are scheduled.
             else:
-                rebuild(req["club_id"], req["season"], req["brand"], sider, game_root, logfile, career_id=req.get("career_id"))
+                rebuild(req["club_id"], req["season"], req["brand"], sider, game_root,
+                        logfile, career_id=req.get("career_id"),
+                        force_signature=is_force_clean)
         except Exception as exc:                      # noqa: BLE001 - keep watching
             _log("  ERROR building %s: %s: %s"
                  % (req["offer"], type(exc).__name__, exc), logfile)

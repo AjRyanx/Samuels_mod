@@ -98,10 +98,10 @@ def test_sleeve_sponsor_uv_containment():
     sleeve_mask = masks["sleeve"]
 
     cx, cy, area = kit_regions.SLEEVE_SPONSOR_LEFT
-    assert cx == 1515
-    assert cy == 405
-    assert area == 12000
-    assert kit_regions.SLEEVE_WRAP_ANGLE == 0.0
+    assert cx == 1530
+    assert cy == 404
+    assert area == 18000
+    assert kit_regions.SLEEVE_WRAP_ANGLE == 90.0
 
     # Check containment of standard sleeve sponsor stamp item
     stamp_item = {"cx": cx, "cy": cy, "w": 160, "h": 70}

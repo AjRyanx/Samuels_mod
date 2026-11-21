@@ -38,7 +38,7 @@ import math
 import re
 import numpy as np
 
-from PIL import Image, ImageChops, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageFilter
 
 import kit_gen
 import kit_regions
@@ -144,6 +144,57 @@ def _wcag_contrast(c1, c2):
     return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
 
 
+def _resolve_badge_color(badge_path, base_color, design):
+    """Determine if a badge is a monochrome silhouette or has low contrast against base_color.
+    Returns (badge_color, is_white) where badge_color is an RGB tuple or None."""
+    if not badge_path or not Path(badge_path).is_file():
+        return None, False
+
+    explicit_col = design.get("badge_color")
+    if explicit_col:
+        # If explicit badge color has sufficient contrast with base_color (e.g. white on shirt), use it
+        if _wcag_contrast(base_color, tuple(explicit_col)) >= 3.0:
+            return tuple(explicit_col), False
+        # Otherwise (e.g. white badge on white shorts), adapt below
+
+    if design.get("badge_white"):
+        if _wcag_contrast(base_color, (250, 250, 252)) >= 3.0:
+            return None, True
+
+    try:
+        im = Image.open(badge_path).convert("RGBA")
+        arr = np.asarray(im)
+        vis = arr[arr[:, :, 3] > 80][:, :3]
+        if len(vis) == 0:
+            return None, False
+
+        unique_q = len(np.unique(vis // 24, axis=0))
+        std = float(np.std(vis, axis=0).mean())
+
+        # Adapt monochrome or low-diversity silhouette badges (e.g. Liverpool Liverbird, Forest Tree)
+        if unique_q <= 4 or std < 15.0 or explicit_col:
+            b_mean = tuple(int(x) for x in vis.mean(axis=0)) if not explicit_col else tuple(explicit_col)
+            ratio = _wcag_contrast(base_color, b_mean)
+            if ratio < 3.5:
+                # Need contrast resolution!
+                body_c = tuple(design.get("body", (20, 20, 24)))
+                second_c = tuple(design.get("second", (250, 250, 252)))
+                third_c = tuple(design.get("third")) if design.get("third") else None
+                # If primary shirt color has good contrast (e.g. red badge on white shorts), prioritize it!
+                if _wcag_contrast(base_color, body_c) >= 3.5:
+                    return body_c, False
+                cands = [second_c]
+                if third_c:
+                    cands.append(third_c)
+                cands.extend([(250, 250, 252), (20, 20, 24)])
+                best_c = max(cands, key=lambda c: _wcag_contrast(base_color, c))
+                return best_c, False
+    except Exception:
+        pass
+
+    return None, False
+
+
 # --------------------------------------------------------------------------- #
 #  shirt-local design tile
 # --------------------------------------------------------------------------- #
@@ -223,7 +274,7 @@ def build_tile(design):
 
 
 def _paint_shirt(atlas, tile, masks, d=None):
-    """Paste the shirt-local tile into front/back islands with selective pattern masking."""
+    """Paste the shirt-local tile into front/back islands with selective pattern masking and sponsor calm zone."""
     boxes = kit_regions.region_boxes(masks)
     mask_mode = (d.get("pattern_mask") if d else "full") or "full"
 
@@ -231,6 +282,28 @@ def _paint_shirt(atlas, tile, masks, d=None):
     fw, fh = fx1 - fx0 + 1, fy1 - fy0 + 1
     front = tile.resize((fw, fh), Image.LANCZOS)
     fmask_raw = masks["body_front"][fy0:fy1 + 1, fx0:fx1 + 1].copy()
+
+    # UEFA/FIFA Article 19 authentic calm chest zone for high-contrast patterns
+    # Attenuate bold pattern strokes under the chest sponsor footprint so typography never clashes
+    if d and d.get("sponsor") and d.get("pattern", "plain") != "plain" and d.get("macro_layout") != "chestband":
+        # Sponsor center in front-box local coordinates (atlas 1024, 1310):
+        scx = 1024 - fx0
+        scy = 1310 - fy0
+        calm_local = Image.new("L", (fw, fh), 0)
+        c_draw = ImageDraw.Draw(calm_local)
+        # Footprint: width 520, height 230 centered at (scx, scy)
+        c_x0 = max(0, scx - 260)
+        c_x1 = min(fw, scx + 260)
+        c_y0 = max(0, scy - 115)
+        c_y1 = min(fh, scy + 115)
+        # Fill calm area with attenuation strength ~215 (leaving ~15% subtle pattern hint)
+        c_draw.rounded_rectangle([c_x0, c_y0, c_x1, c_y1], radius=45, fill=215)
+        calm_local = calm_local.filter(ImageFilter.GaussianBlur(radius=32))
+        
+        # Solid body base tile
+        body_col = tuple(d["body"]) + (255,)
+        body_solid_local = Image.new("RGBA", (fw, fh), body_col)
+        front = Image.composite(body_solid_local, front, calm_local)
 
     if mask_mode == "chest_only":
         y_c0, y_c1 = int(fh * 0.28), int(fh * 0.56)
@@ -371,43 +444,70 @@ def _apply_brand_signatures(atlas, d, masks):
         acc = (245, 245, 245) if l_b < 128 else (20, 25, 35)
     acc_rgba = tuple(acc) + (255,)
 
+    # Shorts contrast calculation: must contrast against shorts base color, NOT sleeve!
+    shorts_base = d.get("shorts") or d["body"]
+    sh_acc = d.get("shorts_accent") or d.get("stripe_accent") or d.get("second") or d["body"]
+    dist_sh = math.sqrt(sum((a - b) ** 2 for a, b in zip(shorts_base[:3], sh_acc[:3])))
+    if dist_sh < 40:
+        l_sh = _col_lum(shorts_base)
+        if l_sh >= 128:
+            # White/light shorts: contrast with shirt body or rich dark tone
+            sh_acc = d["body"] if _col_lum(d["body"]) < 130 else (d.get("second") if _col_lum(d.get("second", (20, 25, 35))) < 130 else (20, 25, 35))
+        else:
+            sh_acc = (245, 245, 245)
+    sh_acc_rgba = tuple(sh_acc) + (255,)
+
     # 1. ADIDAS: Three iconic parallel stripes running down outer shoulders/sleeves and shorts
-    is_adidas = "adidas" in supp or d.get("sleeve_style") in ("shoulder_stripe", "adidas_stripes", "three_stripes")
+    is_adidas = "adidas" in supp or d.get("sleeve_style") in ("shoulder_stripe", "adidas_stripes", "three_stripes") or d.get("shorts_style") == "three_stripes"
     if is_adidas:
-        stripe_mask = np.zeros_like(sleeve_mask)
-        # Left sleeve outer shoulder 3-stripes (y: 215..570)
-        # Calibrated directly against authentic PES 2021 UV atlas layout
-        for x0, x1 in [(8, 15), (20, 27), (32, 39)]:
-            stripe_mask[215:570, x0:x1] = sleeve_mask[215:570, x0:x1]
+        stripe_mask = np.zeros((ATLAS, ATLAS), dtype=bool)
+        # Three iconic parallel stripes running across outer shoulders/sleeves (horizontal bands on PES 2021 UV atlas)
+        # Measured directly from authentic PES 2021 kits (Real Madrid rm_auth, Arsenal arsenal_auth):
+        # 3 parallel stripes at y: 366..384, 395..413, 424..442 across sleeve tops and chest raglans!
+        for y0, y1 in [(366, 384), (395, 413), (424, 442)]:
+            # Left sleeve island (player's left arm)
+            stripe_mask[y0:y1, 43:450] = True
+            # Front chest left shoulder raglan
+            stripe_mask[y0:y1, 632:690] = True
+            # Front chest right shoulder raglan
+            stripe_mask[y0:y1, 1358:1416] = True
+            # Right sleeve island (player's right arm)
+            stripe_mask[y0:y1, 1599:2006] = True
 
-        # Right sleeve outer shoulder 3-stripes (y: 215..570)
-        for x0, x1 in [(2008, 2015), (2020, 2027), (2032, 2039)]:
-            stripe_mask[215:570, x0:x1] = sleeve_mask[215:570, x0:x1]
-
-        # Raglan shoulder seam continuation onto back panel top edges
-        for x0, x1 in [(700, 707), (712, 719), (724, 731)]:
-            stripe_mask[60:130, x0:x1] = body_back[60:130, x0:x1]
-        for x0, x1 in [(1316, 1323), (1328, 1335), (1340, 1347)]:
-            stripe_mask[60:130, x0:x1] = body_back[60:130, x0:x1]
+        # Raglan shoulder seam continuation onto back panel top edges:
+        for y0, y1 in [(926, 944), (955, 973), (984, 1002)]:
+            stripe_mask[y0:y1, 695:970] = True
+            stripe_mask[y0:y1, 1078:1354] = True
 
         if np.any(stripe_mask):
             stripe_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
             stripe_layer.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(stripe_mask))
             _composite_layer(atlas, stripe_layer)
 
-        # Shorts 3-stripes down outer leg seams
+        # Shorts 3-stripes down outer leg seams (horizontal bands on PES 2021 UV atlas)
+        # Measured directly from authentic PES 2021 kits:
+        # y: 1508..1526, 1537..1555, 1566..1584 across left (68..595) and right (1452..1980) shorts islands!
         sh_stripe = np.zeros_like(shorts_mask)
-        sh_stripe[:, 32:38] = True
-        sh_stripe[:, 42:48] = True
-        sh_stripe[:, 52:58] = True
-        sh_stripe[:, 1980:1986] = True
-        sh_stripe[:, 1993:1999] = True
-        sh_stripe[:, 2006:2012] = True
+        for y0, y1 in [(1508, 1526), (1537, 1555), (1566, 1584)]:
+            sh_stripe[y0:y1, 68:595] = True
+            sh_stripe[y0:y1, 1452:1980] = True
         sh_stripe = sh_stripe & shorts_mask
         if np.any(sh_stripe):
             sh_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-            sh_layer.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(sh_stripe))
+            sh_layer.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_acc_rgba), (0, 0), _mask_img(sh_stripe))
             _composite_layer(atlas, sh_layer)
+
+        # Contrast shorts hem tape / cuff band (matching authentic modern elite Adidas cuts like Mbappé/Bellingham)
+        hem_m = np.zeros_like(shorts_mask)
+        hem_m[1942:1968, :] = True
+        hem_m = hem_m & shorts_mask
+        if np.any(hem_m):
+            hem_col = d.get("shorts_hem") or d.get("third") or d.get("second") or sh_acc
+            if math.sqrt(sum((a - b) ** 2 for a, b in zip(shorts_base[:3], hem_col[:3]))) < 40:
+                hem_col = sh_acc
+            hem_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+            hem_layer.paste(Image.new("RGBA", (ATLAS, ATLAS), tuple(hem_col) + (255,)), (0, 0), _mask_img(hem_m))
+            _composite_layer(atlas, hem_layer)
 
     # 2. HUMMEL: Iconic repeating V-Chevrons
     elif "hummel" in supp:
@@ -1180,8 +1280,10 @@ def render_kit(design, out_png, masks=None):
                                       max_w=340, max_h=140)
     bg_item = None
     if d.get("badge"):
+        b_col, b_white = _resolve_badge_color(d["badge"], d["body"], d)
         bg_item = _prepare_stamp_item(d["badge"], *kit_regions.CLUB_BADGE,
-                                      white=d.get("badge_white"),
+                                      white=b_white,
+                                      dark=b_col,
                                       max_w=85, max_h=85, defringe=False)
     sup_item = None
     if d.get("supplier"):
@@ -1215,7 +1317,8 @@ def render_kit(design, out_png, masks=None):
                            fill=tuple(item["plate"]) + (255,))
 
         if d.get("heat_press_relief", True):
-            _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, highlight_opacity=35)
+            sh_op = 145 if key == "sponsor" else 65
+            _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=sh_op, highlight_opacity=35)
         else:
             atlas.alpha_composite(img, (x, y))
 
@@ -1407,11 +1510,13 @@ def _render_shorts_branding(atlas, d, masks):
 
     # 1. Shorts Club Badge (Right leg)
     if d.get("shorts_badge", True) and d.get("badge"):
-        badge_white = d.get("badge_white", False)
+        shorts_c = d.get("shorts") or d["body"]
+        b_col, b_white = _resolve_badge_color(d["badge"], shorts_c, d)
         bg_item = _prepare_stamp_item(
             d["badge"], *kit_regions.SHORTS_BADGE,
-            white=badge_white,
-            max_w=68, max_h=68, defringe=False
+            white=b_white,
+            dark=b_col,
+            max_w=95, max_h=95, defringe=False
         )
         if bg_item:
             adj = kit_regions.validate_and_adjust_stamps(
@@ -1456,7 +1561,7 @@ def _render_shorts_branding(atlas, d, masks):
             d["supplier"], *kit_regions.SHORTS_SUPPLIER,
             white=sup_white if not sup_col or sup_col == (245, 245, 245) else False,
             dark=sup_col if not sup_white else None,
-            max_w=68, max_h=38, defringe=True
+            max_w=85, max_h=55, defringe=True
         )
         if sup_item:
             adj = kit_regions.validate_and_adjust_stamps(
@@ -1477,7 +1582,7 @@ def _render_shorts_branding(atlas, d, masks):
 
 
 def _render_sleeve_sponsor(atlas, d, masks):
-    """Anchor secondary sponsor logo on Left Sleeve UV island oriented along sleeve wrap angle."""
+    """Anchor secondary sponsor logo on player's visible sleeve bicep (Left arm = Right UV island, Right arm = Left UV island)."""
     sleeve_sp = d.get("sleeve_sponsor")
     if not sleeve_sp:
         return
@@ -1485,7 +1590,6 @@ def _render_sleeve_sponsor(atlas, d, masks):
     # Resolve logo file path
     p = Path(sleeve_sp)
     if not p.is_file():
-        # Check standard sleeve logos directories
         candidates = [
             Path(__file__).resolve().parent / "sleeve_logos" / f"{sleeve_sp}.png",
             Path(__file__).resolve().parent.parent / "content" / "KitGenerator" / "sleeve_logos" / f"{sleeve_sp}.png",
@@ -1501,65 +1605,76 @@ def _render_sleeve_sponsor(atlas, d, masks):
         if not found:
             return
 
-    # Sample canvas background under sleeve sponsor region to guarantee WCAG high contrast
-    # Left sleeve anchor center: (1515, 405)
-    sample_arr = np.array(atlas)[350:460, 1450:1580, :3]
-    sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
-    bg_lum = float(np.mean(sample_lums))
+    # In PES 2021 UV atlas:
+    # Player's LEFT arm (Right UV island):
+    #   - Short sleeve bicep (active in-game on short sleeve shirts): (cx = 1485, cy = 935), rotated 90 deg CCW
+    #   - Long sleeve forearm (active in-game on long sleeve shirts): (cx = 1507, cy = 403), rotated 90 deg CCW
+    # Player's RIGHT arm (Left UV island):
+    #   - Short sleeve bicep: (cx = 563, cy = 935), rotated 90 deg CW (-90)
+    #   - Long sleeve forearm: (cx = 541, cy = 403), rotated 90 deg CW (-90)
+    # Stamping on BOTH short sleeve and long sleeve islands guarantees the sponsor
+    # is visible whether the player wears short sleeves (summer/standard) or long sleeves (winter/rain).
+    side_mode = d.get("sleeve_sponsor_side", "both")
+    anchors = []
+    if side_mode in ("both", "left"):
+        anchors.append((1485, 935, 90.0))    # Player's Left arm SHORT sleeve
+        anchors.append((1507, 403, 90.0))    # Player's Left arm LONG sleeve
+    if side_mode in ("both", "right"):
+        anchors.append((563, 935, -90.0))    # Player's Right arm SHORT sleeve
+        anchors.append((541, 403, -90.0))    # Player's Right arm LONG sleeve
 
-    if bg_lum < 130 or d.get("sleeve_sponsor_white"):
-        # Dark sleeve fabric: pick white variant
-        if not p.stem.endswith("_white"):
-            cand_w = p.parent / f"{p.stem}_white.png"
-            if cand_w.is_file():
-                p = cand_w
-    else:
-        # Light sleeve fabric: pick color variant
-        if p.stem.endswith("_white"):
-            cand_c = p.parent / f"{p.stem[:-6]}.png"
-            if cand_c.is_file():
-                p = cand_c
+    for cx, cy, wrap_angle in anchors:
+        # Sample canvas background under sleeve sponsor region to guarantee WCAG high contrast
+        sample_arr = np.array(atlas)[max(0, cy - 60):min(ATLAS, cy + 60), max(0, cx - 60):min(ATLAS, cx + 60), :3]
+        if sample_arr.size > 0:
+            sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
+            bg_lum = float(np.mean(sample_lums))
+        else:
+            bg_lum = 128.0
 
-    # Prepare stamp item
-    cx, cy, area = kit_regions.SLEEVE_SPONSOR_LEFT
-    wrap_angle = float(d.get("sleeve_sponsor_angle", kit_regions.SLEEVE_WRAP_ANGLE))
-    item = _prepare_stamp_item(str(p), cx, cy, area, max_w=180, max_h=80, defringe=True)
-    if not item:
-        return
+        logo_path = p
+        if bg_lum < 130 or d.get("sleeve_sponsor_white"):
+            # Dark sleeve fabric: pick white variant
+            if not logo_path.stem.endswith("_white"):
+                cand_w = logo_path.parent / f"{logo_path.stem}_white.png"
+                if cand_w.is_file():
+                    logo_path = cand_w
+        else:
+            # Light sleeve fabric: pick color variant
+            if logo_path.stem.endswith("_white"):
+                cand_c = logo_path.parent / f"{logo_path.stem[:-6]}.png"
+                if cand_c.is_file():
+                    logo_path = cand_c
 
-    # Validate against masks['sleeve']
-    item["angle"] = wrap_angle
-    adj = kit_regions.validate_and_adjust_stamps(masks, sleeve_sponsor=item).get("sleeve_sponsor")
-    if not adj:
-        return
+        raw_img = Image.open(logo_path).convert("RGBA")
+        rw, rh = raw_img.size
+        aspect = rw / float(max(1, rh))
 
-    cur_w, cur_h = adj["w"], adj["h"]
-    cx, cy = adj["cx"], adj["cy"]
-    img = item["img"]
-    if (cur_w, cur_h) != img.size:
-        img = img.resize((cur_w, cur_h), Image.LANCZOS)
+        # Size logo in unrotated horizontal space before applying sleeve orientation:
+        # Square / round crests (e.g. HP, Angry Birds): 138x138
+        # Wide wordmarks (e.g. BingX, Visit Rwanda, OKX, Deel, Expedia): ~230x75
+        if 0.75 <= aspect <= 1.33:
+            target_w, target_h = 138, 138
+        elif aspect > 1.33:
+            target_w = 230
+            target_h = max(35, min(80, int(target_w / aspect)))
+        else:
+            target_h = 138
+            target_w = max(35, int(target_h * aspect))
 
-    # Rotate along sleeve wrap angle (positive degrees = clockwise for arm drape)
-    if abs(wrap_angle) > 0.01:
-        img_rot = img.rotate(-wrap_angle, resample=Image.BICUBIC, expand=True)
-    else:
-        img_rot = img
+        raw_scaled = raw_img.resize((target_w, target_h), Image.LANCZOS)
 
-    rw, rh = img_rot.size
-    rx = int(cx - rw / 2)
-    ry = int(cy - rh / 2)
+        # Rotate along sleeve wrap orientation:
+        rot_img = raw_scaled.rotate(wrap_angle, resample=Image.BICUBIC, expand=True)
+        fw, fh = rot_img.size
 
-    # Stamp layer composite with sleeve mask clipping
-    stamp_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-    stamp_layer.paste(img_rot, (rx, ry), img_rot)
+        rx = int(cx - fw / 2)
+        ry = int(cy - fh / 2)
 
-    sleeve_mask = masks.get("sleeve") if masks else None
-    if d.get("heat_press_relief", True):
-        _composite_with_relief(atlas, img_rot, rx, ry, relief_depth=1, shadow_opacity=55, highlight_opacity=30, mask=sleeve_mask)
-    elif sleeve_mask is not None:
-        _composite_layer(atlas, stamp_layer, sleeve_mask)
-    else:
-        atlas.alpha_composite(stamp_layer)
+        if d.get("heat_press_relief", True):
+            _composite_with_relief(atlas, rot_img, rx, ry, relief_depth=2, shadow_opacity=135, highlight_opacity=40, mask=None)
+        else:
+            atlas.alpha_composite(rot_img, (rx, ry))
 
 
 # --------------------------------------------------------------------------- #
@@ -1915,9 +2030,9 @@ def mockup(design, club_name, season, out_png):
     str_col = tuple(acc_cand) + (255,)
 
     if "adidas" in supp_m or design.get("sleeve_style") in ("shoulder_stripe", "adidas_stripes", "three_stripes"):
-        for offset in (-4, 0, 4):
-            d.line([(200 + offset, 46 - abs(offset) // 2), (120 + offset, 88 - abs(offset) // 2)], fill=str_col, width=2)
-            d.line([(280 - offset, 46 - abs(offset) // 2), (360 - offset, 88 - abs(offset) // 2)], fill=str_col, width=2)
+        for offset in (-5, 0, 5):
+            d.line([(200 + offset, 46 - abs(offset) // 2), (120 + offset, 88 - abs(offset) // 2)], fill=str_col, width=3)
+            d.line([(280 - offset, 46 - abs(offset) // 2), (360 - offset, 88 - abs(offset) // 2)], fill=str_col, width=3)
     elif "hummel" in supp_m:
         for cx, cy in [(180, 56), (155, 70), (130, 84)]:
             d.polygon([(cx - 4, cy - 4), (cx + 2, cy), (cx - 4, cy + 4)], fill=str_col)
@@ -1977,7 +2092,10 @@ def mockup(design, club_name, season, out_png):
     if design.get("badge"):
         try:
             b_logo = Image.open(design["badge"]).convert("RGBA")
-            if design.get("badge_white"):
+            b_col, b_white = _resolve_badge_color(design["badge"], design.get("body", (200, 200, 200)), design)
+            if b_col:
+                b_logo = _flatten_color(b_logo, b_col)
+            elif b_white:
                 b_logo = _flatten_white(b_logo)
             bs = min(44 / max(1, b_logo.width), 44 / max(1, b_logo.height))
             b_logo = b_logo.resize((max(1, int(b_logo.width * bs)), max(1, int(b_logo.height * bs))), Image.LANCZOS)

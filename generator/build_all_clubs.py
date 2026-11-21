@@ -29,6 +29,7 @@ import kit_dna
 import kit_gen
 import kit_regions
 import kit_render
+import kit_signature
 from kg_core import season_rng
 
 DEFAULT_GAME_ROOT = Path(r"C:\Games\SP Football Life 2027")
@@ -369,11 +370,14 @@ def generate_club_kits(
     outdir: Optional[Path] = None,
     staging_dir: Optional[Path] = None,
     install: bool = True,
+    force_signature: bool = False,
 ) -> Dict[str, Any]:
     """Generate all or missing kit slots for a single club (e.g. JIT scheduled opponent).
 
     `install=False` keeps the files in the staging folder only, which lets the
-    season refresh copy them into active as one fast batch.
+    season refresh copy them into active as one fast batch.  Identical repeat
+    requests are skipped when the stored content signature and output bytes
+    both still match.
     """
     import build_kit
     sider_dir = Path(sider_dir or DEFAULT_GAME_ROOT / "SiderAddons")
@@ -386,6 +390,8 @@ def generate_club_kits(
     badges = sider_dir / "content" / "KitGenerator" / "badges"
     if not badges.is_dir():
         badges = ROOT / "content" / "KitGenerator" / "badges"
+    content_dir = sider_dir / "content" / "KitGenerator"
+    sleeve_dir = content_dir / "sleeve_logos"
 
     # The human club must NEVER get an AI-assigned sponsor from a JIT/background
     # generation.  Its chest logo comes only from the signed deal; with no deal
@@ -401,28 +407,64 @@ def generate_club_kits(
         })
         sponsor = pick_ai_sponsor(club, season, brands) if brands else None
 
-    staging_root = sider_dir / "content" / "KitGenerator" / "staging"
+    staging_root = content_dir / "staging"
     out_staging = Path(staging_dir) if staging_dir else staging_root / f"season_{season}"
     out_staging.mkdir(parents=True, exist_ok=True)
+    target_root = active_dir if install else out_staging
 
     selected_slots = parse_slots(slots)
-    if skip_existing:
+    if skip_existing and not force_signature:
         needed_slots = []
         for s in selected_slots:
             scode = f"p{s}" if isinstance(s, int) else str(s)
-            tf = active_dir / f"u{club_id:04d}{scode}.ftex"
+            tf = target_root / f"u{club_id:04d}{scode}.ftex"
             if not tf.is_file() or tf.stat().st_size <= 1000:
                 needed_slots.append(s)
         selected_slots = tuple(needed_slots)
 
     if not selected_slots:
-        return {"id": club_id, "sponsor": sponsor, "count": 0, "skipped": True}
+        return {"id": club_id, "sponsor": sponsor, "count": 0,
+                "skipped": True, "reason": "missing"}
 
     base_ftex = DEFAULT_BASE
     if not base_ftex.is_file():
         candidates = list(sider_dir.glob("content/kits/**/p1/*.ftex"))
         if candidates:
             base_ftex = candidates[0]
+
+    signature_for = lambda slot: kit_signature.build_signature(
+        club_id=club_id,
+        season=season,
+        sponsor=sponsor,
+        slot=slot,
+        generator_dir=HERE,
+        base_ftex=base_ftex,
+        logo_dir=logos,
+        badge_dir=badges,
+        sleeve_dir=sleeve_dir,
+    )
+    signatures = {}
+    signature_skipped = 0
+    if not force_signature:
+        needed_slots = []
+        for s in selected_slots:
+            sig = signature_for(s)
+            signatures[s] = sig
+            key = kit_signature.key_for(target_root, club_id, season, s)
+            paths = kit_signature.target_files(target_root, club_id, s)
+            if kit_signature.matches(content_dir, key, sig, paths):
+                signature_skipped += 1
+                continue
+            needed_slots.append(s)
+        selected_slots = tuple(needed_slots)
+    else:
+        for s in selected_slots:
+            signatures[s] = signature_for(s)
+
+    if not selected_slots:
+        return {"id": club_id, "sponsor": sponsor, "count": 0,
+                "skipped": True, "reason": "signature_match",
+                "signature_skipped": signature_skipped}
 
     results = build_kit.build_set(
         club,
@@ -438,7 +480,14 @@ def generate_club_kits(
         slots=selected_slots,
         previews=False,                   # JIT/background installs need only .ftex
     )
-    return {"id": club_id, "sponsor": sponsor, "count": len(results), "skipped": False}
+    for slot, _atlas, _ftex, _design in results:
+        sig = signatures.get(slot) or signature_for(slot)
+        key = kit_signature.key_for(target_root, club_id, season, slot)
+        paths = kit_signature.target_files(target_root, club_id, slot)
+        if all(path.is_file() for path in paths):
+            kit_signature.record(content_dir, key, sig, paths)
+    return {"id": club_id, "sponsor": sponsor, "count": len(results),
+            "skipped": False, "signature_skipped": signature_skipped}
 
 
 def _ftex_club_id(name: str) -> Optional[int]:
@@ -449,6 +498,35 @@ def _ftex_club_id(name: str) -> Optional[int]:
             break
         digits += ch
     return int(digits) if digits else None
+
+
+ROLLOVER_RESUME_MARKER = "_rollover_in_progress"
+
+
+def _valid_ftex_file(path: Path) -> bool:
+    """Cheap validity check for a staged FTEX before reusing it on a retry."""
+    try:
+        if not path.is_file() or path.stat().st_size < 64:
+            return False
+        with path.open("rb") as fh:
+            return fh.read(4) == b"FTEX"
+    except OSError:
+        return False
+
+
+def _discard_invalid_staged_outputs(staging: Path, slots: tuple) -> int:
+    """Remove truncated/corrupt staged kit files so a retry rebuilds them."""
+    removed = 0
+    for slot in slots:
+        code = f"p{slot}" if isinstance(slot, int) else str(slot)
+        for path in staging.glob(f"u*{code}.ftex"):
+            if not _valid_ftex_file(path):
+                try:
+                    path.unlink()
+                    removed += 1
+                except OSError:
+                    pass
+    return removed
 
 
 def _copy_staged_kits(staging: Path, active: Path, protected_ids: Set[int]) -> int:
@@ -490,61 +568,113 @@ def refresh_season_kits(
     low_priority: bool = True,
     abort_check: Optional[Callable[[], bool]] = None,
     workers: Optional[int] = None,
+    resume: Optional[bool] = None,
 ) -> Dict[str, Any]:
-    """Force a fresh season render into staging, then copy it into active.
+    """Render a season's kits into staging, then copy them into active.
 
-    Unlike generate_all_kit's `skip_existing`, this ALWAYS rebuilds: a new
-    season must change designs and AI sponsors even though the old files still
-    exist.  The human club is protected because its branded kit is produced by
-    the separate career `rebuild` request.
+    A fresh request always rebuilds.  If a previous attempt was interrupted,
+    the in-progress marker in staging lets the retry reuse valid staged files
+    and render only the missing slots.  The human club stays protected because
+    its branded kit is produced by the separate career `rebuild` request.
     """
     sider_dir = Path(sider_dir)
     content = sider_dir / "content" / "KitGenerator"
     active = content / "active"
     staging_root = content / "staging"
     staging = staging_root / f"season_{season}" / f"refresh_{scope}"
+    marker = staging / ROLLOVER_RESUME_MARKER
 
-    if staging.exists():
-        shutil.rmtree(staging)
-    staging.mkdir(parents=True, exist_ok=True)
+    t_setup = time.perf_counter()
+    if resume is None:
+        resume = marker.is_file()
+    if not resume:
+        if staging.exists():
+            shutil.rmtree(staging)
+        staging.mkdir(parents=True, exist_ok=True)
+    else:
+        staging.mkdir(parents=True, exist_ok=True)
+    marker.write_text(
+        f"season={season}\nscope={scope}\nslots={slots}\n",
+        encoding="utf-8",
+    )
+    selected_slots = parse_slots(slots)
+    invalid_removed = _discard_invalid_staged_outputs(staging, selected_slots) if resume else 0
+    setup_s = time.perf_counter() - t_setup
 
     user_cid, _, _ = load_user_club_info(sider_dir)
     protected = {user_cid} if user_cid else set()
 
-    result: Dict[str, Any] = {"season": season, "scope": scope,
-                              "generated": 0, "copied": 0, "pruned": 0, "clubs": 0,
-                              "aborted": False}
+    result: Dict[str, Any] = {
+        "season": season,
+        "scope": scope,
+        "generated": 0,
+        "copied": 0,
+        "pruned": 0,
+        "clubs": 0,
+        "aborted": False,
+        "resumed": resume,
+        "invalid_removed": invalid_removed,
+        "timings": {
+            "setup_s": setup_s,
+            "render_s": 0.0,
+            "copy_s": 0.0,
+            "prune_s": 0.0,
+            "total_s": setup_s,
+        },
+    }
     refresh_kwargs = dict(
         season=season,
         sider_dir=sider_dir,
         slots=slots,
-        skip_existing=False,
+        skip_existing=resume,
         outdir=staging,
         low_priority=low_priority,
         abort_check=abort_check,
         workers=workers,
     )
-    if team_ids is None:
-        result.update(generate_all_kits(**refresh_kwargs))
-        if result.get("aborted"):
-            return result
-        result["clubs"] = len(list(staging.glob("u*p1.ftex")))
-    else:
-        ids = [int(t) for t in team_ids if int(t) not in protected]
-        # Use the same parallel lightweight renderer as the global rollover.
-        # The old serial loop called generate_club_kits(), which also writes
-        # preview/mockup PNGs and took ~18s per club instead of ~3s.
-        if not ids:
-            result["clubs"] = 0
-            return result
-        result.update(generate_all_kits(**refresh_kwargs, team_ids=ids))
-        if result.get("aborted"):
-            return result
-        result["clubs"] = len(list(staging.glob("u*p1.ftex")))
 
+    if team_ids is None:
+        ids = None
+    else:
+        # Use the same parallel lightweight renderer as the global rollover.
+        # The old serial loop called generate_club_kits(), which also wrote
+        # preview/mockup PNGs and took ~18s per club instead of ~3s.
+        ids = [int(t) for t in team_ids if int(t) not in protected]
+        if not ids:
+            marker.unlink(missing_ok=True)
+            return result
+
+    t_render = time.perf_counter()
+    if ids is None:
+        result.update(generate_all_kits(**refresh_kwargs))
+    else:
+        result.update(generate_all_kits(**refresh_kwargs, team_ids=ids))
+    wall_render = time.perf_counter() - t_render
+    render_s = float(result.get("elapsed", wall_render))
+    if result.get("aborted"):
+        # Keep the marker so the next poll resumes from staged work instead
+        # of deleting a partially completed season and starting over.
+        result["timings"]["render_s"] = render_s
+        result["timings"]["total_s"] = setup_s + render_s
+        return result
+
+    result["clubs"] = len(list(staging.glob("u*p1.ftex")))
+
+    t_copy = time.perf_counter()
     result["copied"] = _copy_staged_kits(staging, active, protected)
+    copy_s = time.perf_counter() - t_copy
+
+    t_prune = time.perf_counter()
     if prune_secondary:
         result["pruned"] = _prune_secondary_kits(active, protected)
+    prune_s = time.perf_counter() - t_prune
+
+    marker.unlink(missing_ok=True)
+    timings = result["timings"]
+    timings["render_s"] = render_s
+    timings["copy_s"] = copy_s
+    timings["prune_s"] = prune_s
+    timings["total_s"] = setup_s + render_s + copy_s + prune_s
     return result
 
 

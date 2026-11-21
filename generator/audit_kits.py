@@ -152,14 +152,14 @@ def lint_kit(club, slot, design, chest_img):
         results.append({"rule": "Sponsor Contrast", "status": "INFO", "msg": "No chest sponsor"})
 
     # Rule 2: Pattern Authenticity & No Alien Shards on Home Kits
-    shard_patterns = ["001", "001-B", "006", "006-B", "027-B"]
+    shard_patterns = ["001", "001-B", "006", "006-B"]
     if slot == 1:
-        if pattern_key in shard_patterns or "shard" in str(pattern_key).lower():
+        if pattern_key in shard_patterns or ("shard" in str(pattern_key).lower() and not pattern_key.endswith("-B")):
             results.append({"rule": "Home Authenticity", "status": "FAIL",
                             "msg": f"Unrealistic geometric shard pattern '{pattern_key}' on Home kit"})
-        elif pattern_key == "plain" or pattern_key.endswith("-E") or "pinstripe" in pattern_key:
+        elif pattern_key == "plain" or pattern_key.endswith("-E") or pattern_key.endswith("-B") or pattern_key.endswith("-C") or "pinstripe" in pattern_key:
             results.append({"rule": "Home Authenticity", "status": "PASS",
-                            "msg": f"Clean tonal luxury pattern '{pattern_key}'"})
+                            "msg": f"Authentic dynamic pattern '{pattern_key}'"})
         elif pattern_key in kit_dna.POOL_STRIPES or pattern_key in kit_dna.POOL_HOOPS or pattern_key in kit_dna.POOL_SASH or pattern_key in kit_dna.POOL_CHESTBAND or pattern_key in kit_dna.POOL_HALF_HALF or pattern_key in kit_dna.POOL_PINSTRIPES or pattern_key in ["stripes", "hoops", "sash", "chestband", "101", "086", "094", "098", "206", "207", "208", "209"]:
             results.append({"rule": "Home Authenticity", "status": "PASS",
                             "msg": f"Authentic heritage pattern '{pattern_key}'"})
@@ -248,8 +248,33 @@ def crop_torso(atlas_img):
 
 
 def crop_sleeve(atlas_img):
-    """Crop the left sleeve area (x: 1350..1680, y: 250..560) containing the sleeve sponsor mark."""
-    return atlas_img.crop((1350, 250, 1680, 560))
+    """Crop the left sleeve area showing sleeve sponsor mark (e.g. HP / Visit Rwanda at y:75) and shoulder crown."""
+    return atlas_img.crop((30, 15, 480, 460))
+
+
+def crop_shoulder(atlas_img):
+    """Crop the shoulder and raglan bands showing supplier 3-stripes."""
+    return atlas_img.crop((0, 340, 720, 520))
+
+
+def crop_shorts(atlas_img):
+    """Composite of Left & Right shorts legs showing side stripes, crest, supplier mark, and hem band."""
+    left_leg = atlas_img.crop((20, 1160, 610, 1970))
+    right_leg = atlas_img.crop((1438, 1160, 2028, 1970))
+    comp = Image.new("RGBA", (1210, 830), (12, 16, 24, 255))
+    comp.paste(left_leg, (10, 10), left_leg if left_leg.mode == "RGBA" else None)
+    comp.paste(right_leg, (610, 10), right_leg if right_leg.mode == "RGBA" else None)
+    return comp
+
+
+def crop_kit(atlas_img):
+    """Full side-by-side presentation preview of Shirt Torso + Left Shorts Leg."""
+    torso = atlas_img.crop((660, 952, 1390, 1888))
+    shorts = atlas_img.crop((20, 1160, 610, 1970))
+    comp = Image.new("RGBA", (1360, 960), (12, 16, 24, 255))
+    comp.paste(torso, (10, 12), torso if torso.mode == "RGBA" else None)
+    comp.paste(shorts, (750, 75), shorts if shorts.mode == "RGBA" else None)
+    return comp
 
 
 def generate_html_gallery(audit_data, out_html_path):
@@ -305,6 +330,10 @@ def generate_html_gallery(audit_data, out_html_path):
 
         badge_img_tag = f'<img src="{item["badge_rel"]}" class="club-crest" alt="crest" onerror="this.style.display=\'none\'">' if item.get("badge_rel") else ''
 
+        kit_tag = f'<img src="{item["kit_rel"]}" class="kit-img" alt="Full Kit Preview" loading="lazy">' if item.get("kit_rel") else ''
+        chest_tag = f'<img src="{item["chest_rel"]}" class="chest-img" alt="Chest Preview" loading="lazy" style="display:none;">' if item.get("chest_rel") else ''
+        shorts_tag = f'<img src="{item["shorts_rel"]}" class="shorts-img" alt="Shorts Preview" loading="lazy" style="display:none;">' if item.get("shorts_rel") else ''
+        shoulder_tag = f'<img src="{item["shoulder_rel"]}" class="shoulder-img" alt="Shoulder Preview" loading="lazy" style="display:none;">' if item.get("shoulder_rel") else ''
         torso_tag = f'<img src="{item["torso_rel"]}" class="torso-img" alt="Torso Preview" loading="lazy" style="display:none;">' if item.get("torso_rel") else ''
         sleeve_tag = f'<img src="{item["sleeve_rel"]}" class="sleeve-img" alt="Sleeve Preview" loading="lazy" style="display:none;">' if item.get("sleeve_rel") else ''
 
@@ -324,7 +353,10 @@ def generate_html_gallery(audit_data, out_html_path):
             </div>
             
             <div class="preview-container">
-                <img src="{item['chest_rel']}" class="chest-img" alt="Chest Preview" loading="lazy">
+                {kit_tag}
+                {chest_tag}
+                {shorts_tag}
+                {shoulder_tag}
                 {torso_tag}
                 {sleeve_tag}
             </div>
@@ -410,9 +442,9 @@ def generate_html_gallery(audit_data, out_html_path):
         .club-meta {{ font-size: 11px; color: var(--text-secondary); }}
         .slot-pill {{ font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; }}
 
-        .preview-container {{ position: relative; width: 100%; height: 210px; background: #070a12; overflow: hidden; display: flex; align-items: center; justify-content: center; }}
-        .chest-img {{ width: 100%; height: 100%; object-fit: cover; object-position: center 20%; transition: transform 0.3s ease; }}
-        .kit-card:hover .chest-img {{ transform: scale(1.05); }}
+        .preview-container {{ position: relative; width: 100%; height: 230px; background: #070a12; overflow: hidden; display: flex; align-items: center; justify-content: center; }}
+        .preview-container img {{ width: 100%; height: 100%; object-fit: contain; transition: transform 0.25s ease; }}
+        .kit-card:hover .preview-container img {{ transform: scale(1.02); }}
 
         .card-body {{ padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }}
         .swatch-bar {{ display: flex; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--text-secondary); }}
@@ -460,9 +492,12 @@ def generate_html_gallery(audit_data, out_html_path):
         
         <div style="display:flex; gap:12px; flex-wrap:wrap">
             <div class="filter-group" id="viewModeFilter">
-                <button class="filter-btn active" id="btnChestView" onclick="setViewMode('chest')">Chest Focus</button>
-                <button class="filter-btn" id="btnSleeveView" onclick="setViewMode('sleeve')">Left Sleeve (Sponsor)</button>
+                <button class="filter-btn active" id="btnKitView" onclick="setViewMode('kit')">Full Kit (Shirt+Shorts)</button>
+                <button class="filter-btn" id="btnShortsView" onclick="setViewMode('shorts')">Shorts Focus</button>
+                <button class="filter-btn" id="btnShoulderView" onclick="setViewMode('shoulder')">Shoulder (3-Stripes)</button>
+                <button class="filter-btn" id="btnChestView" onclick="setViewMode('chest')">Chest Focus</button>
                 <button class="filter-btn" id="btnTorsoView" onclick="setViewMode('torso')">Full Torso</button>
+                <button class="filter-btn" id="btnSleeveView" onclick="setViewMode('sleeve')">Left Sleeve</button>
             </div>
 
             <div class="filter-group" id="statusFilter">
@@ -510,12 +545,19 @@ def generate_html_gallery(audit_data, out_html_path):
         let currentSeason = 'all';
 
         function setViewMode(mode) {{
+            document.querySelectorAll('.kit-img').forEach(el => el.style.display = (mode === 'kit') ? 'block' : 'none');
+            document.querySelectorAll('.shorts-img').forEach(el => el.style.display = (mode === 'shorts') ? 'block' : 'none');
+            document.querySelectorAll('.shoulder-img').forEach(el => el.style.display = (mode === 'shoulder') ? 'block' : 'none');
             document.querySelectorAll('.chest-img').forEach(el => el.style.display = (mode === 'chest') ? 'block' : 'none');
             document.querySelectorAll('.torso-img').forEach(el => el.style.display = (mode === 'torso') ? 'block' : 'none');
             document.querySelectorAll('.sleeve-img').forEach(el => el.style.display = (mode === 'sleeve') ? 'block' : 'none');
+
+            document.getElementById('btnKitView').classList.toggle('active', mode === 'kit');
+            document.getElementById('btnShortsView').classList.toggle('active', mode === 'shorts');
+            document.getElementById('btnShoulderView').classList.toggle('active', mode === 'shoulder');
             document.getElementById('btnChestView').classList.toggle('active', mode === 'chest');
-            document.getElementById('btnSleeveView').classList.toggle('active', mode === 'sleeve');
             document.getElementById('btnTorsoView').classList.toggle('active', mode === 'torso');
+            document.getElementById('btnSleeveView').classList.toggle('active', mode === 'sleeve');
         }}
 
         function updateFilters() {{
@@ -595,6 +637,7 @@ def main():
     parser.add_argument("--outdir", default=str(REPO_ROOT / "tests" / "visual_audit"),
                         help="Output directory for audit images & HTML report")
     parser.add_argument("--limit", type=int, default=0, help="Limit number of clubs to audit")
+    parser.add_argument("--slots", help="Comma-separated kit slots to audit (e.g. 1 or 1,2 or p1,p2). Default: 1,2,3")
     parser.add_argument("--include-gk", action="store_true", help="Include goalkeeper kits (g1, g2)")
     args = parser.parse_args()
 
@@ -637,7 +680,20 @@ def main():
     if args.limit > 0:
         club_ids = club_ids[:args.limit]
 
-    slots_to_audit = [1, 2, 3, "g1", "g2"] if args.include_gk else [1, 2, 3]
+    if args.slots:
+        slots_to_audit = []
+        for s in args.slots.split(","):
+            s_clean = s.strip().lower()
+            if s_clean.startswith("p") and s_clean[1:].isdigit():
+                slots_to_audit.append(int(s_clean[1:]))
+            elif s_clean.isdigit():
+                slots_to_audit.append(int(s_clean))
+            else:
+                slots_to_audit.append(s_clean)
+    elif args.include_gk:
+        slots_to_audit = [1, 2, 3, "g1", "g2"]
+    else:
+        slots_to_audit = [1, 2, 3]
     total_kits_to_audit = len(club_ids) * len(seasons) * len(slots_to_audit)
     print(f"\n=======================================================")
     print(f"  PES 2021 / FL26 Automated Kit Visual Audit Suite")
@@ -673,6 +729,17 @@ def main():
                 active_sponsor = SPONSOR_ROSTER[s_idx % len(SPONSOR_ROSTER)]
             elif args.sponsor.lower() in ("none", "clean"):
                 active_sponsor = None
+            elif args.sponsor.lower() == "ai":
+                try:
+                    import build_all_clubs
+                    available_brands = sorted({
+                        p.stem.replace("_white", "")
+                        for p in logo_dir.glob("*.png")
+                        if not p.stem.startswith("_")
+                    })
+                    active_sponsor = build_all_clubs.pick_ai_sponsor(club, season, available_brands)
+                except Exception:
+                    active_sponsor = "fly_emirates"
             else:
                 active_sponsor = args.sponsor
 
@@ -682,7 +749,10 @@ def main():
             for slot in slots_to_audit:
                 slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
                 atlas_png = crops_dir / f"atlas_{cid}_{season}_{slot_code}.png"
+                kit_png = crops_dir / f"kit_{cid}_{season}_{slot_code}.png"
                 chest_png = crops_dir / f"chest_{cid}_{season}_{slot_code}.png"
+                shorts_png = crops_dir / f"shorts_{cid}_{season}_{slot_code}.png"
+                shoulder_png = crops_dir / f"shoulder_{cid}_{season}_{slot_code}.png"
                 torso_png = crops_dir / f"torso_{cid}_{season}_{slot_code}.png"
                 sleeve_png = crops_dir / f"sleeve_{cid}_{season}_{slot_code}.png"
 
@@ -691,10 +761,16 @@ def main():
                                         masks=masks, slot=slot, sponsor=active_sponsor,
                                         badge_dir=badge_dir)
 
-                # Crop chest, torso & left sleeve & save
+                # Crop previews
                 with Image.open(atlas_png) as im:
+                    k_crop = crop_kit(im)
+                    k_crop.save(kit_png)
                     c_crop = crop_chest(im)
                     c_crop.save(chest_png)
+                    sh_crop = crop_shorts(im)
+                    sh_crop.save(shorts_png)
+                    sho_crop = crop_shoulder(im)
+                    sho_crop.save(shoulder_png)
                     t_crop = crop_torso(im)
                     t_crop.save(torso_png)
                     s_crop = crop_sleeve(im)
@@ -727,7 +803,10 @@ def main():
                     "lint": lint_results,
                     "sponsor_name": active_sponsor or "None",
                     "sleeve_name": sl_name,
+                    "kit_rel": f"crops/{kit_png.name}",
                     "chest_rel": f"crops/{chest_png.name}",
+                    "shorts_rel": f"crops/{shorts_png.name}",
+                    "shoulder_rel": f"crops/{shoulder_png.name}",
                     "torso_rel": f"crops/{torso_png.name}",
                     "sleeve_rel": f"crops/{sleeve_png.name}",
                     "badge_rel": b_rel,

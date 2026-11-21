@@ -2082,21 +2082,26 @@ def apply_modifier(overlay, mod, p):
     elif mod == "E":
         rgb = arr[:, :, :3]
         lum = (0.2126 * rgb[:, :, 0] + 0.7152 * rgb[:, :, 1] + 0.0722 * rgb[:, :, 2]) / 255.0
-        f = 0.90 + 0.22 * lum
+        # Rich engineered jacquard depth: deep woven shadow (0.74) to crisp light reflection (1.26)
+        f = 0.74 + 0.52 * lum
         body = np.array(p.body, dtype=np.float32)
+        second = np.array(p.second, dtype=np.float32) if (hasattr(p, "second") and p.second) else body
+        hl_weight = np.clip((lum - 0.48) / 0.52, 0.0, 1.0) * 0.14
         for i in range(3):
-            arr[:, :, i] = np.clip(body[i] * f, 0, 255)
-        arr[:, :, 3] = alpha * 0.92
+            val = body[i] * f
+            val = val * (1.0 - hl_weight) + second[i] * hl_weight
+            arr[:, :, i] = np.clip(val, 0, 255)
+        arr[:, :, 3] = alpha * 0.95
     out = Image.fromarray(arr.astype("uint8"), "RGBA")
     if mod == "E":
         from PIL import ImageChops, ImageFilter
         al = out.getchannel("A")
         edge = ImageChops.subtract(al, al.filter(ImageFilter.MinFilter(3)))
         body_col = tuple(int(v) for v in p.body[:3])
-        # Subtle tonal highlight: 12-16% brighter than body color, woven fabric feel (never harsh white)
-        hl_rgb = tuple(min(255, int(c * 1.14 + 8)) for c in body_col)
+        # Visible woven jacquard highlight ridge: 22-28% brighter than body color
+        hl_rgb = tuple(min(255, int(c * 1.25 + 14)) for c in body_col)
         hl = Image.new("RGBA", out.size, hl_rgb + (0,))
-        hl.putalpha(edge.point(lambda v: int(v * 0.30)))
+        hl.putalpha(edge.point(lambda v: int(v * 0.45)))
         out = Image.alpha_composite(out, hl)
     return out
 

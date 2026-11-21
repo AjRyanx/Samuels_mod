@@ -66,6 +66,7 @@ REQUIRED_FILES = (
     "generator/setup_watcher.py",
     "generator/watch_signed.py",
     "generator/build_all_clubs.py",
+    "generator/kit_signature.py",
     "generator/build_kit.py",
     "generator/kit_render.py",
     "generator/uv_masks/body_erase.png",

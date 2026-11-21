@@ -53,22 +53,25 @@ CLUB_BADGE = (1145, 1150, 6000)
 KIT_SUPPLIER = (905, 1150, 3600)
 
 # Shorts leg anchors:
-# Island 1 (UV left, x: 31..602, y: 1535..1968): Player's right leg. Club crest sits on lower front.
-# Island 2 (UV right, x: 1446..2015, y: 1535..1968): Player's left leg. Supplier logo sits on lower front.
-SHORTS_BADGE = (460, 1845, 4200)
-SHORTS_SUPPLIER = (1580, 1845, 2400)
+# Island 1 (UV left, x: 0..658, y: 1159..1971): Player's right leg. Lower front hem centers at (130, 1680).
+# Island 2 (UV right, x: 1390..2048, y: 1159..1971): Player's left leg. Lower front hem centers at (1918, 1680).
+SHORTS_BADGE = (130, 1680, 5000)
+SHORTS_SUPPLIER = (1918, 1680, 3200)
 
 # Lower jocktag / authenticity foil stamp (bottom-right of front torso / player's left hem):
 JOCKTAG_ANCHOR = (1270, 1835, 1400)
 
-# Left sleeve sponsor anchor:
-# In PES 2021 UV atlas (2048x2048), Component 2 of uv_masks/sleeves.png (x: 1350..2047, y: 105..679)
-# represents the player's Left Sleeve (where commercial sleeve sponsors reside in real leagues).
-# Calibrated directly against authentic Premier League / La Liga kits (Real Madrid HP, Man City OKX,
-# Aston Villa Trade Nation, Arsenal Visit Rwanda):
-# The lateral/front visible face on the 3D player arm centers at (1515, 405) with target area 12000 px^2.
-SLEEVE_SPONSOR_LEFT = (1515, 405, 12000)
-SLEEVE_WRAP_ANGLE = 0.0
+# Sleeve sponsor anchors:
+# Calibrated directly against authentic Premier League and La Liga PES 2021 kits (e.g. Arsenal Visit Rwanda/deel,
+# Real Madrid HP, Man City OKX):
+# The lateral bicep visible face on the 3D player arm centers at y: 404 on the sleeve islands.
+# Player's LEFT arm = Right sleeve island (x: 1448..2048): center (1530, 404), wrap rotation 90 deg CCW
+# Player's RIGHT arm = Left sleeve island (x: 0..600): center (518, 404), wrap rotation -90 deg CW
+PLAYER_LEFT_ARM_SLEEVE = (1530, 404, 18000)
+PLAYER_RIGHT_ARM_SLEEVE = (518, 404, 18000)
+SLEEVE_SPONSOR_LEFT = PLAYER_LEFT_ARM_SLEEVE
+SLEEVE_SPONSOR_RIGHT = PLAYER_RIGHT_ARM_SLEEVE
+SLEEVE_WRAP_ANGLE = 90.0
 
 # --- front / back panel boxes (for reference / debug) ---------------------- #
 FRONT_BOX = (660, 952, 1390, 1888)
@@ -420,24 +423,16 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
         orig_cx, orig_cy = cur_cx, cur_cy
         angle = sleeve_sponsor.get("angle", SLEEVE_WRAP_ANGLE)
 
-        if sl is not None:
-            for _ in range(10):
-                x0 = int(cur_cx - cur_w / 2)
-                y0 = int(cur_cy - cur_h / 2)
-                x1 = x0 + cur_w
-                y1 = y0 + cur_h
-                if check_stamp_containment(sl, x0, y0, x1, y1, alpha=alpha, margin=margin):
-                    break
-                if cur_cx < 1460:
-                    cur_cx += 4
-                elif cur_cx > 1580:
-                    cur_cx -= 4
-                if cur_cy < 330:
-                    cur_cy += 4
-                elif cur_cy > 480:
-                    cur_cy -= 4
-                cur_w = max(16, int(cur_w * 0.95))
-                cur_h = max(16, int(cur_h * 0.95))
+        # Bounds for sleeve sponsor (covers both long sleeve y:220..620 and short sleeve y:750..1050):
+        # Left island (player's right arm): x: 400..600, y: 220..1050
+        # Right island (player's left arm): x: 1450..1650, y: 220..1050
+        is_left_island = cur_cx < 1024
+        min_x, max_x = (400, 600) if is_left_island else (1450, 1650)
+        min_y, max_y = 220, 1050
+
+        # Clamp into valid sleeve island region
+        cur_cx = max(min_x + cur_w // 2, min(max_x - cur_w // 2, cur_cx))
+        cur_cy = max(min_y + cur_h // 2, min(max_y - cur_h // 2, cur_cy))
 
         res["sleeve_sponsor"] = {
             "cx": cur_cx, "cy": cur_cy, "w": cur_w, "h": cur_h,

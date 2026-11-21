@@ -161,6 +161,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "collar_style": "crew", "collar_tip": (212, 175, 55),
             "cuff": (250, 250, 252),
             "gradient": 0, "supplier": "nike",
+            "badge_color": (250, 250, 252),
         },
         2: {  # Away: Heritage off-white & forest green / teal accents
             "body": (245, 245, 242), "second": (15, 65, 45), "third": (20, 20, 25),
@@ -169,6 +170,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "socks": (245, 245, 242), "collar": (15, 65, 45),
             "cuff": (15, 65, 45),
             "gradient": 0, "supplier": "nike",
+            "badge_color": (15, 65, 45),
         },
         3: {  # Third: Noir Luxury / Royal Purple couture with iridescent gold
             "body": (32, 22, 42), "second": (212, 175, 55), "third": (190, 18, 30),
@@ -177,6 +179,7 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "socks": (32, 22, 42), "collar": (212, 175, 55),
             "cuff": (212, 175, 55),
             "gradient": 1, "supplier": "nike",
+            "badge_color": (212, 175, 55),
         },
     },
 
@@ -291,6 +294,43 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
         },
     },
 
+    # Nottingham Forest
+    389: {
+        1: {  # Home: Iconic Garibaldi Red body, white shorts, red socks, adidas 3-stripes
+            "body": (185, 25, 40), "second": (248, 248, 250), "third": (20, 20, 25),
+            "patterns": ["145-E", "177-E", "090-E", "170-E"],
+            "sleeve": (185, 25, 40), "shorts": (248, 248, 250),
+            "socks": (185, 25, 40), "collar": (20, 20, 25),
+            "collar_style": "polo", "collar_tip": (248, 248, 250),
+            "cuff": (248, 248, 250), "cuff_tip": (20, 20, 25),
+            "stripe_accent": (248, 248, 250),
+            "badge_color": (248, 248, 250),
+            "gradient": 0, "supplier": "adidas",
+        },
+        2: {  # Away: Iconic Yellow & Navy (European heritage 1979/1980 away colors)
+            "body": (245, 210, 40), "second": (20, 35, 75), "third": (185, 25, 40),
+            "patterns": ["085", "166-B", "095-E"],
+            "sleeve": (245, 210, 40), "shorts": (20, 35, 75),
+            "socks": (245, 210, 40), "collar": (20, 35, 75),
+            "collar_style": "crew", "collar_tip": (185, 25, 40),
+            "cuff": (20, 35, 75),
+            "stripe_accent": (20, 35, 75),
+            "badge_color": (20, 35, 75),
+            "gradient": 0, "supplier": "adidas",
+        },
+        3: {  # Third: Trent River Navy / Sky Blue streetwear
+            "body": (18, 26, 46), "second": (120, 185, 235), "third": (248, 248, 250),
+            "patterns": ["219-B", "041-E", "067-E"],
+            "sleeve": (18, 26, 46), "shorts": (18, 26, 46),
+            "socks": (18, 26, 46), "collar": (120, 185, 235),
+            "collar_style": "v_neck", "collar_tip": (248, 248, 250),
+            "cuff": (120, 185, 235),
+            "stripe_accent": (120, 185, 235),
+            "badge_color": (120, 185, 235),
+            "gradient": 1, "supplier": "adidas",
+        },
+    },
+
     # Newcastle United
     106: {
         1: {  # Home: Iconic black & white vertical stripes with black shorts
@@ -320,13 +360,14 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
     # Real Madrid
     109: {
         1: {  # Home: Pristine Royal White with majestic Gold, Castilian Violet & Midnight Navy rotations
-            "body": (252, 252, 254), "second": (212, 175, 55), "third": (15, 25, 55),
-            "patterns": ["171-E", "170-E", "085-E", "219-E", "046-E"],
-            "sleeve": (252, 252, 254), "shorts": (252, 252, 254),
-            "socks": (252, 252, 254), "collar": (252, 252, 254),
+            "body": (222, 224, 228), "second": (212, 175, 55), "third": (15, 25, 55),
+            "patterns": ["171-E", "204-B", "219-E", "170-E"],
+            "sleeve": (222, 224, 228), "shorts": (222, 224, 228),
+            "socks": (222, 224, 228), "collar": (15, 25, 55),
+            "collar_style": "dual_tipped",
             "collar_tip": (212, 175, 55),
-            "cuff": (212, 175, 55),
-            "cuff_tip": (15, 25, 55),
+            "cuff": (15, 25, 55),
+            "cuff_tip": (212, 175, 55),
             "stripe_accent": (212, 175, 55),
             "supplier_color": (212, 175, 55),
             "gradient": 0, "supplier": "adidas",
@@ -955,6 +996,64 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "sleeve": (120, 25, 45), "shorts": (120, 25, 45),
             "socks": (120, 25, 45), "collar": (214, 175, 65), "cuff": (214, 175, 65),
             "gradient": 0, "supplier": "nike",
+        },
+    },
+
+    # Lyon
+    181: {
+        1: {
+            "body": (250, 250, 252), "second": (15, 55, 150), "third": (215, 20, 30),
+            "patterns": ["086", "153-E", "042-B", "pinstripe"],
+            "sleeve": (250, 250, 252), "shorts": (250, 250, 252),
+            "socks": (250, 250, 252), "collar": (15, 55, 150),
+            "collar_style": "dual_tipped", "collar_tip": (215, 20, 30),
+            "cuff": (15, 55, 150), "cuff_tip": (215, 20, 30),
+            "gradient": 0, "supplier": "adidas",
+        },
+        2: {
+            "body": (15, 55, 150), "second": (215, 20, 30), "third": (250, 250, 252),
+            "patterns": ["042-B", "168-B"],
+            "sleeve": (15, 55, 150), "shorts": (15, 55, 150),
+            "socks": (15, 55, 150), "collar": (215, 20, 30),
+            "collar_style": "crew", "cuff": (215, 20, 30),
+            "gradient": 0, "supplier": "adidas",
+        },
+        3: {
+            "body": (22, 24, 28), "second": (212, 175, 55), "third": (215, 20, 30),
+            "patterns": ["153-E", "219-B"],
+            "sleeve": (22, 24, 28), "shorts": (22, 24, 28),
+            "socks": (22, 24, 28), "collar": (212, 175, 55),
+            "collar_style": "v_neck", "cuff": (212, 175, 55),
+            "gradient": 1, "supplier": "adidas",
+        },
+    },
+
+    # Strasbourg
+    4213: {
+        1: {
+            "body": (15, 60, 160), "second": (250, 250, 252), "third": (215, 25, 35),
+            "patterns": ["183-B", "024-B", "070-E", "168-B"],
+            "sleeve": (15, 60, 160), "shorts": (250, 250, 252),
+            "socks": (15, 60, 160), "collar": (250, 250, 252),
+            "collar_style": "crew", "collar_tip": (15, 60, 160),
+            "cuff": (250, 250, 252), "cuff_tip": (15, 60, 160),
+            "gradient": 0, "supplier": "adidas",
+        },
+        2: {
+            "body": (250, 250, 252), "second": (15, 60, 160), "third": (215, 25, 35),
+            "patterns": ["pinstripe", "088"],
+            "sleeve": (250, 250, 252), "shorts": (15, 60, 160),
+            "socks": (250, 250, 252), "collar": (15, 60, 160),
+            "collar_style": "polo", "cuff": (15, 60, 160),
+            "gradient": 0, "supplier": "adidas",
+        },
+        3: {
+            "body": (24, 26, 30), "second": (0, 195, 230), "third": (15, 60, 160),
+            "patterns": ["168-B", "219-B"],
+            "sleeve": (24, 26, 30), "shorts": (24, 26, 30),
+            "socks": (24, 26, 30), "collar": (0, 195, 230),
+            "collar_style": "v_neck", "cuff": (0, 195, 230),
+            "gradient": 1, "supplier": "adidas",
         },
     },
 }
@@ -1747,6 +1846,7 @@ CLUB_SLEEVE_SPONSORS = {
     177: "angry_birds",     # Everton
     178: "noon",            # Newcastle United
     179: "kraken",          # Tottenham Hotspur
+    389: "jd_sports",       # Nottingham Forest
 
     # La Liga
     108: "ambilight",       # Barcelona
@@ -1883,45 +1983,431 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
                 so_idx = s_off % len(so_choices)
                 base_style["socks"] = so_choices[so_idx]
 
-        # Real Madrid iconic heritage aura seasonal rotation
-        if cid == 109 and slot == 1:
-            aura_cycle = s_off % 3
-            if aura_cycle == 0:
-                # Galácticos Pure Gold Era (2011/12, 2019/20, 2023/24)
-                base_style["second"] = (212, 175, 55)
-                base_style["third"] = (15, 25, 55)
-                base_style["collar"] = (252, 252, 254)
-                base_style["collar_style"] = "dual_tipped"
-                base_style["collar_tip"] = (212, 175, 55)
-                base_style["cuff"] = (212, 175, 55)
-                base_style["cuff_tip"] = (15, 25, 55)
-                base_style["stripe_accent"] = (212, 175, 55)
-                base_style["supplier_color"] = (212, 175, 55)
-            elif aura_cycle == 1:
-                # Castilian Violet / Royal Purple Heritage (La Séptima, La Duodécima, 2022/23)
-                base_style["second"] = (75, 40, 130)
-                base_style["third"] = (212, 175, 55)
-                base_style["collar"] = (252, 252, 254)
-                base_style["collar_style"] = "v_neck"
-                base_style["collar_tip"] = (75, 40, 130)
-                base_style["cuff"] = (75, 40, 130)
-                base_style["cuff_tip"] = (212, 175, 55)
-                base_style["stripe_accent"] = (75, 40, 130)
-                base_style["supplier_color"] = (75, 40, 130)
-            elif aura_cycle == 2:
-                # Sovereign Midnight Navy & Gold (2023/24)
-                base_style["second"] = (15, 25, 55)
-                base_style["third"] = (212, 175, 55)
-                base_style["collar"] = (15, 25, 55)
-                base_style["collar_style"] = "polo"
-                base_style["collar_tip"] = (212, 175, 55)
-                base_style["cuff"] = (15, 25, 55)
-                base_style["cuff_tip"] = (212, 175, 55)
-                base_style["stripe_accent"] = (212, 175, 55)
-                base_style["supplier_color"] = (15, 25, 55)
+        # Iconic Club Seasonal Evolution Engine (Home Kit P1):
+        if slot == 1:
+            cycle = s_off % 4
+
+            # CHELSEA (102) - Inspired by real-life iconic evolutions (Liquid Wave, Geo-Camo, 70s Yellow, Pure Luxury)
+            if cid == 102:
+                if cycle == 0:
+                    # Modern Oceanic Liquid Wave with vibrant cyan & flame-orange accents (inspired by 2024/25)
+                    base_style["pattern"] = "183-B"
+                    base_style["second"] = (0, 185, 235)       # Electric Cyan
+                    base_style["third"] = (235, 65, 30)        # Flame Orange / Coral
+                    base_style["collar"] = (3, 70, 155)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (235, 65, 30)
+                    base_style["cuff"] = (3, 70, 155)
+                    base_style["cuff_tip"] = (235, 65, 30)
+                    base_style["shorts"] = (3, 70, 155)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 1:
+                    # Architectural Geo-Camo & Contrast White/Red V-Neck (inspired by 2025/26)
+                    base_style["pattern"] = "042-B"
+                    base_style["second"] = (250, 250, 252)     # Crisp White
+                    base_style["third"] = (200, 25, 35)        # Crimson Red
+                    base_style["collar"] = (250, 250, 252)     # Contrast White V-Neck
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (200, 25, 35)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (200, 25, 35)
+                    base_style["shorts"] = (3, 70, 155)
+                    base_style["socks"] = (3, 70, 155)
+                elif cycle == 2:
+                    # Retro 70s King's Road Yellow Heritage Polo & Tonal Lion Weave (inspired by 2026/27)
+                    base_style["pattern"] = "170-E"
+                    base_style["second"] = (252, 218, 0)       # Iconic Chelsea Canary Yellow
+                    base_style["third"] = (250, 250, 252)
+                    base_style["collar"] = (3, 70, 155)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (252, 218, 0)
+                    base_style["cuff"] = (252, 218, 0)
+                    base_style["cuff_tip"] = (250, 250, 252)
+                    base_style["shorts"] = (3, 70, 155)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 3:
+                    # Sovereign Royal Luxury & Iridescent Gold Pinstripes (inspired by 2023/24)
+                    base_style["pattern"] = "067-E"
+                    base_style["second"] = (250, 250, 252)
+                    base_style["third"] = (212, 175, 55)       # Regal Gold
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (212, 175, 55)
+                    base_style["shorts"] = (250, 250, 252)     # Contrast White Shorts
+                    base_style["socks"] = (3, 70, 155)
+
+            # MANCHESTER UNITED (100)
+            elif cid == 100:
+                if cycle == 0:
+                    # Cantona Class of 92 Heritage Polo with geometric collar trim
+                    base_style["pattern"] = "141-E"
+                    base_style["second"] = (250, 250, 250)
+                    base_style["third"] = (20, 20, 25)
+                    base_style["collar"] = (250, 250, 250)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (20, 20, 25)
+                    base_style["cuff"] = (250, 250, 250)
+                    base_style["cuff_tip"] = (20, 20, 25)
+                    base_style["shorts"] = (250, 250, 250)
+                    base_style["socks"] = (20, 20, 25)
+                elif cycle == 1:
+                    # Modern Noir Shadow & Dual Crimson Soundwave Pulse
+                    base_style["pattern"] = "183-B"
+                    base_style["second"] = (20, 20, 25)
+                    base_style["third"] = (235, 30, 45)
+                    base_style["collar"] = (20, 20, 25)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (235, 30, 45)
+                    base_style["cuff"] = (20, 20, 25)
+                    base_style["cuff_tip"] = (235, 30, 45)
+                    base_style["shorts"] = (20, 20, 25)
+                    base_style["socks"] = (20, 20, 25)
+                elif cycle == 2:
+                    # Regal Gold & White Luxury with Lancaster Rose Jacquard
+                    base_style["pattern"] = "095-E"
+                    base_style["second"] = (250, 250, 250)
+                    base_style["third"] = (212, 175, 55)
+                    base_style["collar"] = (250, 250, 250)
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (250, 250, 250)
+                    base_style["cuff_tip"] = (212, 175, 55)
+                    base_style["shorts"] = (250, 250, 250)
+                    base_style["socks"] = (250, 250, 250)
+                elif cycle == 3:
+                    # Retro Kinetic Chevron & Tonal Crimson Contrast
+                    base_style["pattern"] = "153-B"
+                    base_style["second"] = (250, 250, 250)
+                    base_style["third"] = (140, 15, 25)
+                    base_style["collar"] = (195, 20, 30)
+                    base_style["collar_style"] = "crew"
+                    base_style["collar_tip"] = (250, 250, 250)
+                    base_style["cuff"] = (250, 250, 250)
+                    base_style["cuff_tip"] = (20, 20, 25)
+                    base_style["shorts"] = (250, 250, 250)
+                    base_style["socks"] = (20, 20, 25)
+
+            # ARSENAL (101)
+            elif cid == 101:
+                base_style["sleeve"] = (250, 250, 252) # Iconic White Sleeves
+                if cycle == 0:
+                    # Highbury Classic Navy & White Trim
+                    base_style["pattern"] = "090-E"
+                    base_style["second"] = (250, 250, 252)
+                    base_style["third"] = (15, 32, 67)
+                    base_style["collar"] = (15, 32, 67)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (250, 250, 252)
+                    base_style["cuff"] = (15, 32, 67)
+                    base_style["cuff_tip"] = (250, 250, 252)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 1:
+                    # Invincibles Championship Gold & Lightning Energy
+                    base_style["pattern"] = "170-B"
+                    base_style["second"] = (212, 175, 55)
+                    base_style["third"] = (250, 250, 252)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (212, 175, 55)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 2:
+                    # Tailored Pure White Polo & Diamond Weave
+                    base_style["pattern"] = "096-E"
+                    base_style["second"] = (250, 250, 252)
+                    base_style["third"] = (190, 22, 34)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (190, 22, 34)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (190, 22, 34)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (190, 22, 34)
+                elif cycle == 3:
+                    # Modern Emirates Architecture & Navy Flank Contours
+                    base_style["pattern"] = "145-B"
+                    base_style["second"] = (15, 32, 67)
+                    base_style["third"] = (250, 250, 252)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "crew"
+                    base_style["collar_tip"] = (15, 32, 67)
+                    base_style["cuff"] = (15, 32, 67)
+                    base_style["cuff_tip"] = (250, 250, 252)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (250, 250, 252)
+
+            # LIVERPOOL (103)
+            elif cid == 103:
+                if cycle == 0:
+                    # Shankly 1974 Pure Crimson Minimalist
+                    base_style["pattern"] = "145-E"
+                    base_style["second"] = (250, 250, 252)
+                    base_style["third"] = (190, 18, 30)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "crew"
+                    base_style["collar_tip"] = (190, 18, 30)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (190, 18, 30)
+                    base_style["shorts"] = (190, 18, 30)
+                    base_style["socks"] = (190, 18, 30)
+                elif cycle == 1:
+                    # Rome 1984 Golden Yellow Pinstripes
+                    base_style["pattern"] = "067-B"
+                    base_style["second"] = (245, 195, 45)
+                    base_style["third"] = (250, 250, 252)
+                    base_style["collar"] = (190, 18, 30)
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (245, 195, 45)
+                    base_style["cuff"] = (190, 18, 30)
+                    base_style["cuff_tip"] = (245, 195, 45)
+                    base_style["shorts"] = (190, 18, 30)
+                    base_style["socks"] = (190, 18, 30)
+                elif cycle == 2:
+                    # Spice Boys 90s Emerald Teal Heritage
+                    base_style["pattern"] = "177-E"
+                    base_style["second"] = (0, 140, 125)
+                    base_style["third"] = (250, 250, 252)
+                    base_style["collar"] = (0, 140, 125)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (250, 250, 252)
+                    base_style["cuff"] = (0, 140, 125)
+                    base_style["cuff_tip"] = (250, 250, 252)
+                    base_style["shorts"] = (190, 18, 30)
+                    base_style["socks"] = (190, 18, 30)
+                elif cycle == 3:
+                    # Anfield Shankly Gates Dual-Stripe Polo
+                    base_style["pattern"] = "141-B"
+                    base_style["second"] = (250, 250, 252)
+                    base_style["third"] = (212, 175, 55)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (190, 18, 30)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (190, 18, 30)
+                    base_style["shorts"] = (190, 18, 30)
+                    base_style["socks"] = (190, 18, 30)
+
+            # REAL MADRID (109)
+            elif cid == 109:
+                base_style["body"] = (222, 224, 228)
+                base_style["sleeve"] = (222, 224, 228)
+                base_style["shorts"] = (222, 224, 228)
+                base_style["socks"] = (222, 224, 228)
+                if cycle == 0:
+                    # Galácticos Pure Gold Era (2026/27)
+                    base_style["pattern"] = "171-E"
+                    base_style["second"] = (212, 175, 55)
+                    base_style["third"] = (15, 25, 55)
+                    base_style["collar"] = (15, 25, 55)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (15, 25, 55)
+                    base_style["cuff_tip"] = (212, 175, 55)
+                    base_style["stripe_accent"] = (212, 175, 55)
+                    base_style["supplier_color"] = (212, 175, 55)
+                elif cycle == 1:
+                    # Yohji Yamamoto Mythical Dragon & Castilian Violet (2027/28)
+                    base_style["pattern"] = "204-B"
+                    base_style["second"] = (75, 40, 130)
+                    base_style["third"] = (212, 175, 55)
+                    base_style["collar"] = (75, 40, 130)
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (75, 40, 130)
+                    base_style["cuff_tip"] = (212, 175, 55)
+                    base_style["stripe_accent"] = (75, 40, 130)
+                    base_style["supplier_color"] = (75, 40, 130)
+                elif cycle == 2:
+                    # Sovereign Midnight Navy & Gold Polo (2028/29)
+                    base_style["pattern"] = "219-E"
+                    base_style["second"] = (15, 25, 55)
+                    base_style["third"] = (212, 175, 55)
+                    base_style["collar"] = (15, 25, 55)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (15, 25, 55)
+                    base_style["cuff_tip"] = (212, 175, 55)
+                    base_style["stripe_accent"] = (15, 25, 55)
+                    base_style["supplier_color"] = (15, 25, 55)
+                elif cycle == 3:
+                    # Bellingham / Mbappé 24/25 Era (2029/30)
+                    base_style["pattern"] = "170-E"
+                    base_style["second"] = (18, 55, 48)
+                    base_style["third"] = (215, 65, 80)
+                    base_style["collar"] = (18, 55, 48)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (215, 65, 80)
+                    base_style["cuff"] = (18, 55, 48)
+                    base_style["cuff_tip"] = (215, 65, 80)
+                    base_style["stripe_accent"] = (18, 55, 48)
+                    base_style["supplier_color"] = (18, 55, 48)
+
+            # BAYERN MUNICH (127)
+            elif cid == 127:
+                if cycle == 0:
+                    # Bavarian Diamond Flag Heritage
+                    base_style["pattern"] = "022-B"
+                    base_style["second"] = (250, 250, 250)
+                    base_style["third"] = (170, 10, 20)
+                    base_style["collar"] = (250, 250, 250)
+                    base_style["collar_style"] = "crew"
+                    base_style["collar_tip"] = (210, 15, 25)
+                    base_style["cuff"] = (250, 250, 250)
+                    base_style["cuff_tip"] = (210, 15, 25)
+                    base_style["shorts"] = (250, 250, 250)
+                    base_style["socks"] = (210, 15, 25)
+                elif cycle == 1:
+                    # Mia San Mia Regal Gold & Crimson
+                    base_style["pattern"] = "033-E"
+                    base_style["second"] = (212, 175, 55)
+                    base_style["third"] = (250, 250, 250)
+                    base_style["collar"] = (210, 15, 25)
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (212, 175, 55)
+                    base_style["cuff_tip"] = (250, 250, 250)
+                    base_style["shorts"] = (185, 12, 22)
+                    base_style["socks"] = (185, 12, 22)
+                elif cycle == 2:
+                    # Allianz Night Shadow / Triple Red Soundwave
+                    base_style["pattern"] = "183-B"
+                    base_style["second"] = (245, 30, 45)
+                    base_style["third"] = (130, 8, 16)
+                    base_style["collar"] = (145, 10, 20)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (245, 30, 45)
+                    base_style["cuff"] = (145, 10, 20)
+                    base_style["cuff_tip"] = (245, 30, 45)
+                    base_style["shorts"] = (145, 10, 20)
+                    base_style["socks"] = (145, 10, 20)
+                elif cycle == 3:
+                    # Rot-Weiß Classic Retro Polo
+                    base_style["pattern"] = "145-E"
+                    base_style["second"] = (250, 250, 250)
+                    base_style["third"] = (210, 15, 25)
+                    base_style["collar"] = (250, 250, 250)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (210, 15, 25)
+                    base_style["cuff"] = (250, 250, 250)
+                    base_style["cuff_tip"] = (210, 15, 25)
+                    base_style["shorts"] = (250, 250, 250)
+                    base_style["socks"] = (210, 15, 25)
+
+            # OLYMPIQUE LYONNAIS (181)
+            elif cid == 181:
+                base_style["body"] = (250, 250, 252)
+                if cycle == 0:
+                    # Iconic Central Blue & Red Heritage Stripe
+                    base_style["pattern"] = "086"
+                    base_style["second"] = (15, 55, 150)
+                    base_style["third"] = (215, 20, 30)
+                    base_style["collar"] = (15, 55, 150)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (215, 20, 30)
+                    base_style["cuff"] = (15, 55, 150)
+                    base_style["cuff_tip"] = (215, 20, 30)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 1:
+                    # Gônes Tonal Lion Heraldry & Gold Luxury
+                    base_style["pattern"] = "153-E"
+                    base_style["second"] = (212, 175, 55)
+                    base_style["third"] = (15, 55, 150)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (212, 175, 55)
+                    base_style["cuff"] = (212, 175, 55)
+                    base_style["cuff_tip"] = (15, 55, 150)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 2:
+                    # Modern Rhône Dynamic Geo-Camo
+                    base_style["pattern"] = "042-B"
+                    base_style["second"] = (15, 55, 150)
+                    base_style["third"] = (215, 20, 30)
+                    base_style["collar"] = (15, 55, 150)
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (215, 20, 30)
+                    base_style["cuff"] = (215, 20, 30)
+                    base_style["cuff_tip"] = (15, 55, 150)
+                    base_style["shorts"] = (15, 55, 150)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 3:
+                    # Rhône-Alpes Alternating Dual Pinstripes
+                    base_style["pattern"] = "pinstripe"
+                    base_style["second"] = (15, 55, 150)
+                    base_style["third"] = (215, 20, 30)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "crew"
+                    base_style["collar_tip"] = (15, 55, 150)
+                    base_style["cuff"] = (15, 55, 150)
+                    base_style["cuff_tip"] = (215, 20, 30)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (250, 250, 252)
+
+            # STRASBOURG (4213)
+            elif cid == 4213:
+                base_style["body"] = (15, 60, 160)
+                if cycle == 0:
+                    # Racing Blue & White Diagonal Pinstripes
+                    base_style["pattern"] = "183-B"
+                    base_style["second"] = (250, 250, 252)
+                    base_style["third"] = (12, 45, 125)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "crew"
+                    base_style["collar_tip"] = (15, 60, 160)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (15, 60, 160)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (15, 60, 160)
+                elif cycle == 1:
+                    # Alsace Flag & Cathedral Rose Facets
+                    base_style["pattern"] = "024-B"
+                    base_style["second"] = (215, 25, 35)
+                    base_style["third"] = (250, 250, 252)
+                    base_style["collar"] = (15, 60, 160)
+                    base_style["collar_style"] = "v_neck"
+                    base_style["collar_tip"] = (215, 25, 35)
+                    base_style["cuff"] = (215, 25, 35)
+                    base_style["cuff_tip"] = (250, 250, 252)
+                    base_style["shorts"] = (15, 60, 160)
+                    base_style["socks"] = (250, 250, 252)
+                elif cycle == 2:
+                    # Retro Stade de la Meinau Polo
+                    base_style["pattern"] = "070-E"
+                    base_style["second"] = (250, 250, 252)
+                    base_style["third"] = (15, 60, 160)
+                    base_style["collar"] = (250, 250, 252)
+                    base_style["collar_style"] = "polo"
+                    base_style["collar_tip"] = (15, 60, 160)
+                    base_style["cuff"] = (250, 250, 252)
+                    base_style["cuff_tip"] = (15, 60, 160)
+                    base_style["shorts"] = (15, 60, 160)
+                    base_style["socks"] = (15, 60, 160)
+                elif cycle == 3:
+                    # Modern Electric Strasbourg Topo
+                    base_style["pattern"] = "168-B"
+                    base_style["second"] = (0, 195, 230)
+                    base_style["third"] = (250, 250, 252)
+                    base_style["collar"] = (0, 195, 230)
+                    base_style["collar_style"] = "dual_tipped"
+                    base_style["collar_tip"] = (250, 250, 252)
+                    base_style["cuff"] = (0, 195, 230)
+                    base_style["cuff_tip"] = (250, 250, 252)
+                    base_style["shorts"] = (250, 250, 252)
+                    base_style["socks"] = (15, 60, 160)
+            else:
+                # Dynamic seasonal collar and trim styling for other bespoke clubs
+                collar_styles = ["dual_tipped", "v_neck", "polo", "crew"]
+                base_style["collar_style"] = collar_styles[cycle]
 
         pool = base_style.pop("patterns", None)
-        if pool:
+        if pool and "pattern" not in base_style:
             # Deterministic progression with sponsor and club entropy with intra-league zero collision
             p_idx = ((seed ^ (cid * 0x45D9F3B)) + s_off * 37) % len(pool)
             base_style["pattern"] = get_league_assigned_pattern(cid, slot, season, pool[p_idx], pool)
