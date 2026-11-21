@@ -2021,6 +2021,120 @@ def f_liquid_wave(p, d, img, waves=14, amp=38.0):
         _line(d, pts_top, p.second, w=2, a=220)
 
 
+def f_lightning_sash(p, d, img, width=105, border_w=7):
+    """Rayo Vallecano iconic jagged diagonal lightning bolt sash with high-contrast piped borders."""
+    outline_col = p.third if p.third else (215, 175, 55)
+    w, h = p.w, p.h
+    hw = width / 2.0
+
+    # Path points defining the center spine of the lightning bolt:
+    # 1. Top right (shoulder) -> 2. Mid chest -> 3. Sharp zag right -> 4. Bottom left (hip)
+    # Right border and left border offsets
+    pts_left = [
+        (w * 0.72 - hw, -20),
+        (w * 0.42 - hw, h * 0.40),
+        (w * 0.58 - hw, h * 0.38),
+        (w * 0.16 - hw, h + 20),
+    ]
+    pts_right = [
+        (w * 0.72 + hw, -20),
+        (w * 0.42 + hw, h * 0.42),
+        (w * 0.58 + hw, h * 0.40),
+        (w * 0.16 + hw, h + 20),
+    ]
+    poly = pts_left + list(reversed(pts_right))
+
+    # Outer border/piping
+    if border_w > 0:
+        poly_out_l = [
+            (w * 0.72 - hw - border_w, -20),
+            (w * 0.42 - hw - border_w, h * 0.40 - border_w * 0.5),
+            (w * 0.58 - hw - border_w, h * 0.38 - border_w * 0.5),
+            (w * 0.16 - hw - border_w, h + 20),
+        ]
+        poly_out_r = [
+            (w * 0.72 + hw + border_w, -20),
+            (w * 0.42 + hw + border_w, h * 0.42 + border_w * 0.5),
+            (w * 0.58 + hw + border_w, h * 0.40 + border_w * 0.5),
+            (w * 0.16 + hw + border_w, h + 20),
+        ]
+        _poly(d, poly_out_l + list(reversed(poly_out_r)), outline_col, a=255)
+
+    # Main vibrant lightning body
+    _poly(d, poly, p.second, a=255)
+
+    # Center kinetic speed/bevel crease line
+    crease = [
+        (w * 0.72, -20),
+        (w * 0.42, h * 0.41),
+        (w * 0.58, h * 0.39),
+        (w * 0.16, h + 20),
+    ]
+    _line(d, crease, outline_col, w=2, a=210)
+
+
+def f_diagonal_bordered_sash(p, d, img, sash_w=120, border_w=6, gap=5):
+    """River Plate / Vasco da Gama / Rayo classic: diagonal sash with dual contrast flanking pinstripes."""
+    border_col = p.third if p.third else (245, 245, 245)
+    w, h = p.w, p.h
+    hw = sash_w / 2.0
+
+    # Main sash polygon from top-right to bottom-left
+    p_main = [
+        (w * 0.75 - hw, -20), (w * 0.75 + hw, -20),
+        (w * 0.20 + hw, h + 20), (w * 0.20 - hw, h + 20)
+    ]
+    _poly(d, p_main, p.second, a=255)
+
+    # Flanking pinstripes
+    off1 = hw + gap + border_w / 2.0
+    _line(d, [(w * 0.75 - off1, -20), (w * 0.20 - off1, h + 20)], border_col, w=border_w, a=240)
+    _line(d, [(w * 0.75 + off1, -20), (w * 0.20 + off1, h + 20)], border_col, w=border_w, a=240)
+
+
+def f_diagonal_split(p, d, img, border_w=6):
+    """AS Monaco Princess Grace iconic 45-degree diagonal split with contrast divider stripe."""
+    divider_col = p.third if p.third else (245, 245, 245)
+    w, h = p.w, p.h
+
+    # Diagonal half: from top-left (0, 0) down to (w, h*0.75)
+    poly = [(0, 0), (w, h * 0.72), (w, h), (0, h)]
+    _poly(d, poly, p.second, a=255)
+
+    if border_w > 0:
+        _line(d, [(0, 0), (w, h * 0.72)], divider_col, w=border_w, a=255)
+
+
+def f_kinetic_diagonal_pinstripes(p, d, img, count=22):
+    """Modern aerodynamic diagonal speed pinstripes cascading across the torso."""
+    col2 = p.second
+    col3 = p.third if p.third else col2
+    w, h = p.w, p.h
+    step = (w + h) / float(count)
+    for i in range(-5, count + 8):
+        x0 = i * step - h * 0.5
+        y0 = -20
+        x1 = x0 + h * 0.85
+        y1 = h + 20
+        th = 2 if (i % 3 != 0) else 5
+        c = col2 if (i % 2 == 0) else col3
+        a = 230 if (i % 3 == 0) else 160
+        _line(d, [(x0, y0), (x1, y1)], c, w=th, a=a)
+
+
+def f_slanted_chevrons(p, d, img, count=12, thick=18):
+    """Athletic slanted diagonal chevrons cascading down the kit."""
+    col2 = p.second
+    col3 = p.third if p.third else col2
+    w, h = p.w, p.h
+    step = h / float(count)
+    for i in range(-1, count + 2):
+        y = i * step
+        pts = [(0, y), (w * 0.48, y + step * 0.5), (w, y)]
+        c = col2 if (i % 2 == 0) else col3
+        _line(d, pts, c, w=thick, a=190)
+
+
 _reg("210", "Acid Mineral Wash Streetwear", "Fluid", f_acid_wash)
 _reg("211", "Warped Checkerboard Op-Art", "Cultural", f_warped_checks)
 _reg("212", "Cyber Halftone Dither Matrix", "Digital", f_halftone_dither)
@@ -2032,6 +2146,11 @@ _reg("217", "Thermal Elevation Topo", "Fluid", f_thermal_topo)
 _reg("218", "Cyber Glitch Aurora", "Digital", f_glitch_aurora)
 _reg("219", "Architectural Blueprint Grid", "Cultural", f_blueprint_truss)
 _reg("220", "Liquid Metallic Silk Waves", "Fluid", f_liquid_wave)
+_reg("221", "Rayo Lightning Bolt Sash", "Geometric", f_lightning_sash)
+_reg("222", "Bordered Heritage Diagonal Sash", "Geometric", f_diagonal_bordered_sash)
+_reg("223", "Monaco Princess Grace Split", "Geometric", f_diagonal_split)
+_reg("224", "Kinetic Speed Diagonals", "Geometric", f_kinetic_diagonal_pinstripes)
+_reg("225", "Slanted Diagonal Chevrons", "Geometric", f_slanted_chevrons)
 
 
 # =========================================================================== #

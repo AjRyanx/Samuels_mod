@@ -837,6 +837,47 @@ def _apply_engineered_collar(atlas, d, masks):
         draw_m.ellipse([1020, 1030, 1028, 1038], fill=(245, 245, 248, 255), outline=t1_rgba, width=1)
         _composite_layer(atlas, m_layer, body_front)
 
+    elif style == "striped_rib_polo":
+        # Athletic multi-striped polo with spread wings & inset ribbed triangular gusset (Napoli EA7 style)
+        crease_mask = np.zeros_like(collar_mask)
+        crease_mask[1945:1950, :] = collar_mask[1945:1950, :]
+        if np.any(crease_mask):
+            crease_col = (max(0, int(collar[0] * 0.75)),
+                          max(0, int(collar[1] * 0.75)),
+                          max(0, int(collar[2] * 0.75)), 220)
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), crease_col), (0, 0), _mask_img(crease_mask))
+
+        base_polo = np.zeros_like(collar_mask)
+        base_polo[1868:1945, :] = collar_mask[1868:1945, :]
+        if np.any(base_polo):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(base_polo))
+
+        # 3 athletic micro-stripes along the outer folded collar edge
+        s1 = np.zeros_like(collar_mask)
+        s1[1868:1871, :] = collar_mask[1868:1871, :]
+        if np.any(s1):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(s1))
+
+        s2 = np.zeros_like(collar_mask)
+        s2[1873:1876, :] = collar_mask[1873:1876, :]
+        if np.any(s2):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t2_rgba), (0, 0), _mask_img(s2))
+
+        s3 = np.zeros_like(collar_mask)
+        s3[1878:1881, :] = collar_mask[1878:1881, :]
+        if np.any(s3):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(s3))
+
+        # Inset triangular ribbed gusset at the chest apex of body_front (X: 1004..1044, Y: 996..1048)
+        gusset_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_g = ImageDraw.Draw(gusset_layer)
+        draw_g.polygon([(1004, 996), (1044, 996), (1024, 1048)], fill=c_rgba)
+        for rx in range(1010, 1039, 4):
+            draw_g.line([(rx, 998), (rx, max(1000, 1044 - int(abs(rx - 1024) * 2.2)))], fill=t1_rgba, width=1)
+        draw_g.line([(1004, 996), (1024, 1048)], fill=t1_rgba, width=2)
+        draw_g.line([(1044, 996), (1024, 1048)], fill=t1_rgba, width=2)
+        _composite_layer(atlas, gusset_layer, body_front)
+
     else:
         # Classic Crew / Round Neck: outer ribbing tipping band + subtle elastic ribbing
         if tip1 != collar:
@@ -928,12 +969,48 @@ def _apply_engineered_cuffs(atlas, d, masks):
             check_mask[y_s[checks], x_s[checks]] = True
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(check_mask))
 
+    elif style == "striped_rib":
+        # Multi-stripe ribbed athletic cuff (3 micro-stripes matching striped_rib_polo)
+        cuff_mask = np.zeros_like(sleeve_mask)
+        cuff_mask[658:680, :] = sleeve_mask[658:680, :]
+        cuff_mask[710:732, :] = sleeve_mask[710:732, :]
+        cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
+        if np.any(cuff_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+
+        stripe_m1 = np.zeros_like(sleeve_mask)
+        stripe_m2 = np.zeros_like(sleeve_mask)
+        stripe_m3 = np.zeros_like(sleeve_mask)
+
+        # Long sleeve wrist
+        stripe_m1[660:663, :] = sleeve_mask[660:663, :]
+        stripe_m2[666:669, :] = sleeve_mask[666:669, :]
+        stripe_m3[672:675, :] = sleeve_mask[672:675, :]
+
+        # Short sleeve front hem
+        stripe_m1[712:715, :] = sleeve_mask[712:715, :]
+        stripe_m2[718:721, :] = sleeve_mask[718:721, :]
+        stripe_m3[724:727, :] = sleeve_mask[724:727, :]
+
+        # Short sleeve rear hem
+        stripe_m1[1133:1136, :] = sleeve_mask[1133:1136, :]
+        stripe_m2[1139:1142, :] = sleeve_mask[1139:1142, :]
+        stripe_m3[1145:1148, :] = sleeve_mask[1145:1148, :]
+
+        if np.any(stripe_m1):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(stripe_m1))
+        if np.any(stripe_m2):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip2_col), (0, 0), _mask_img(stripe_m2))
+        if np.any(stripe_m3):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(stripe_m3))
+
 
 def _apply_sleeve_architecture(atlas, d, masks):
     """Render distinctive shoulder, sleeve, and yoke architecture:
     - 'grunge_yoke': Aggressive urban brushstroke splatter across chest/shoulder saddle and sleeves (BVB Cup kit style)
     - 'brand_track_tape': Continuous branded geometric track running down the sleeve outer ridge (LOSC Lille / Kappa style)
     - 'seam_piping': Modern ergonomic contrast piping along the raglan diagonal seams
+    - 'raglan_piping': Contrast shoulder/raglan panels with dual piping along the seams (Rayo Vallecano style)
     """
     style = d.get("sleeve_style", "solid")
     if style in ("solid", "raglan", "tipped"):
@@ -1018,6 +1095,20 @@ def _apply_sleeve_architecture(atlas, d, masks):
         draw_p.line([(1308, 970), (1208, 1020), (1138, 1100)], fill=acc_rgba, width=4)
         draw_p.line([(740, 970), (840, 1020), (910, 1100)], fill=tip_rgba, width=1)
         draw_p.line([(1308, 970), (1208, 1020), (1138, 1100)], fill=tip_rgba, width=1)
+        _composite_layer(atlas, pipe_layer, body_front | sleeve_mask)
+
+    elif style in ("raglan_piping", "contrast_raglan_piped"):
+        # Contrast shoulder raglan with dual piping along the seams (Rayo Vallecano style)
+        pipe_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_p = ImageDraw.Draw(pipe_layer)
+        # Raglan front diagonals
+        draw_p.line([(730, 960), (830, 1010), (915, 1110)], fill=acc_rgba, width=5)
+        draw_p.line([(730, 960), (830, 1010), (915, 1110)], fill=tip_rgba, width=2)
+        draw_p.line([(1318, 960), (1218, 1010), (1133, 1110)], fill=acc_rgba, width=5)
+        draw_p.line([(1318, 960), (1218, 1010), (1133, 1110)], fill=tip_rgba, width=2)
+        # Shoulder ridge stripes
+        draw_p.line([(50, 404), (440, 404)], fill=tip_rgba, width=3)
+        draw_p.line([(1610, 404), (1990, 404)], fill=tip_rgba, width=3)
         _composite_layer(atlas, pipe_layer, body_front | sleeve_mask)
 
 
@@ -2281,6 +2372,25 @@ def mockup(design, club_name, season, out_png):
                 chk_m = np.zeros_like(sm)
                 chk_m[y_s[checks], x_s[checks]] = True
                 canvas.paste(Image.new("RGBA", (W, H), tip_col), (0, 0), Image.fromarray((chk_m * 255).astype("uint8"), "L"))
+        elif style_cuff == "striped_rib":
+            band_top = 268
+            cm = np.zeros_like(sm)
+            cm[band_top:283, :] = sm[band_top:283, :]
+            if np.any(cm):
+                canvas.paste(Image.new("RGBA", (W, H), cuff_col), (0, 0), Image.fromarray((cm * 255).astype("uint8"), "L"))
+            s1 = np.zeros_like(sm)
+            s2 = np.zeros_like(sm)
+            s3 = np.zeros_like(sm)
+            s1[band_top + 2:band_top + 4, :] = sm[band_top + 2:band_top + 4, :]
+            s2[band_top + 6:band_top + 8, :] = sm[band_top + 6:band_top + 8, :]
+            s3[band_top + 10:band_top + 12, :] = sm[band_top + 10:band_top + 12, :]
+            tip2_c = tuple(design.get("third") or design.get("second") or cuff_tip) + (255,)
+            if np.any(s1):
+                canvas.paste(Image.new("RGBA", (W, H), tip_col), (0, 0), Image.fromarray((s1 * 255).astype("uint8"), "L"))
+            if np.any(s2):
+                canvas.paste(Image.new("RGBA", (W, H), tip2_c), (0, 0), Image.fromarray((s2 * 255).astype("uint8"), "L"))
+            if np.any(s3):
+                canvas.paste(Image.new("RGBA", (W, H), tip_col), (0, 0), Image.fromarray((s3 * 255).astype("uint8"), "L"))
 
     d = ImageDraw.Draw(canvas)
 
@@ -2356,6 +2466,16 @@ def mockup(design, club_name, season, out_png):
         d.line([(200, 40), (108, 150)], fill=str_col, width=3)
         d.line([(280, 40), (372, 150)], fill=str_col, width=3)
 
+    elif s_arch in ("raglan_piping", "contrast_raglan_piped"):
+        tip2_c = tuple(design.get("third") or design.get("accent") or acc_cand) + (255,)
+        d.line([(200, 40), (108, 150)], fill=str_col, width=5)
+        d.line([(200, 40), (108, 150)], fill=tip2_c, width=2)
+        d.line([(280, 40), (372, 150)], fill=str_col, width=5)
+        d.line([(280, 40), (372, 150)], fill=tip2_c, width=2)
+        # Shoulder ridge stripes
+        d.line([(195, 42), (120, 84)], fill=tip2_c, width=2)
+        d.line([(285, 42), (360, 84)], fill=tip2_c, width=2)
+
     # Vent panels on 2D mockup flanks
     v_style = design.get("vent_style", "none")
     if v_style and v_style != "none":
@@ -2400,6 +2520,20 @@ def mockup(design, club_name, season, out_png):
         d.rectangle([237, 54, 243, 68], fill=trim + (255,))
         btn_c = (245, 245, 248, 255) if _col_lum(trim) < 160 else (25, 25, 30, 255)
         d.ellipse([238, 58, 242, 62], fill=btn_c)
+    elif c_style == "striped_rib_polo":
+        # Spread polo wings with 3 athletic micro-stripes and inset ribbed triangular gusset (Napoli EA7 style)
+        d.polygon([(192, 40), (214, 68), (234, 52), (246, 52), (266, 68), (288, 40), (272, 38), (240, 44), (208, 38)],
+                  fill=trim + (255,), outline=tip_col)
+        tip2_c = tuple(design.get("third") or design.get("second") or trim) + (255,)
+        d.line([(194, 43), (212, 65)], fill=tip_col, width=1)
+        d.line([(196, 45), (210, 63)], fill=tip2_c, width=1)
+        d.line([(286, 43), (268, 65)], fill=tip_col, width=1)
+        d.line([(284, 45), (270, 63)], fill=tip2_c, width=1)
+        # Inset triangular ribbed gusset
+        d.polygon([(234, 52), (246, 52), (240, 78)], fill=trim + (255,))
+        for rx in (236, 238, 240, 242, 244):
+            d.line([(rx, 53), (rx, max(54, 74 - abs(rx - 240) * 3))], fill=tip_col, width=1)
+        d.line([(234, 52), (240, 78), (246, 52)], fill=tip_col, width=2)
     elif c_style == "v_neck":
         d.polygon([(200, 40), (240, 86), (280, 40), (268, 40), (240, 70), (212, 40)],
                   fill=trim + (255,))

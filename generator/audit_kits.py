@@ -175,15 +175,17 @@ def lint_kit(club, slot, design, chest_img):
 
     # Rule 3: Collar Harmony
     dist_to_body = color_distance(body_col, collar_col)
-    # Check if collar matches body tone, design trim colors, or club colors
+    # Check if collar matches body tone, design trim colors, sleeves, or club colors
     d_sec = design.get("second", (255, 255, 255))
     d_acc = design.get("third", (255, 255, 255))
+    d_sleeve = design.get("sleeve", body_col)
     sec_col = _hexc(club.get("secondary", "#FFFFFF"))
     acc_col = _hexc(club.get("accent", "#FFFFFF"))
 
     min_trim_dist = min(
         color_distance(d_sec, collar_col),
         color_distance(d_acc, collar_col),
+        color_distance(d_sleeve, collar_col),
         color_distance(sec_col, collar_col),
         color_distance(acc_col, collar_col),
     )
