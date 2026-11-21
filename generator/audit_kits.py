@@ -238,8 +238,8 @@ def lint_kit(club, slot, design, chest_img):
 
 
 def crop_chest(atlas_img):
-    """Crop the chest area (x: 700..1350, y: 1000..1550) containing collar, badge, supplier & sponsor."""
-    return atlas_img.crop((700, 1000, 1350, 1550))
+    """Crop the chest area (x: 700..1350, y: 952..1550) containing collar, badge, supplier & sponsor."""
+    return atlas_img.crop((700, 952, 1350, 1550))
 
 
 def crop_torso(atlas_img):
@@ -248,8 +248,15 @@ def crop_torso(atlas_img):
 
 
 def crop_sleeve(atlas_img):
-    """Crop the left sleeve area showing sleeve sponsor mark (e.g. HP / Visit Rwanda at y:75) and shoulder crown."""
-    return atlas_img.crop((30, 15, 480, 460))
+    """Composite of left sleeve area showing shoulder crown/sleeve sponsor AND cuff bands."""
+    crown = atlas_img.crop((30, 15, 480, 460))
+    cuff_short = atlas_img.crop((30, 700, 480, 745))
+    cuff_long = atlas_img.crop((30, 650, 480, 690))
+    comp = Image.new("RGBA", (450, 560), (12, 16, 24, 255))
+    comp.paste(crown, (0, 0), crown if crown.mode == "RGBA" else None)
+    comp.paste(cuff_short, (0, 465), cuff_short if cuff_short.mode == "RGBA" else None)
+    comp.paste(cuff_long, (0, 512), cuff_long if cuff_long.mode == "RGBA" else None)
+    return comp
 
 
 def crop_shoulder(atlas_img):
@@ -331,6 +338,7 @@ def generate_html_gallery(audit_data, out_html_path):
         badge_img_tag = f'<img src="{item["badge_rel"]}" class="club-crest" alt="crest" onerror="this.style.display=\'none\'">' if item.get("badge_rel") else ''
 
         kit_tag = f'<img src="{item["kit_rel"]}" class="kit-img" alt="Full Kit Preview" loading="lazy">' if item.get("kit_rel") else ''
+        mockup_tag = f'<img src="{item["mockup_rel"]}" class="mockup-img" alt="2D Mockup Preview" loading="lazy" style="display:none;">' if item.get("mockup_rel") else ''
         chest_tag = f'<img src="{item["chest_rel"]}" class="chest-img" alt="Chest Preview" loading="lazy" style="display:none;">' if item.get("chest_rel") else ''
         shorts_tag = f'<img src="{item["shorts_rel"]}" class="shorts-img" alt="Shorts Preview" loading="lazy" style="display:none;">' if item.get("shorts_rel") else ''
         shoulder_tag = f'<img src="{item["shoulder_rel"]}" class="shoulder-img" alt="Shoulder Preview" loading="lazy" style="display:none;">' if item.get("shoulder_rel") else ''
@@ -354,6 +362,7 @@ def generate_html_gallery(audit_data, out_html_path):
             
             <div class="preview-container">
                 {kit_tag}
+                {mockup_tag}
                 {chest_tag}
                 {shorts_tag}
                 {shoulder_tag}
@@ -378,9 +387,14 @@ def generate_html_gallery(audit_data, out_html_path):
                 </div>
 
                 <div class="meta-row">
+                    <span>Collar: <strong>{html.escape(str(design.get('collar_style', 'crew'))).upper()}</strong></span>
+                    <span>Cuff: <strong>{html.escape(str(design.get('cuff_style', 'solid'))).upper()}</strong></span>
+                    <span>Sleeve: <strong>{html.escape(str(design.get('sleeve_style', 'solid'))).upper()}</strong></span>
+                </div>
+                <div class="meta-row">
                     <span>Pattern: <strong>{html.escape(str(design.get('pattern_name', design.get('pattern', 'plain'))))}</strong></span>
                     <span>Sponsor: <strong>{html.escape(item.get('sponsor_name', 'None')).upper()}</strong></span>
-                    <span>Sleeve: <strong>{html.escape(item.get('sleeve_name', 'None')).upper()}</strong></span>
+                    <span>Sleeve Sp: <strong>{html.escape(item.get('sleeve_name', 'None')).upper()}</strong></span>
                 </div>
 
                 <div class="lint-list">
@@ -493,11 +507,12 @@ def generate_html_gallery(audit_data, out_html_path):
         <div style="display:flex; gap:12px; flex-wrap:wrap">
             <div class="filter-group" id="viewModeFilter">
                 <button class="filter-btn active" id="btnKitView" onclick="setViewMode('kit')">Full Kit (Shirt+Shorts)</button>
+                <button class="filter-btn" id="btnMockupView" onclick="setViewMode('mockup')">2D Mockup</button>
+                <button class="filter-btn" id="btnChestView" onclick="setViewMode('chest')">Chest &amp; Collar</button>
+                <button class="filter-btn" id="btnSleeveView" onclick="setViewMode('sleeve')">Sleeve &amp; Cuffs</button>
+                <button class="filter-btn" id="btnTorsoView" onclick="setViewMode('torso')">Full Torso</button>
                 <button class="filter-btn" id="btnShortsView" onclick="setViewMode('shorts')">Shorts Focus</button>
                 <button class="filter-btn" id="btnShoulderView" onclick="setViewMode('shoulder')">Shoulder (3-Stripes)</button>
-                <button class="filter-btn" id="btnChestView" onclick="setViewMode('chest')">Chest Focus</button>
-                <button class="filter-btn" id="btnTorsoView" onclick="setViewMode('torso')">Full Torso</button>
-                <button class="filter-btn" id="btnSleeveView" onclick="setViewMode('sleeve')">Left Sleeve</button>
             </div>
 
             <div class="filter-group" id="statusFilter">
@@ -546,6 +561,7 @@ def generate_html_gallery(audit_data, out_html_path):
 
         function setViewMode(mode) {{
             document.querySelectorAll('.kit-img').forEach(el => el.style.display = (mode === 'kit') ? 'block' : 'none');
+            document.querySelectorAll('.mockup-img').forEach(el => el.style.display = (mode === 'mockup') ? 'block' : 'none');
             document.querySelectorAll('.shorts-img').forEach(el => el.style.display = (mode === 'shorts') ? 'block' : 'none');
             document.querySelectorAll('.shoulder-img').forEach(el => el.style.display = (mode === 'shoulder') ? 'block' : 'none');
             document.querySelectorAll('.chest-img').forEach(el => el.style.display = (mode === 'chest') ? 'block' : 'none');
@@ -553,6 +569,7 @@ def generate_html_gallery(audit_data, out_html_path):
             document.querySelectorAll('.sleeve-img').forEach(el => el.style.display = (mode === 'sleeve') ? 'block' : 'none');
 
             document.getElementById('btnKitView').classList.toggle('active', mode === 'kit');
+            document.getElementById('btnMockupView').classList.toggle('active', mode === 'mockup');
             document.getElementById('btnShortsView').classList.toggle('active', mode === 'shorts');
             document.getElementById('btnShoulderView').classList.toggle('active', mode === 'shoulder');
             document.getElementById('btnChestView').classList.toggle('active', mode === 'chest');
@@ -751,6 +768,7 @@ def main():
                 atlas_png = crops_dir / f"atlas_{cid}_{season}_{slot_code}.png"
                 kit_png = crops_dir / f"kit_{cid}_{season}_{slot_code}.png"
                 chest_png = crops_dir / f"chest_{cid}_{season}_{slot_code}.png"
+                mockup_png = crops_dir / f"mockup_{cid}_{season}_{slot_code}.png"
                 shorts_png = crops_dir / f"shorts_{cid}_{season}_{slot_code}.png"
                 shoulder_png = crops_dir / f"shoulder_{cid}_{season}_{slot_code}.png"
                 torso_png = crops_dir / f"torso_{cid}_{season}_{slot_code}.png"
@@ -760,6 +778,12 @@ def main():
                 _, design = render_club(club, season, atlas_png, logo_dir,
                                         masks=masks, slot=slot, sponsor=active_sponsor,
                                         badge_dir=badge_dir)
+
+                # Generate 2D Mockup preview
+                try:
+                    kit_render.mockup(design, club["name"], season, mockup_png)
+                except Exception:
+                    pass
 
                 # Crop previews
                 with Image.open(atlas_png) as im:
@@ -804,6 +828,7 @@ def main():
                     "sponsor_name": active_sponsor or "None",
                     "sleeve_name": sl_name,
                     "kit_rel": f"crops/{kit_png.name}",
+                    "mockup_rel": f"crops/{mockup_png.name}",
                     "chest_rel": f"crops/{chest_png.name}",
                     "shorts_rel": f"crops/{shorts_png.name}",
                     "shoulder_rel": f"crops/{shoulder_png.name}",
