@@ -594,23 +594,75 @@ BESPOKE_DNA: Dict[int, Dict[int, Dict[str, Any]]] = {
             "patterns": ["plain", "167-E", "041-E", "067-E", "185-E"],
             "sleeve": (250, 220, 0), "shorts": (18, 18, 20),
             "socks": (250, 220, 0), "collar": (18, 18, 20),
-            "cuff": (18, 18, 20),
+            "collar_style": "crossover_v",
+            "cuff": (18, 18, 20), "cuff_style": "wide_band",
             "gradient": 0, "supplier": "puma",
             "sponsor_dark": (18, 18, 20),
         },
-        2: {  # Away: Blackout coal & steel aesthetic
-            "body": (22, 22, 24), "second": (250, 220, 0), "third": (80, 85, 95),
-            "patterns": ["041-E", "220-E", "166-B", "171-E"],
-            "sleeve": (22, 22, 24), "shorts": (22, 22, 24),
-            "socks": (250, 220, 0), "collar": (250, 220, 0),
-            "gradient": 1, "supplier": "puma",
-        },
-        3: {  # Third: Retro white & neon yellow cup kit
-            "body": (250, 250, 252), "second": (250, 220, 0), "third": (18, 18, 20),
-            "patterns": ["083", "085", "003-B", "024"],
-            "sleeve": (250, 250, 252), "shorts": (18, 18, 20),
-            "socks": (250, 250, 252), "collar": (18, 18, 20),
+        2: {  # Away: Electric volt & purple streetwear aesthetic (from reference photos)
+            "body": (155, 105, 175), "second": (205, 255, 30), "third": (18, 18, 20),
+            "patterns": ["plain", "041-E", "220-E", "166-B"],
+            "sleeve": (155, 105, 175), "shorts": (155, 105, 175),
+            "socks": (155, 105, 175), "collar": (18, 18, 20),
+            "collar_style": "crossover_v", "collar_tip": (205, 255, 30),
+            "cuff": (18, 18, 20), "cuff_style": "micro_tipped", "cuff_tip": (205, 255, 30),
             "gradient": 0, "supplier": "puma",
+        },
+        3: {  # Third / Cup: Iconic yellow & black grunge yoke brush splatter (from reference photos)
+            "body": (250, 220, 0), "second": (18, 18, 20), "third": (250, 220, 0),
+            "patterns": ["plain"],
+            "sleeve": (18, 18, 20), "sleeve_style": "grunge_yoke",
+            "shorts": (18, 18, 20), "socks": (250, 220, 0), "collar": (18, 18, 20),
+            "collar_style": "crossover_v", "cuff": (18, 18, 20), "cuff_style": "wide_band",
+            "stripe_accent": (18, 18, 20),
+            "gradient": 0, "supplier": "puma",
+            "sponsor_dark": (18, 18, 20),
+        },
+    },
+
+    # LOSC Lille (Ligue 1 - running brand track tape & retro thick crew neck)
+    213: {
+        1: {  # Home: Master French Crimson with Navy Track Ribbon
+            "body": (185, 25, 40), "second": (15, 35, 75), "third": (250, 250, 252),
+            "patterns": ["plain", "005", "022", "171-E"],
+            "sleeve": (185, 25, 40), "sleeve_style": "brand_track_tape",
+            "stripe_accent": (15, 35, 75),
+            "shorts": (15, 35, 75), "socks": (15, 35, 75),
+            "collar": (15, 35, 75), "collar_style": "retro_crew", "collar_tip": (250, 250, 252),
+            "cuff": (15, 35, 75), "cuff_style": "solid",
+            "gradient": 0, "supplier": "newbalance",
+        },
+        2: {  # Away: Pure White with Navy Brand Track Ribbon
+            "body": (250, 250, 252), "second": (15, 35, 75), "third": (185, 25, 40),
+            "patterns": ["plain", "022", "095"],
+            "sleeve": (250, 250, 252), "sleeve_style": "brand_track_tape",
+            "stripe_accent": (15, 35, 75),
+            "shorts": (250, 250, 252), "socks": (250, 250, 252),
+            "collar": (15, 35, 75), "collar_style": "retro_crew", "collar_tip": (185, 25, 40),
+            "cuff": (15, 35, 75), "cuff_style": "solid",
+            "gradient": 0, "supplier": "newbalance",
+        },
+    },
+
+    # Venezia FC (Italian Haute Couture - tailored open-notch polo & jacquard knit tipping)
+    4229: {
+        1: {  # Home: Deep Noir with Luxury Gold & Jacquard Knit Edges
+            "body": (18, 20, 24), "second": (214, 175, 65), "third": (25, 75, 50),
+            "patterns": ["plain", "005"],
+            "sleeve": (18, 20, 24), "sleeve_style": "raglan",
+            "shorts": (18, 20, 24), "socks": (18, 20, 24),
+            "collar": (18, 20, 24), "collar_style": "polo_v_notch", "collar_tip": (214, 175, 65),
+            "cuff": (18, 20, 24), "cuff_style": "jacquard_knit", "cuff_tip": (214, 175, 65),
+            "gradient": 0, "supplier": "kappa",
+        },
+        2: {  # Away: Royal Lagoon / Warm Ecru Luxury with Gold Accents
+            "body": (20, 55, 145), "second": (214, 175, 65), "third": (245, 245, 248),
+            "patterns": ["plain", "020"],
+            "sleeve": (20, 55, 145), "sleeve_style": "raglan",
+            "shorts": (20, 55, 145), "socks": (20, 55, 145),
+            "collar": (20, 55, 145), "collar_style": "polo_v_notch", "collar_tip": (214, 175, 65),
+            "cuff": (20, 55, 145), "cuff_style": "jacquard_knit", "cuff_tip": (214, 175, 65),
+            "gradient": 0, "supplier": "kappa",
         },
     },
 
@@ -2414,7 +2466,9 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
 
         # Tailoring trims for bespoke clubs
         if "collar_style" not in base_style:
-            base_style["collar_style"] = ["crew", "dual_tipped", "v_neck", "polo"][(salt_val // 19) % 4]
+            base_style["collar_style"] = ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch", "mandarin_button"][(salt_val // 19) % 8]
+        if "cuff_style" not in base_style:
+            base_style["cuff_style"] = ["solid", "wide_band", "micro_tipped", "dual_stripe", "jacquard_knit"][(salt_val // 7) % 5]
         if "cuff_tip" not in base_style:
             base_style["cuff_tip"] = base_style.get("third") or base_style.get("second")
         if "collar_tip" not in base_style:
@@ -2435,7 +2489,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             elif cid == 101 and slot == 1:
                 base_style["sleeve_style"] = "raglan"
             else:
-                base_style["sleeve_style"] = ["solid", "tipped", "shoulder_stripe", "tipped"][(salt_val // 13) % 4]
+                base_style["sleeve_style"] = ["solid", "tipped", "shoulder_stripe", "brand_track_tape", "seam_piping", "raglan"][(salt_val // 13) % 6]
         if "vent_style" not in base_style:
             base_style["vent_style"] = ["laser_cut", "stealth_rib", "contrast_panel", "none"][(salt_val // 17) % 4]
         if "macro_layout" not in base_style:
@@ -2503,7 +2557,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "var": (seed >> 8) % 3,
             "width_step": (seed >> 11) % 8,
             "sleeve": primary,
-            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["solid", "tipped", "shoulder_stripe", "tipped"][(seed >> 5) % 4],
+            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["solid", "tipped", "shoulder_stripe", "brand_track_tape", "seam_piping", "raglan"][(seed >> 5) % 6],
             "shorts": shorts_col,
             "shorts_style": "three_stripes" if supplier == "adidas" else ["split_leg", "side_stripe", "hem_tape", "solid"][(seed >> 7) % 4],
             "shorts_accent": secondary if shorts_col == primary else primary,
@@ -2512,9 +2566,10 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "socks_accent": secondary,
             "socks_tip": accent,
             "collar": collar_col,
-            "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 4) % 4],
+            "collar_style": ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch"][(seed >> 4) % 7],
             "collar_tip": accent if ((seed >> 2) % 2) else collar_col,
             "cuff": secondary,
+            "cuff_style": ["solid", "wide_band", "micro_tipped", "dual_stripe", "jacquard_knit"][(seed >> 3) % 5],
             "cuff_tip": accent if ((seed >> 3) % 3 == 0) else secondary,
             "gradient": 0,
             "supplier": supplier,
@@ -2581,7 +2636,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "var": (seed >> 8) % 3,
             "width_step": (seed >> 11) % 8,
             "sleeve": away_body,
-            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["tipped", "raglan", "shoulder_stripe", "solid"][(seed >> 9) % 4],
+            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["tipped", "raglan", "shoulder_stripe", "brand_track_tape", "solid", "seam_piping"][(seed >> 9) % 6],
             "shorts": away_shorts,
             "shorts_style": "three_stripes" if supplier == "adidas" else ["split_leg", "side_stripe", "hem_tape", "solid"][(seed >> 5) % 4],
             "shorts_accent": away_second,
@@ -2590,9 +2645,10 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "socks_accent": away_second,
             "socks_tip": away_third,
             "collar": away_collar,
-            "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 5) % 4],
+            "collar_style": ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch"][(seed >> 5) % 7],
             "collar_tip": away_third,
             "cuff": away_second,
+            "cuff_style": ["solid", "wide_band", "micro_tipped", "dual_stripe"][(seed >> 6) % 4],
             "cuff_tip": away_third,
             "gradient": 1 if (seed % 2) else 0,
             "supplier": supplier,
@@ -2630,7 +2686,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "var": (seed >> 8) % 3,
             "width_step": (seed >> 11) % 8,
             "sleeve": third_body,
-            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["tipped", "shoulder_stripe", "tipped", "raglan"][(seed >> 5) % 4],
+            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["tipped", "shoulder_stripe", "grunge_yoke", "brand_track_tape", "raglan", "seam_piping"][(seed >> 5) % 6],
             "shorts": third_shorts,
             "shorts_style": "three_stripes" if supplier == "adidas" else ["split_leg", "side_stripe", "hem_tape", "solid"][(seed >> 3) % 4],
             "shorts_accent": third_second if third_shorts == third_body else third_third,
@@ -2639,9 +2695,10 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "socks_accent": third_second if third_socks == third_body else third_third,
             "socks_tip": third_third,
             "collar": third_collar,
-            "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 6) % 4],
+            "collar_style": ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch", "mandarin_button"][(seed >> 6) % 8],
             "collar_tip": third_third,
             "cuff": third_cuff,
+            "cuff_style": ["solid", "wide_band", "micro_tipped", "dual_stripe", "jacquard_knit"][(seed >> 4) % 5],
             "cuff_tip": third_third,
             "gradient": [0, 1, 2, 3][(seed >> 2) % 4],
             "supplier": supplier,
