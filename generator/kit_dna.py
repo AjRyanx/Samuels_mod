@@ -1707,6 +1707,16 @@ POOL_GK_STREETWEAR = [
     "126-B", "022-B", "131-B", "204-B", "216-B", "217-B", "218-B", "220-B"
 ]
 
+POOL_MACRO_GK: List[str] = [
+    "prismatic_shards",
+    "optical_warp",
+    "dual_contrast_split",
+    "graffiti_splatter",
+    "flame_sunburst",
+    "ombre_fade",
+    "solid",
+]
+
 
 def pick_gk_palette(club: Dict[str, Any], season: int, slot: str = "g1", sponsor: Optional[str] = None) -> Dict[str, Any]:
     """Pick an iconic high-vis GK streetwear palette that is guaranteed NOT to clash
@@ -1797,23 +1807,24 @@ def _generate_gk_dna(club: Dict[str, Any], season: int, slot: str = "g1", sponso
         "var": (seed >> 8) % 3,
         "width_step": (seed >> 11) % 8,
         "sleeve": gk_body,
-        "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["raglan", "tipped", "shoulder_stripe", "solid"][(seed >> 5) % 4],
+        "sleeve_style": "shoulder_stripe" if supplier == "adidas" else POOL_SLEEVE_STYLES_GK[(seed >> 5) % len(POOL_SLEEVE_STYLES_GK)],
+        "fabric_finish": POOL_FABRIC_FINISHES_GK[(seed >> 6) % len(POOL_FABRIC_FINISHES_GK)],
         "shorts": shorts_col,
-        "shorts_style": "three_stripes" if supplier == "adidas" else ["split_leg", "side_stripe", "hem_tape", "solid"][(seed >> 7) % 4],
+        "shorts_style": "three_stripes" if supplier == "adidas" else POOL_SHORTS_STYLES_GK[(seed >> 7) % len(POOL_SHORTS_STYLES_GK)],
         "shorts_accent": gk_second if shorts_col == gk_body else gk_body,
         "socks": socks_col,
-        "socks_style": ["turnover_hoop", "calf_band", "gradient_fade", "solid"][(seed >> 11) % 4],
+        "socks_style": POOL_SOCKS_STYLES_GK[(seed >> 11) % len(POOL_SOCKS_STYLES_GK)],
         "socks_accent": gk_second if socks_col == gk_body else gk_body,
         "socks_tip": gk_third,
         "collar": collar_col,
-        "collar_style": ["crew", "dual_tipped", "v_neck", "polo"][(seed >> 4) % 4],
+        "collar_style": ["crew", "dual_tipped", "v_neck", "crossover_v", "wrap_v_neck", "square_neck", "mock_turtleneck_micro", "polo"][(seed >> 4) % 8],
         "collar_tip": gk_third if ((seed >> 2) % 2) else collar_col,
         "cuff": cuff_col,
         "cuff_tip": gk_third if ((seed >> 3) % 3 == 0) else cuff_col,
         "gradient": 1 if (seed % 2) else 0,
         "supplier": supplier,
         "vent_style": ["laser_cut", "stealth_rib", "contrast_panel"][(seed >> 2) % 3],
-        "macro_layout": ["solid", "ombre_fade", "solid"][(seed >> 5) % 3],
+        "macro_layout": POOL_MACRO_GK[(seed >> 5) % len(POOL_MACRO_GK)],
         "pattern_mask": ["front_only", "full", "front_only"][(seed >> 7) % 3],
         "tile_scale": 1.0,
     }
@@ -1941,7 +1952,10 @@ CLUB_SUPPLIERS: Dict[int, str] = {
     139: "adidas",      # Boca Juniors
 }
 
-GENERIC_SUPPLIERS = ["adidas", "nike", "puma", "umbro", "macron", "kappa", "joma", "hummel", "castore"]
+GENERIC_SUPPLIERS = [
+    "adidas", "nike", "puma", "umbro", "macron", "kappa",
+    "joma", "hummel", "castore", "mizuno", "newbalance", "ea7"
+]
 
 def get_club_supplier(cid: int, name: str = "") -> str:
     """Return authentic supplier for club, or a deterministic premier brand."""
@@ -2007,6 +2021,245 @@ def get_club_sleeve_sponsor(cid: int, season: int = 2026, sponsor: Optional[str]
     return SLEEVE_SPONSOR_POOL[idx]
 
 
+# PES 2021 3D Kitserver Collar Model Mapping
+COLLAR_STYLE_TO_MODEL: Dict[str, int] = {
+    "crew": 1,
+    "retro_crew": 2,
+    "dual_tipped": 2,
+    "v_neck": 3,
+    "crossover_v": 4,
+    "polo": 13,
+    "polo_v_notch": 105,
+    "striped_rib_polo": 46,
+    "mandarin_button": 64,
+    "wrap_v_neck": 78,
+    "grandad_collar": 64,
+    "square_neck": 118,
+    "contrast_split_collar": 38,
+    "laced_placket": 14,
+    "mock_turtleneck_micro": 38,
+}
+
+POOL_COLLAR_STYLES = [
+    "crew",
+    "retro_crew",
+    "dual_tipped",
+    "v_neck",
+    "crossover_v",
+    "polo",
+    "polo_v_notch",
+    "striped_rib_polo",
+    "mandarin_button",
+    "wrap_v_neck",
+    "grandad_collar",
+    "square_neck",
+    "contrast_split_collar",
+    "laced_placket",
+    "mock_turtleneck_micro",
+]
+
+POOL_SHORTS_STYLES: List[str] = [
+    "solid",
+    "side_stripe",
+    "dual_side_stripes",
+    "split_leg",
+    "hem_tape",
+    "contrast_flank_panel",
+    "hem_turnup_notch",
+    "two_tone_halves",
+    "gradient_side_fade",
+    "contrast_waistband",
+]
+
+POOL_SHORTS_STYLES_HOME: List[str] = [
+    "solid",
+    "side_stripe",
+    "dual_side_stripes",
+    "split_leg",
+    "hem_tape",
+    "contrast_flank_panel",
+    "hem_turnup_notch",
+    "contrast_waistband",
+]
+
+POOL_SHORTS_STYLES_AWAY: List[str] = [
+    "solid",
+    "side_stripe",
+    "dual_side_stripes",
+    "split_leg",
+    "hem_tape",
+    "contrast_flank_panel",
+    "hem_turnup_notch",
+    "gradient_side_fade",
+    "contrast_waistband",
+]
+
+POOL_SHORTS_STYLES_THIRD: List[str] = [
+    "contrast_flank_panel",
+    "dual_side_stripes",
+    "hem_turnup_notch",
+    "two_tone_halves",
+    "gradient_side_fade",
+    "contrast_waistband",
+    "side_stripe",
+    "hem_tape",
+]
+
+POOL_SHORTS_STYLES_GK: List[str] = [
+    "solid",
+    "side_stripe",
+    "contrast_flank_panel",
+    "hem_turnup_notch",
+    "contrast_waistband",
+    "gradient_side_fade",
+    "dual_side_stripes",
+]
+
+POOL_SOCKS_STYLES: List[str] = [
+    "solid",
+    "turnover_hoop",
+    "dual_hoop_turnover",
+    "triple_hoop_turnover",
+    "full_hooped_body",
+    "calf_band",
+    "triple_calf_hoops",
+    "vertical_back_spine",
+    "gradient_dip",
+    "gradient_fade",
+    "ankle_bracket_cuff",
+    "chevron_stack",
+]
+
+POOL_SOCKS_STYLES_HOME: List[str] = [
+    "solid",
+    "turnover_hoop",
+    "dual_hoop_turnover",
+    "triple_hoop_turnover",
+    "calf_band",
+    "triple_calf_hoops",
+    "vertical_back_spine",
+    "full_hooped_body",
+]
+
+POOL_SOCKS_STYLES_AWAY: List[str] = [
+    "solid",
+    "turnover_hoop",
+    "dual_hoop_turnover",
+    "triple_calf_hoops",
+    "calf_band",
+    "vertical_back_spine",
+    "gradient_dip",
+    "gradient_fade",
+    "ankle_bracket_cuff",
+]
+
+POOL_SOCKS_STYLES_THIRD: List[str] = [
+    "solid",
+    "full_hooped_body",
+    "vertical_back_spine",
+    "gradient_dip",
+    "gradient_fade",
+    "ankle_bracket_cuff",
+    "chevron_stack",
+    "triple_calf_hoops",
+]
+
+POOL_SOCKS_STYLES_GK: List[str] = [
+    "solid",
+    "calf_band",
+    "triple_calf_hoops",
+    "gradient_dip",
+    "gradient_fade",
+    "ankle_bracket_cuff",
+    "vertical_back_spine",
+]
+
+POOL_SLEEVE_STYLES: List[str] = [
+    "solid",
+    "contrast_raglan",
+    "shoulder_saddle_panel",
+    "speed_chevrons",
+    "gradient_sleeve_fade",
+    "brand_track_tape",
+    "split_dual_block",
+    "sublimated_camo_sleeve",
+    "seam_piping",
+    "grunge_yoke",
+]
+
+POOL_SLEEVE_STYLES_HOME: List[str] = [
+    "solid",
+    "contrast_raglan",
+    "shoulder_saddle_panel",
+    "seam_piping",
+    "gradient_sleeve_fade",
+]
+
+POOL_SLEEVE_STYLES_AWAY: List[str] = [
+    "contrast_raglan",
+    "shoulder_saddle_panel",
+    "speed_chevrons",
+    "split_dual_block",
+    "brand_track_tape",
+    "solid",
+]
+
+POOL_SLEEVE_STYLES_THIRD: List[str] = [
+    "gradient_sleeve_fade",
+    "sublimated_camo_sleeve",
+    "grunge_yoke",
+    "speed_chevrons",
+    "split_dual_block",
+    "contrast_raglan",
+]
+
+POOL_SLEEVE_STYLES_GK: List[str] = [
+    "speed_chevrons",
+    "split_dual_block",
+    "sublimated_camo_sleeve",
+    "shoulder_saddle_panel",
+    "solid",
+]
+
+POOL_FABRIC_FINISHES: List[str] = [
+    "standard_microknit",
+    "matte_vaporknit",
+    "embossed_damask",
+    "heather_melange",
+    "geometric_jacquard",
+    "corduroy_rib",
+]
+
+POOL_FABRIC_FINISHES_HOME: List[str] = [
+    "standard_microknit",
+    "matte_vaporknit",
+    "embossed_damask",
+    "geometric_jacquard",
+]
+
+POOL_FABRIC_FINISHES_AWAY: List[str] = [
+    "standard_microknit",
+    "matte_vaporknit",
+    "heather_melange",
+    "geometric_jacquard",
+    "corduroy_rib",
+]
+
+POOL_FABRIC_FINISHES_THIRD: List[str] = [
+    "embossed_damask",
+    "geometric_jacquard",
+    "heather_melange",
+    "matte_vaporknit",
+    "corduroy_rib",
+]
+
+POOL_FABRIC_FINISHES_GK: List[str] = [
+    "matte_vaporknit",
+    "standard_microknit",
+    "geometric_jacquard",
+]
+
+
 def sync_collar_and_cuffs(collar_style: str, collar_col: Tuple[int, int, int], collar_tip: Optional[Tuple[int, int, int]], secondary: Tuple[int, int, int], accent: Optional[Tuple[int, int, int]] = None) -> Dict[str, Any]:
     """Aesthetically synchronize sleeve cuffs to collar styling for an authentic, unified kit set."""
     tip = collar_tip or accent or secondary
@@ -2016,16 +2269,10 @@ def sync_collar_and_cuffs(collar_style: str, collar_col: Tuple[int, int, int], c
             "cuff_style": "striped_rib",
             "cuff_tip": tip,
         }
-    elif collar_style == "dual_tipped":
+    elif collar_style in ("dual_tipped", "retro_crew"):
         return {
             "cuff": collar_col,
-            "cuff_style": "dual_stripe",
-            "cuff_tip": tip,
-        }
-    elif collar_style == "retro_crew":
-        return {
-            "cuff": collar_col,
-            "cuff_style": "wide_band",
+            "cuff_style": "dual_stripe" if collar_style == "dual_tipped" else "wide_band",
             "cuff_tip": tip,
         }
     elif collar_style == "polo_v_notch":
@@ -2034,7 +2281,43 @@ def sync_collar_and_cuffs(collar_style: str, collar_col: Tuple[int, int, int], c
             "cuff_style": "jacquard_knit",
             "cuff_tip": tip,
         }
-    elif collar_style in ("crossover_v", "mandarin_button", "v_neck"):
+    elif collar_style in ("crossover_v", "v_neck"):
+        return {
+            "cuff": collar_col,
+            "cuff_style": "accent_ring_inner" if (collar_tip and collar_tip != collar_col) else "micro_tipped",
+            "cuff_tip": tip,
+        }
+    elif collar_style == "wrap_v_neck":
+        return {
+            "cuff": collar_col,
+            "cuff_style": "accent_ring_inner",
+            "cuff_tip": tip,
+        }
+    elif collar_style in ("grandad_collar", "mandarin_button"):
+        return {
+            "cuff": collar_col,
+            "cuff_style": "french_turnback" if collar_style == "grandad_collar" else "micro_tipped",
+            "cuff_tip": tip,
+        }
+    elif collar_style == "square_neck":
+        return {
+            "cuff": collar_col,
+            "cuff_style": "wide_band",
+            "cuff_tip": tip,
+        }
+    elif collar_style == "contrast_split_collar":
+        return {
+            "cuff": collar_col,
+            "cuff_style": "contrast_split",
+            "cuff_tip": tip,
+        }
+    elif collar_style == "laced_placket":
+        return {
+            "cuff": collar_col,
+            "cuff_style": "tri_color_knit",
+            "cuff_tip": tip,
+        }
+    elif collar_style == "mock_turtleneck_micro":
         return {
             "cuff": collar_col,
             "cuff_style": "micro_tipped",
@@ -2584,7 +2867,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
 
         # Tailoring trims for bespoke clubs
         if "collar_style" not in base_style:
-            base_style["collar_style"] = ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch", "striped_rib_polo", "mandarin_button"][(salt_val // 19) % 9]
+            base_style["collar_style"] = POOL_COLLAR_STYLES[(salt_val // 19) % len(POOL_COLLAR_STYLES)]
         if "collar_tip" not in base_style:
             base_style["collar_tip"] = base_style.get("third") if (salt_val % 2) else base_style.get("second", base_style.get("collar"))
         if "cuff_style" not in base_style:
@@ -2602,10 +2885,10 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             if supplier == "adidas":
                 base_style["shorts_style"] = "three_stripes"
             else:
-                base_style["shorts_style"] = ["split_leg", "solid", "hem_tape", "side_stripe"][(salt_val // 7) % 4]
+                base_style["shorts_style"] = POOL_SHORTS_STYLES[(salt_val // 7) % len(POOL_SHORTS_STYLES)]
             base_style["shorts_accent"] = base_style.get("second")
         if "socks_style" not in base_style:
-            base_style["socks_style"] = ["turnover_hoop", "calf_band", "gradient_fade", "solid"][(salt_val // 11) % 4]
+            base_style["socks_style"] = POOL_SOCKS_STYLES[(salt_val // 11) % len(POOL_SOCKS_STYLES)]
             base_style["socks_accent"] = base_style.get("second")
             base_style["socks_tip"] = base_style.get("third")
         if "sleeve_style" not in base_style:
@@ -2614,7 +2897,9 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             elif cid == 101 and slot == 1:
                 base_style["sleeve_style"] = "raglan"
             else:
-                base_style["sleeve_style"] = ["solid", "tipped", "shoulder_stripe", "brand_track_tape", "seam_piping", "raglan_piping", "raglan"][(salt_val // 13) % 7]
+                base_style["sleeve_style"] = POOL_SLEEVE_STYLES[(salt_val // 13) % len(POOL_SLEEVE_STYLES)]
+        if "fabric_finish" not in base_style:
+            base_style["fabric_finish"] = POOL_FABRIC_FINISHES[(salt_val // 15) % len(POOL_FABRIC_FINISHES)]
         if "vent_style" not in base_style:
             base_style["vent_style"] = ["laser_cut", "stealth_rib", "contrast_panel", "none"][(salt_val // 17) % 4]
         if "macro_layout" not in base_style:
@@ -2670,11 +2955,11 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
         if _lum(primary) > 220 and _lum(collar_col) > 220:
             collar_col = secondary if _dist(secondary, primary) > 60 else (19, 34, 64)
 
-        macro_cand = ["solid", "solid", "chestband", "ombre_fade", "solid"][(seed >> 6) % 5] if archetype == "SOLID" else "solid"
+        macro_cand = ["solid", "solid", "chestband", "ombre_fade", "diagonal_sash", "lightning_sash", "solid"][(seed >> 6) % 7] if archetype == "SOLID" else "solid"
         micro_cand = POOL_LUXURY_JACQUARD[(seed + s_off * 13) % len(POOL_LUXURY_JACQUARD)] if archetype == "SOLID" and macro_cand != "solid" else None
         mask_cand = ["full", "front_only", "front_only", "chest_only"][(seed >> 8) % 4] if archetype == "SOLID" else "full"
 
-        c_style = ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch", "striped_rib_polo", "mandarin_button"][(seed >> 4) % 9]
+        c_style = POOL_COLLAR_STYLES[(seed >> 4) % len(POOL_COLLAR_STYLES)]
         c_tip = accent if ((seed >> 2) % 2) else collar_col
         cuff_sync = sync_collar_and_cuffs(c_style, collar_col, c_tip, secondary, accent)
 
@@ -2686,12 +2971,13 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "var": (seed >> 8) % 3,
             "width_step": (seed >> 11) % 8,
             "sleeve": primary,
-            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["solid", "tipped", "shoulder_stripe", "brand_track_tape", "seam_piping", "raglan_piping", "raglan"][(seed >> 5) % 7],
+            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else POOL_SLEEVE_STYLES_HOME[(seed >> 5) % len(POOL_SLEEVE_STYLES_HOME)],
+            "fabric_finish": POOL_FABRIC_FINISHES_HOME[(seed >> 3) % len(POOL_FABRIC_FINISHES_HOME)],
             "shorts": shorts_col,
-            "shorts_style": "three_stripes" if supplier == "adidas" else ["split_leg", "side_stripe", "hem_tape", "solid"][(seed >> 7) % 4],
+            "shorts_style": "three_stripes" if supplier == "adidas" else POOL_SHORTS_STYLES_HOME[(seed >> 7) % len(POOL_SHORTS_STYLES_HOME)],
             "shorts_accent": secondary if shorts_col == primary else primary,
             "socks": socks_col,
-            "socks_style": ["turnover_hoop", "calf_band", "gradient_fade", "solid"][(seed >> 11) % 4],
+            "socks_style": POOL_SOCKS_STYLES_HOME[(seed >> 11) % len(POOL_SOCKS_STYLES_HOME)],
             "socks_accent": secondary,
             "socks_tip": accent,
             "collar": collar_col,
@@ -2702,7 +2988,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "cuff_tip": cuff_sync["cuff_tip"],
             "gradient": 0,
             "supplier": supplier,
-            "vent_style": ["laser_cut", "contrast_panel", "stealth_rib", "none"][(seed >> 4) % 4],
+            "vent_style": ["laser_cut", "contrast_panel", "athletic_flank", "stealth_rib", "none"][(seed >> 4) % 5],
             "macro_layout": macro_cand,
             "micro_jacquard": micro_cand,
             "pattern_mask": mask_cand,
@@ -2753,11 +3039,11 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             away_socks = (22, 26, 36)
             away_collar = away_second
 
-        macro_cand = ["solid", "ombre_fade", "half_half", "diagonal_sash", "solid"][(seed >> 5) % 5]
+        macro_cand = ["solid", "ombre_fade", "half_half", "diagonal_sash", "lightning_sash", "solid"][(seed >> 5) % 6]
         micro_cand = POOL_LUXURY_JACQUARD[(seed + s_off * 11) % len(POOL_LUXURY_JACQUARD)] if macro_cand != "solid" else None
         mask_cand = ["full", "front_only", "sash_only", "sleeves_only"][(seed >> 7) % 4]
 
-        c_style_away = ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch", "striped_rib_polo"][(seed >> 5) % 8]
+        c_style_away = POOL_COLLAR_STYLES[(seed >> 5) % len(POOL_COLLAR_STYLES)]
         cuff_sync_away = sync_collar_and_cuffs(c_style_away, away_collar, away_third, away_second, away_third)
 
         return {
@@ -2768,12 +3054,13 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "var": (seed >> 8) % 3,
             "width_step": (seed >> 11) % 8,
             "sleeve": away_body,
-            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["tipped", "raglan", "shoulder_stripe", "brand_track_tape", "solid", "raglan_piping", "seam_piping"][(seed >> 9) % 7],
+            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else POOL_SLEEVE_STYLES_AWAY[(seed >> 9) % len(POOL_SLEEVE_STYLES_AWAY)],
+            "fabric_finish": POOL_FABRIC_FINISHES_AWAY[(seed >> 4) % len(POOL_FABRIC_FINISHES_AWAY)],
             "shorts": away_shorts,
-            "shorts_style": "three_stripes" if supplier == "adidas" else ["split_leg", "side_stripe", "hem_tape", "solid"][(seed >> 5) % 4],
+            "shorts_style": "three_stripes" if supplier == "adidas" else POOL_SHORTS_STYLES_AWAY[(seed >> 5) % len(POOL_SHORTS_STYLES_AWAY)],
             "shorts_accent": away_second,
             "socks": away_socks,
-            "socks_style": ["calf_band", "turnover_hoop", "gradient_fade", "solid"][(seed >> 7) % 4],
+            "socks_style": POOL_SOCKS_STYLES_AWAY[(seed >> 7) % len(POOL_SOCKS_STYLES_AWAY)],
             "socks_accent": away_second,
             "socks_tip": away_third,
             "collar": away_collar,
@@ -2784,7 +3071,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "cuff_tip": cuff_sync_away["cuff_tip"],
             "gradient": 1 if (seed % 2) else 0,
             "supplier": supplier,
-            "vent_style": ["contrast_panel", "laser_cut", "stealth_rib", "none"][(seed >> 3) % 4],
+            "vent_style": ["contrast_panel", "laser_cut", "athletic_flank", "stealth_rib", "none"][(seed >> 3) % 5],
             "macro_layout": macro_cand,
             "micro_jacquard": micro_cand,
             "pattern_mask": mask_cand,
@@ -2805,12 +3092,12 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
         third_collar = third_second
         third_cuff = third_second
 
-        macro_cand = ["solid", "ombre_fade", "chestband", "diagonal_sash", "solid"][(seed >> 7) % 5]
+        macro_cand = ["solid", "ombre_fade", "chestband", "diagonal_sash", "lightning_sash", "solid"][(seed >> 7) % 6]
         micro_cand = POOL_LUXURY_JACQUARD[(seed + s_off * 7) % len(POOL_LUXURY_JACQUARD)] if macro_cand != "solid" else None
         mask_cand = ["sleeves_only", "front_only", "full", "sash_only"][(seed >> 9) % 4]
         finish_cand = ["standard", "liquid_gold", "chrome_silver", "copper_bronze", "blackout", "cyber_neon"][(seed >> 10) % 6]
 
-        c_style_third = ["crew", "retro_crew", "dual_tipped", "v_neck", "crossover_v", "polo", "polo_v_notch", "striped_rib_polo", "mandarin_button"][(seed >> 6) % 9]
+        c_style_third = POOL_COLLAR_STYLES[(seed >> 6) % len(POOL_COLLAR_STYLES)]
         cuff_sync_third = sync_collar_and_cuffs(c_style_third, third_collar, third_third, third_second, third_third)
 
         return {
@@ -2821,12 +3108,13 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "var": (seed >> 8) % 3,
             "width_step": (seed >> 11) % 8,
             "sleeve": third_body,
-            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else ["tipped", "shoulder_stripe", "grunge_yoke", "brand_track_tape", "raglan_piping", "raglan", "seam_piping"][(seed >> 5) % 7],
+            "sleeve_style": "shoulder_stripe" if supplier == "adidas" else POOL_SLEEVE_STYLES_THIRD[(seed >> 5) % len(POOL_SLEEVE_STYLES_THIRD)],
+            "fabric_finish": POOL_FABRIC_FINISHES_THIRD[(seed >> 2) % len(POOL_FABRIC_FINISHES_THIRD)],
             "shorts": third_shorts,
-            "shorts_style": "three_stripes" if supplier == "adidas" else ["split_leg", "side_stripe", "hem_tape", "solid"][(seed >> 3) % 4],
+            "shorts_style": "three_stripes" if supplier == "adidas" else POOL_SHORTS_STYLES_THIRD[(seed >> 3) % len(POOL_SHORTS_STYLES_THIRD)],
             "shorts_accent": third_second if third_shorts == third_body else third_third,
             "socks": third_socks,
-            "socks_style": ["turnover_hoop", "calf_band", "gradient_fade", "solid"][(seed >> 7) % 4],
+            "socks_style": POOL_SOCKS_STYLES_THIRD[(seed >> 7) % len(POOL_SOCKS_STYLES_THIRD)],
             "socks_accent": third_second if third_socks == third_body else third_third,
             "socks_tip": third_third,
             "collar": third_collar,
@@ -2837,7 +3125,7 @@ def _get_club_style_impl(club: Dict[str, Any], slot: int | str, season: int, spo
             "cuff_tip": cuff_sync_third["cuff_tip"],
             "gradient": [0, 1, 2, 3][(seed >> 2) % 4],
             "supplier": supplier,
-            "vent_style": ["laser_cut", "contrast_panel", "stealth_rib"][(seed >> 5) % 3],
+            "vent_style": ["laser_cut", "contrast_panel", "athletic_flank", "stealth_rib"][(seed >> 5) % 4],
             "macro_layout": macro_cand,
             "micro_jacquard": micro_cand,
             "pattern_mask": mask_cand,
@@ -2852,4 +3140,6 @@ def get_club_style(club: Dict[str, Any], slot: int | str, season: int, sponsor: 
     cid = int(club.get("id") or club.get("team_id", 0))
     if "sleeve_sponsor" not in res:
         res["sleeve_sponsor"] = get_club_sleeve_sponsor(cid, season, sponsor) if sponsor else None
+    if "collar_model" not in res:
+        res["collar_model"] = COLLAR_STYLE_TO_MODEL.get(res.get("collar_style", "crew"), 1)
     return res

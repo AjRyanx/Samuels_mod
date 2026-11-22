@@ -1,17 +1,18 @@
 """test_sleeve_sponsors.py - Test suite for authentic dynamic sleeve sponsors."""
 
 import os
+import sys
 from pathlib import Path
 import pytest
 from PIL import Image
 import numpy as np
 
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "generator"))
+
 import kit_regions
 import kit_dna
 import kit_render
-
-
-ROOT = Path(__file__).resolve().parent.parent
 SLEEVE_LOGOS_DIR = ROOT / "content" / "KitGenerator" / "sleeve_logos"
 SLEEVE_LOGOS_GEN = ROOT / "generator" / "sleeve_logos"
 
@@ -135,6 +136,12 @@ def test_sleeve_sponsor_rendering_contrast_and_rotation(tmp_path):
     sub_dark = arr_dark[380:430, 1485:1545]
     high_lum = np.sum(sub_dark[:, :, :3] > 200)
     assert high_lum > 100, "White sleeve sponsor variant was not applied on dark kit"
+
+    # Verify right sleeve arm is completely clean (no logo stamped on right arm by default)
+    # Right arm long sleeve forearm zone is 510..570, 380..430
+    sub_dark_right = arr_dark[380:430, 510:570]
+    right_high_lum = np.sum(sub_dark_right[:, :, :3] > 200)
+    assert right_high_lum == 0, f"Right sleeve should have 0 logo pixels, got {right_high_lum}"
 
     # Light sleeve: should pick color variant
     design_light = {

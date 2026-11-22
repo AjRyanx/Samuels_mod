@@ -73,9 +73,13 @@ DEFAULT_DESIGN = {
     "socks_accent": None,         # contrast hoop/band colour on socks
     "socks_tip": None,            # contrast tipping on socks turnover
     "collar": None,               # None = same as body
-    "collar_style": "crew",       # "crew", "retro_crew", "v_neck", "crossover_v", "polo", "polo_v_notch", "dual_tipped", "mandarin_button"
-    "collar_model": 1,            # 3D Kitserver collar model: 1=crew, 2=dual_tipped, 3=v_neck, 13=polo
+    "collar_style": "crew",       # "crew", "retro_crew", "v_neck", "crossover_v", "polo", "polo_v_notch", "striped_rib_polo", "dual_tipped", "mandarin_button", "wrap_v_neck", "grandad_collar", "square_neck", "contrast_split_collar", "laced_placket", "mock_turtleneck_micro"
+    "collar_model": 1,            # 3D Kitserver collar model: 1=crew, 2=dual_tipped, 3=v_neck, 4=crossover_v, 13=polo, 14=laced, 38=mock, 46=striped_polo, 64=grandad/mandarin, 78=wrap_v, 105=polo_v_notch, 118=square_neck
     "collar_tip": None,           # contrast tipping on collar ribbing
+    "cuff": None,                 # contrast sleeve cuff color (None = auto)
+    "cuff_style": "solid",        # "solid", "wide_band", "micro_tipped", "dual_stripe", "dual_tipped", "jacquard_knit", "striped_rib", "accent_ring_inner", "tri_color_knit", "contrast_split", "french_turnback"
+    "cuff_tip": None,             # contrast stripe on cuff (None = accent/secondary)
+    "sleeve_style": "solid",      # "solid", "tipped", "shoulder_stripe", "brand_track_tape", "seam_piping", "raglan_piping", "grunge_yoke", "splatter_brush", "contrast_raglan"
     "sponsor": None,              # path to a PNG logo (chest)
     "badge": None,                # path to a PNG logo (club badge)
     "supplier": None,             # path to a PNG logo (kit maker)
@@ -83,9 +87,9 @@ DEFAULT_DESIGN = {
     "badge_white": False,
     "supplier_white": False,
     "sponsor_plate": False,       # draw a body-coloured plate behind the sponsor (False = seamless logo with no background)
-    "vent_style": "none",         # "none", "laser_cut", "contrast_panel", "stealth_rib"
+    "vent_style": "none",         # "none", "laser_cut", "contrast_panel", "stealth_rib", "athletic_flank"
     "vent_color": None,           # None = auto breathable tone
-    "macro_layout": "solid",      # "solid", "ombre_fade", "half_half", "chestband", "diagonal_sash", "fade_geo"
+    "macro_layout": "solid",      # "solid", "ombre_fade", "half_half", "chestband", "diagonal_sash", "lightning_sash", "fade_geo"
     "micro_jacquard": None,       # secondary subtle luxury jacquard overlay (e.g. "041-E", "171-E")
     "pattern_mask": "full",       # "full", "front_only", "chest_only", "sash_only", "sleeves_only"
     "tile_scale": 1.0,            # 0.5 (micro-weave 2x2), 1.0 (standard), 2.0 (macro streetwear art)
@@ -94,6 +98,7 @@ DEFAULT_DESIGN = {
     "shorts_badge": True,         # True = render club crest on right shorts leg
     "shorts_supplier": True,      # True = render supplier logo on left shorts leg
     "sleeve_sponsor": None,       # path to a PNG logo or key (player's left sleeve)
+    "sleeve_sponsor_side": "left",# "left" (authentic default), "right", or "both"
     "sleeve_sponsor_angle": 0.0,  # wrap angle slope along sleeve (default: 0.0 degrees / upright)
     "sleeve_sponsor_white": False,# True = flatten sleeve logo to white
     "fabric_texture": True,       # True = render micro-knit textile weave across all garment panels
@@ -244,6 +249,121 @@ def build_tile(design):
         draw_b.line([(0, y_b0 - 2), (kit_gen.W, y_b0 - 2)], fill=tuple(tip_c) + (255,), width=3)
         draw_b.line([(0, y_b1 + 2), (kit_gen.W, y_b1 + 2)], fill=tuple(tip_c) + (255,), width=3)
         canvas.alpha_composite(band_img)
+    elif macro == "diagonal_sash":
+        sash_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_s = ImageDraw.Draw(sash_img)
+        sw = int(kit_gen.W * 0.22)
+        p1 = (int(kit_gen.W * 0.72), 0)
+        p2 = (int(kit_gen.W * 0.72) + sw, 0)
+        p3 = (int(kit_gen.W * 0.08) + sw, kit_gen.H)
+        p4 = (int(kit_gen.W * 0.08), kit_gen.H)
+        poly = [p1, p2, p3, p4]
+        draw_s.polygon(poly, fill=second + (255,))
+        tip_c = d.get("third") or d.get("accent") or body
+        draw_s.line([p1, p4], fill=tuple(tip_c) + (255,), width=3)
+        draw_s.line([p2, p3], fill=tuple(tip_c) + (255,), width=3)
+        canvas.alpha_composite(sash_img)
+    elif macro == "lightning_sash":
+        # Bold authentic lightning bolt diagonal sash (Rayo Vallecano style)
+        bolt_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_bolt = ImageDraw.Draw(bolt_img)
+        W, H = kit_gen.W, kit_gen.H
+        poly = [
+            (int(W * 0.72), 0),
+            (int(W * 0.94), 0),
+            (int(W * 0.42), int(H * 0.48)),
+            (int(W * 0.64), int(H * 0.46)),
+            (int(W * 0.20), H),
+            (0, H),
+            (0, int(H * 0.88)),
+            (int(W * 0.32), int(H * 0.54)),
+            (int(W * 0.12), int(H * 0.56)),
+        ]
+        s_fill = second if second != body else (d.get("third") or (220, 30, 40))
+        draw_bolt.polygon(poly, fill=tuple(s_fill) + (255,))
+        tip_c = d.get("third") or d.get("accent") or (235, 195, 30)
+        draw_bolt.line(poly + [poly[0]], fill=tuple(tip_c) + (255,), width=4)
+        canvas.alpha_composite(bolt_img)
+    elif macro == "prismatic_shards":
+        # 90s Jorge Campos / Schmeichel iconic angular faceted geometric shards
+        shard_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_sh = ImageDraw.Draw(shard_img)
+        W, H = kit_gen.W, kit_gen.H
+        s_fill1 = tuple(second) + (240,)
+        s_fill2 = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (240,)
+        s_fill3 = tuple(d.get("accent") or (255, 30, 100)) + (230,)
+        draw_sh.polygon([(0, 0), (int(W * 0.35), 0), (int(W * 0.20), int(H * 0.40)), (0, int(H * 0.25))], fill=s_fill1)
+        draw_sh.polygon([(int(W * 0.35), 0), (int(W * 0.65), 0), (int(W * 0.50), int(H * 0.45)), (int(W * 0.20), int(H * 0.40))], fill=s_fill2)
+        draw_sh.polygon([(int(W * 0.65), 0), (W, 0), (W, int(H * 0.25)), (int(W * 0.80), int(H * 0.40))], fill=s_fill3)
+        draw_sh.polygon([(int(W * 0.50), int(H * 0.45)), (W, int(H * 0.25)), (int(W * 0.80), int(H * 0.40)), (int(W * 0.65), int(H * 0.65))], fill=s_fill1)
+        draw_sh.polygon([(0, int(H * 0.25)), (int(W * 0.20), int(H * 0.40)), (int(W * 0.35), int(H * 0.65)), (0, int(H * 0.55))], fill=s_fill2)
+        draw_sh.polygon([(int(W * 0.20), int(H * 0.40)), (int(W * 0.50), int(H * 0.45)), (int(W * 0.50), int(H * 0.75)), (int(W * 0.35), int(H * 0.65))], fill=s_fill3)
+        draw_sh.polygon([(int(W * 0.50), int(H * 0.45)), (int(W * 0.80), int(H * 0.40)), (int(W * 0.65), int(H * 0.65)), (int(W * 0.50), int(H * 0.75))], fill=s_fill2)
+        canvas.alpha_composite(shard_img)
+    elif macro == "optical_warp":
+        # 90s hypnotic kaleidoscopic wave warp across upper torso
+        warp_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_w = ImageDraw.Draw(warp_img)
+        W, H = kit_gen.W, kit_gen.H
+        s_fill = tuple(second) + (220,)
+        t_fill = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (200,)
+        for y_step in range(0, int(H * 0.75), 24):
+            pts = []
+            for x in range(0, W + 10, 20):
+                y_offset = int(18 * math.sin(x / 35.0 + y_step / 20.0))
+                pts.append((x, y_step + y_offset))
+            c = s_fill if (y_step // 24) % 2 == 0 else t_fill
+            draw_w.line(pts, fill=c, width=12)
+        canvas.alpha_composite(warp_img)
+    elif macro == "dual_contrast_split":
+        # High-contrast diagonal chevron color blocking split
+        split_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_sp = ImageDraw.Draw(split_img)
+        W, H = kit_gen.W, kit_gen.H
+        s_fill = tuple(second) + (255,)
+        draw_sp.polygon([(0, 0), (W, 0), (W, int(H * 0.35)), (int(W * 0.5), int(H * 0.58)), (0, int(H * 0.35))], fill=s_fill)
+        tip_c = tuple(d.get("third") or d.get("accent") or body) + (255,)
+        draw_sp.line([(0, int(H * 0.35)), (int(W * 0.5), int(H * 0.58)), (W, int(H * 0.35))], fill=tip_c, width=6)
+        canvas.alpha_composite(split_img)
+    elif macro == "graffiti_splatter":
+        # Urban 90s streetwear spray/splatter graphics bursting across torso
+        sp_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_gp = ImageDraw.Draw(sp_img)
+        W, H = kit_gen.W, kit_gen.H
+        rng = np.random.default_rng(42)
+        s_fill = tuple(second) + (240,)
+        t_fill = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (240,)
+        for _ in range(70):
+            cx = int(rng.integers(int(W * 0.1), int(W * 0.9)))
+            cy = int(rng.integers(int(H * 0.05), int(H * 0.70)))
+            rad = int(rng.integers(12, 38))
+            c = s_fill if rng.random() > 0.4 else t_fill
+            draw_gp.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=c)
+            for _ in range(6):
+                ox = int(rng.integers(-40, 40))
+                oy = int(rng.integers(-40, 40))
+                dr = int(rng.integers(2, 6))
+                draw_gp.ellipse([cx + ox - dr, cy + oy - dr, cx + ox + dr, cy + oy + dr], fill=c)
+        canvas.alpha_composite(sp_img)
+    elif macro == "flame_sunburst":
+        # Iconic 90s flame starburst / sunburst spikes radiating outward from chest
+        flame_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_fl = ImageDraw.Draw(flame_img)
+        W, H = kit_gen.W, kit_gen.H
+        cx, cy = int(W * 0.5), int(H * 0.42)
+        s_fill = tuple(second) + (240,)
+        t_fill = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (240,)
+        num_spikes = 14
+        for i in range(num_spikes):
+            angle = i * (2 * math.pi / num_spikes)
+            r_outer = int(H * 0.38)
+            r_inner = int(H * 0.14)
+            p1 = (int(cx + r_inner * math.cos(angle - 0.15)), int(cy + r_inner * math.sin(angle - 0.15)))
+            p2 = (int(cx + r_outer * math.cos(angle)), int(cy + r_outer * math.sin(angle)))
+            p3 = (int(cx + r_inner * math.cos(angle + 0.15)), int(cy + r_inner * math.sin(angle + 0.15)))
+            c = s_fill if i % 2 == 0 else t_fill
+            draw_fl.polygon([p1, p2, p3], fill=c)
+        canvas.alpha_composite(flame_img)
 
     # Optional Micro Jacquard Layer overlay
     if micro:
@@ -275,7 +395,7 @@ def build_tile(design):
 
 
 def _paint_shirt(atlas, tile, masks, d=None):
-    """Paste the shirt-local tile into front/back islands with selective pattern masking and sponsor calm zone."""
+    """Paste the shirt-local tile into front/back islands with selective pattern masking."""
     boxes = kit_regions.region_boxes(masks)
     mask_mode = (d.get("pattern_mask") if d else "full") or "full"
 
@@ -283,28 +403,6 @@ def _paint_shirt(atlas, tile, masks, d=None):
     fw, fh = fx1 - fx0 + 1, fy1 - fy0 + 1
     front = tile.resize((fw, fh), Image.LANCZOS)
     fmask_raw = masks["body_front"][fy0:fy1 + 1, fx0:fx1 + 1].copy()
-
-    # UEFA/FIFA Article 19 authentic calm chest zone for high-contrast patterns
-    # Attenuate bold pattern strokes under the chest sponsor footprint so typography never clashes
-    if d and d.get("sponsor") and d.get("pattern", "plain") != "plain" and d.get("macro_layout") != "chestband":
-        # Sponsor center in front-box local coordinates (atlas 1024, 1310):
-        scx = 1024 - fx0
-        scy = 1310 - fy0
-        calm_local = Image.new("L", (fw, fh), 0)
-        c_draw = ImageDraw.Draw(calm_local)
-        # Footprint: width 520, height 230 centered at (scx, scy)
-        c_x0 = max(0, scx - 260)
-        c_x1 = min(fw, scx + 260)
-        c_y0 = max(0, scy - 115)
-        c_y1 = min(fh, scy + 115)
-        # Fill calm area with attenuation strength ~215 (leaving ~15% subtle pattern hint)
-        c_draw.rounded_rectangle([c_x0, c_y0, c_x1, c_y1], radius=45, fill=215)
-        calm_local = calm_local.filter(ImageFilter.GaussianBlur(radius=32))
-        
-        # Solid body base tile
-        body_col = tuple(d["body"]) + (255,)
-        body_solid_local = Image.new("RGBA", (fw, fh), body_col)
-        front = Image.composite(body_solid_local, front, calm_local)
 
     if mask_mode == "chest_only":
         y_c0, y_c1 = int(fh * 0.28), int(fh * 0.56)
@@ -347,8 +445,8 @@ def _apply_vent_panels(atlas, d, masks):
     body = tuple(d["body"])
     vent_col = d.get("vent_color")
     if not vent_col:
-        if vent_style == "contrast_panel":
-            vent_col = d.get("second") or d.get("third")
+        if vent_style in ("contrast_panel", "athletic_flank", "contrast_flank"):
+            vent_col = d.get("second") or d.get("third") or ((22, 22, 28) if _col_lum(body) > 130 else (245, 245, 248))
             l_b = _col_lum(body)
             l_v = _col_lum(vent_col)
             if (max(l_b, l_v) + 12.5) / (min(l_b, l_v) + 12.5) < 2.0:
@@ -392,6 +490,16 @@ def _apply_vent_panels(atlas, d, masks):
             arr = np.array(atlas)
             arr[y_c[ribs], x_c[ribs]] = rib_rgba
             atlas.paste(Image.fromarray(arr, "RGBA"), (0, 0))
+    elif vent_style in ("athletic_flank", "contrast_flank"):
+        # Modern ergonomic contrast side flank panel with athletic seam piping (BVB style)
+        pipe_rgba = tuple(d.get("third") or d.get("accent") or vent_col) + (255,)
+        flank_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_fl = ImageDraw.Draw(flank_layer)
+        draw_fl.line([(725, 1100), (725, 1850)], fill=pipe_rgba, width=2)
+        draw_fl.line([(1323, 1100), (1323, 1850)], fill=pipe_rgba, width=2)
+        draw_fl.line([(746, 100), (746, 850)], fill=pipe_rgba, width=2)
+        draw_fl.line([(1302, 100), (1302, 850)], fill=pipe_rgba, width=2)
+        _composite_layer(atlas, flank_layer, masks["body_front"] | masks["body_back"])
 
 
 def _composite_layer(atlas, layer, mask=None, dest=(0, 0)):
@@ -589,6 +697,107 @@ def _apply_brand_signatures(atlas, d, masks):
             draw_n.line([(1328, y), (1368, y + 6)], fill=acc_rgba, width=3)
         _composite_layer(atlas, nike_layer, masks["body_front"])
 
+    # 7. CASTORE: Precision dual sonic wings, back-neck laser bars, and angled shorts vent
+    elif "castore" in supp:
+        castore_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_c = ImageDraw.Draw(castore_layer)
+        # Dual sonic wing chevrons along sleeve tops / shoulder ridges
+        for cx in range(120, 420, 48):
+            draw_c.polygon([(cx - 12, 404), (cx, 412), (cx + 12, 404),
+                            (cx + 8, 404), (cx, 409), (cx - 8, 404)], fill=acc_rgba)
+            draw_c.polygon([(cx - 12, 416), (cx, 424), (cx + 12, 416),
+                            (cx + 8, 416), (cx, 421), (cx - 8, 416)], fill=acc_rgba)
+        for cx in range(1620, 1920, 48):
+            draw_c.polygon([(cx - 12, 404), (cx, 412), (cx + 12, 404),
+                            (cx + 8, 404), (cx, 409), (cx - 8, 404)], fill=acc_rgba)
+            draw_c.polygon([(cx - 12, 416), (cx, 424), (cx + 12, 416),
+                            (cx + 8, 416), (cx, 421), (cx - 8, 416)], fill=acc_rgba)
+        # Precision back-neck laser ventilation bars (upper back)
+        for by in range(230, 275, 12):
+            draw_c.rounded_rectangle([985, by, 1063, by + 4], radius=2, fill=acc_rgba)
+        # Shorts angular geometric vent inserts at outer lower hem
+        draw_c.polygon([(40, 1900), (95, 1955), (40, 1955)], fill=sh_acc_rgba)
+        draw_c.polygon([(2008, 1900), (1953, 1955), (2008, 1955)], fill=sh_acc_rgba)
+        _composite_layer(atlas, castore_layer, sleeve_mask | body_back | shorts_mask)
+
+    # 8. MACRON: Iconic "Hero" shoulder stamps and breathable flank panels
+    elif "macron" in supp:
+        macron_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_m = ImageDraw.Draw(macron_layer)
+        # Repeating stylized Macron Hero stamps on sleeve ridges
+        for cx in range(120, 410, 44):
+            draw_m.ellipse([cx - 4, 402, cx + 4, 410], fill=acc_rgba)
+            draw_m.polygon([(cx - 10, 414), (cx, 411), (cx + 10, 414),
+                            (cx + 8, 424), (cx, 421), (cx - 8, 424)], fill=acc_rgba)
+        for cx in range(1630, 1920, 44):
+            draw_m.ellipse([cx - 4, 402, cx + 4, 410], fill=acc_rgba)
+            draw_m.polygon([(cx - 10, 414), (cx, 411), (cx + 10, 414),
+                            (cx + 8, 424), (cx, 421), (cx - 8, 424)], fill=acc_rgba)
+        # Torso flank inset panels
+        draw_m.rectangle([664, 1140, 688, 1820], fill=acc_rgba)
+        draw_m.rectangle([1360, 1140, 1384, 1820], fill=acc_rgba)
+        # Shorts lateral accent stripe
+        draw_m.rectangle([40, 1240, 52, 1920], fill=sh_acc_rgba)
+        draw_m.rectangle([1996, 1240, 2008, 1920], fill=sh_acc_rgba)
+        _composite_layer(atlas, macron_layer, sleeve_mask | masks["body_front"] | shorts_mask)
+
+    # 9. NEW BALANCE: Dynamic speed cuffs and aerodynamic shoulder darts
+    elif "newbalance" in supp or "new balance" in supp or "nb" in supp:
+        nb_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_nb = ImageDraw.Draw(nb_layer)
+        # Asymmetric angled speed cuffs (signature NB angled flash)
+        draw_nb.polygon([(50, 642), (430, 642), (430, 668), (180, 668), (140, 655), (50, 655)], fill=acc_rgba)
+        draw_nb.polygon([(1618, 642), (1998, 642), (1998, 655), (1908, 655), (1868, 668), (1618, 668)], fill=acc_rgba)
+        # Aerodynamic collarbone speed dart lines
+        draw_nb.line([(760, 1000), (840, 1050)], fill=acc_rgba, width=3)
+        draw_nb.line([(1288, 1000), (1208, 1050)], fill=acc_rgba, width=3)
+        # Shorts vertical speed flash on outer hem
+        draw_nb.polygon([(40, 1820), (60, 1820), (52, 1950), (40, 1950)], fill=sh_acc_rgba)
+        draw_nb.polygon([(2008, 1820), (1988, 1820), (1996, 1950), (2008, 1950)], fill=sh_acc_rgba)
+        _composite_layer(atlas, nb_layer, sleeve_mask | masks["body_front"] | shorts_mask)
+
+    # 10. JOMA: Signature running "J" ribbon tape and twin-stripe shorts flank
+    elif "joma" in supp:
+        joma_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_j = ImageDraw.Draw(joma_layer)
+        # Geometric Joma repeating ribbon tape
+        for cx in range(110, 420, 36):
+            draw_j.polygon([(cx - 8, 405), (cx + 8, 405), (cx + 8, 411), (cx, 411), (cx, 421), (cx - 8, 421)], fill=acc_rgba)
+        for cx in range(1620, 1930, 36):
+            draw_j.polygon([(cx - 8, 405), (cx + 8, 405), (cx + 8, 411), (cx, 411), (cx, 421), (cx - 8, 421)], fill=acc_rgba)
+        # Twin parallel pinstripes down shorts sides
+        draw_j.rectangle([40, 1240, 44, 1920], fill=sh_acc_rgba)
+        draw_j.rectangle([48, 1240, 52, 1920], fill=sh_acc_rgba)
+        draw_j.rectangle([1996, 1240, 2000, 1920], fill=sh_acc_rgba)
+        draw_j.rectangle([2004, 1240, 2008, 1920], fill=sh_acc_rgba)
+        _composite_layer(atlas, joma_layer, sleeve_mask | shorts_mask)
+
+    # 11. MIZUNO: Iconic Runbird wing chevrons and asymmetric hem notch
+    elif "mizuno" in supp:
+        mizuno_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_mz = ImageDraw.Draw(mizuno_layer)
+        # Mizuno Runbird aerodynamic feather chevron accents
+        for cx in range(130, 400, 48):
+            draw_mz.polygon([(cx - 14, 418), (cx - 2, 406), (cx + 14, 406), (cx + 4, 414), (cx - 4, 414), (cx - 10, 422)], fill=acc_rgba)
+        for cx in range(1640, 1910, 48):
+            draw_mz.polygon([(cx + 14, 418), (cx + 2, 406), (cx - 14, 406), (cx - 4, 414), (cx + 4, 414), (cx + 10, 422)], fill=acc_rgba)
+        # Asymmetric shorts thigh hem notch
+        draw_mz.polygon([(38, 1920), (78, 1960), (38, 1960)], fill=sh_acc_rgba)
+        draw_mz.polygon([(2010, 1920), (1970, 1960), (2010, 1960)], fill=sh_acc_rgba)
+        _composite_layer(atlas, mizuno_layer, sleeve_mask | shorts_mask)
+
+    # 12. EA7: Minimalist luxury 7-slash flank cluster and refined trim
+    elif "ea7" in supp:
+        ea7_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_ea = ImageDraw.Draw(ea7_layer)
+        # 7 crisp parallel laser micro-slashes on lower left flank
+        for i, dy in enumerate(range(0, 70, 10)):
+            draw_ea.line([(680 + i * 2, 1680 + dy), (715 + i * 2, 1700 + dy)], fill=acc_rgba, width=3)
+        # Minimalist single pinstripe down shorts side
+        draw_ea.rectangle([44, 1260, 48, 1900], fill=sh_acc_rgba)
+        draw_ea.rectangle([2000, 1260, 2004, 1900], fill=sh_acc_rgba)
+        _composite_layer(atlas, ea7_layer, masks["body_front"] | shorts_mask)
+
 
 def _apply_engineered_shorts(atlas, d, masks):
     """Render split-leg tailoring, lateral side stripes, or hem tape on shorts."""
@@ -601,10 +810,12 @@ def _apply_engineered_shorts(atlas, d, masks):
     shorts_accent = d.get("shorts_accent") or d.get("second") or (245, 245, 245)
     l_sh = _col_lum(shorts_base)
     l_acc = _col_lum(shorts_accent)
-    if (max(l_sh, l_acc) + 12.5) / (min(l_sh, l_acc) + 12.5) < 2.2:
+    if (max(l_sh, l_acc) + 12.5) / (min(l_sh, l_acc) + 12.5) < 2.0:
         shorts_accent = (245, 245, 245) if l_sh < 128 else (20, 25, 35)
 
     sh_col = tuple(shorts_accent) + (255,)
+    tip_col = d.get("shorts_tip") or d.get("third") or ((255, 255, 255) if l_sh < 128 else (10, 15, 20))
+    tip_rgba = tuple(tip_col) + (255,)
 
     if shorts_style == "split_leg":
         split_m = np.zeros_like(shorts_mask)
@@ -615,6 +826,7 @@ def _apply_engineered_shorts(atlas, d, masks):
         split_m = split_m & shorts_mask
         if np.any(split_m):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(split_m))
+
     elif shorts_style == "side_stripe":
         side_mask = np.zeros_like(shorts_mask)
         side_mask[:, 24:58] = True
@@ -622,6 +834,17 @@ def _apply_engineered_shorts(atlas, d, masks):
         side_mask = side_mask & shorts_mask
         if np.any(side_mask):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(side_mask))
+
+    elif shorts_style == "dual_side_stripes":
+        dual_m = np.zeros_like(shorts_mask)
+        dual_m[:, 22:38] = True
+        dual_m[:, 48:64] = True
+        dual_m[:, 1984:2000] = True
+        dual_m[:, 2010:2026] = True
+        dual_m = dual_m & shorts_mask
+        if np.any(dual_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(dual_m))
+
     elif shorts_style == "hem_tape":
         hem_mask = np.zeros_like(shorts_mask)
         hem_mask[1935:1968, :] = True
@@ -629,51 +852,224 @@ def _apply_engineered_shorts(atlas, d, masks):
         if np.any(hem_mask):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(hem_mask))
 
+    elif shorts_style == "contrast_flank_panel":
+        panel_m = np.zeros_like(shorts_mask)
+        piping_m = np.zeros_like(shorts_mask)
+        for y in range(1159, 1970):
+            t = (y - 1159) / float(1970 - 1159)
+            w = int(45 + 75 * (t ** 1.3))
+            panel_m[y, 22:22 + w] = True
+            piping_m[y, 22 + w - 3:22 + w] = True
+            panel_m[y, 2026 - w:2026] = True
+            piping_m[y, 2026 - w:2026 - w + 3] = True
+        panel_m = panel_m & shorts_mask
+        piping_m = piping_m & shorts_mask
+        if np.any(panel_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(panel_m))
+        if np.any(piping_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_rgba), (0, 0), _mask_img(piping_m))
+
+    elif shorts_style == "hem_turnup_notch":
+        hem_m = np.zeros_like(shorts_mask)
+        hem_m[1940:1968, :] = True
+        notch_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_n = ImageDraw.Draw(notch_layer)
+        draw_n.polygon([(20, 1940), (45, 1895), (70, 1940)], fill=sh_col)
+        draw_n.polygon([(1978, 1940), (2003, 1895), (2028, 1940)], fill=sh_col)
+        draw_n.line([(20, 1940), (45, 1895), (70, 1940)], fill=tip_rgba, width=2)
+        draw_n.line([(1978, 1940), (2003, 1895), (2028, 1940)], fill=tip_rgba, width=2)
+        hem_m = hem_m & shorts_mask
+        if np.any(hem_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(hem_m))
+        atlas.paste(notch_layer, (0, 0), _mask_img(shorts_mask))
+
+    elif shorts_style == "two_tone_halves":
+        right_m = np.zeros_like(shorts_mask)
+        right_m[:, 1300:2048] = True
+        right_m = right_m & shorts_mask
+        if np.any(right_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(right_m))
+        hem_left = np.zeros_like(shorts_mask)
+        hem_left[1942:1968, 0:1000] = True
+        hem_left = hem_left & shorts_mask
+        if np.any(hem_left):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(hem_left))
+        hem_right = np.zeros_like(shorts_mask)
+        hem_right[1942:1968, 1300:2048] = True
+        hem_right = hem_right & shorts_mask
+        if np.any(hem_right):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tuple(shorts_base) + (255,)), (0, 0), _mask_img(hem_right))
+
+    elif shorts_style == "gradient_side_fade":
+        grad_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_g = ImageDraw.Draw(grad_layer)
+        y_top = 1320
+        y_bot = 1968
+        for y in range(y_top, y_bot):
+            alpha_frac = ((y - y_top) / float(y_bot - y_top)) ** 1.5
+            col = tuple(shorts_accent) + (int(255 * alpha_frac),)
+            draw_g.line([(18, y), (110, y)], fill=col)
+            draw_g.line([(1938, y), (2030, y)], fill=col)
+        atlas.paste(grad_layer, (0, 0), _mask_img(shorts_mask))
+
+    elif shorts_style == "contrast_waistband":
+        wb_m = np.zeros_like(shorts_mask)
+        wb_m[1159:1235, :] = True
+        wb_m = wb_m & shorts_mask
+        if np.any(wb_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(wb_m))
+            groove_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+            draw_w = ImageDraw.Draw(groove_layer)
+            groove_dark = (max(0, shorts_accent[0] - 40), max(0, shorts_accent[1] - 40), max(0, shorts_accent[2] - 40), 200)
+            groove_light = (min(255, shorts_accent[0] + 40), min(255, shorts_accent[1] + 40), min(255, shorts_accent[2] + 40), 160)
+            for yg in [1182, 1208]:
+                draw_w.line([(0, yg), (2047, yg)], fill=groove_dark, width=1)
+                draw_w.line([(0, yg + 1), (2047, yg + 1)], fill=groove_light, width=1)
+            draw_w.rectangle([(292, 1192), (298, 1198)], fill=(15, 20, 25, 255))
+            draw_w.rectangle([(308, 1192), (314, 1198)], fill=(15, 20, 25, 255))
+            draw_w.line([(295, 1198), (292, 1218)], fill=tip_rgba, width=2)
+            draw_w.line([(311, 1198), (314, 1218)], fill=tip_rgba, width=2)
+            atlas.paste(groove_layer, (0, 0), _mask_img(wb_m))
+
 
 def _apply_engineered_socks(atlas, d, masks):
-    """Render turnover cuff hoops, mid-calf pro bands, or ombre gradient fades on socks."""
+    """Render authentic engineered football socks styling across 11 distinctive styles."""
     socks_style = d.get("socks_style", "solid")
     if not socks_style or socks_style == "solid":
         return
 
     socks_mask = masks["socks"]
-    socks_base = d.get("socks") or d["body"]
-    socks_accent = d.get("socks_accent") or d.get("second") or (245, 245, 245)
+    socks_base = tuple(d.get("socks") or d["body"])
+    socks_accent = tuple(d.get("socks_accent") or d.get("second") or (245, 245, 245))
+    socks_tip = tuple(d.get("socks_tip") or d.get("third") or socks_accent)
+
     l_so = _col_lum(socks_base)
     l_acc = _col_lum(socks_accent)
-    if (max(l_so, l_acc) + 12.5) / (min(l_so, l_acc) + 12.5) < 2.2:
+    if (max(l_so, l_acc) + 12.5) / (min(l_so, l_acc) + 12.5) < 2.0:
         socks_accent = (245, 245, 245) if l_so < 128 else (20, 25, 35)
 
     so_col = tuple(socks_accent) + (255,)
+    tip_col = tuple(socks_tip) + (255,)
 
     if socks_style == "turnover_hoop":
         cuff_so = np.zeros_like(socks_mask)
-        cuff_so[630:695, :] = True
+        cuff_so[630:692, :] = True
         cuff_so = cuff_so & socks_mask
         if np.any(cuff_so):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(cuff_so))
-            so_tip = d.get("socks_tip") or d["body"]
-            so_tip_mask = np.zeros_like(socks_mask)
-            so_tip_mask[690:696, :] = True
-            so_tip_mask = so_tip_mask & socks_mask
-            if np.any(so_tip_mask):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tuple(so_tip) + (255,)), (0, 0), _mask_img(so_tip_mask))
+            tip_m = np.zeros_like(socks_mask)
+            tip_m[690:696, :] = True
+            tip_m = tip_m & socks_mask
+            if np.any(tip_m):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_m))
+
+    elif socks_style == "dual_hoop_turnover":
+        hoop_m = np.zeros_like(socks_mask)
+        hoop_m[632:654, :] = True
+        hoop_m[666:688, :] = True
+        hoop_m = hoop_m & socks_mask
+        if np.any(hoop_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(hoop_m))
+            tip_m = np.zeros_like(socks_mask)
+            tip_m[688:694, :] = True
+            tip_m = tip_m & socks_mask
+            if np.any(tip_m):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_m))
+
+    elif socks_style == "triple_hoop_turnover":
+        hoop_m = np.zeros_like(socks_mask)
+        hoop_m[630:644, :] = True
+        hoop_m[652:666, :] = True
+        hoop_m[674:688, :] = True
+        hoop_m = hoop_m & socks_mask
+        if np.any(hoop_m):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(hoop_m))
+            tip_m = np.zeros_like(socks_mask)
+            tip_m[688:694, :] = True
+            tip_m = tip_m & socks_mask
+            if np.any(tip_m):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_m))
+
+    elif socks_style == "full_hooped_body":
+        hoop_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_h = ImageDraw.Draw(hoop_layer)
+        for y_top in range(630, 1020, 36):
+            draw_h.rectangle([(0, y_top), (ATLAS - 1, y_top + 20)], fill=so_col)
+            draw_h.line([(0, y_top), (ATLAS - 1, y_top)], fill=tip_col, width=1)
+            draw_h.line([(0, y_top + 20), (ATLAS - 1, y_top + 20)], fill=tip_col, width=1)
+        atlas.paste(hoop_layer, (0, 0), _mask_img(socks_mask))
+
     elif socks_style == "calf_band":
         band_so = np.zeros_like(socks_mask)
-        band_so[830:875, :] = True
+        band_so[825:885, :] = True
         band_so = band_so & socks_mask
         if np.any(band_so):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(band_so))
+            border_m = np.zeros_like(socks_mask)
+            border_m[822:825, :] = True
+            border_m[885:888, :] = True
+            border_m = border_m & socks_mask
+            if np.any(border_m):
+                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(border_m))
+
+    elif socks_style == "triple_calf_hoops":
+        hoop_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_th = ImageDraw.Draw(hoop_layer)
+        for y_top in [770, 806, 842]:
+            draw_th.rectangle([(0, y_top), (ATLAS - 1, y_top + 18)], fill=so_col)
+            draw_th.line([(0, y_top + 9), (ATLAS - 1, y_top + 9)], fill=tip_col, width=2)
+        atlas.paste(hoop_layer, (0, 0), _mask_img(socks_mask))
+
+    elif socks_style == "vertical_back_spine":
+        spine_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_sp = ImageDraw.Draw(spine_layer)
+        draw_sp.rectangle([(177, 630), (201, 1060)], fill=so_col)
+        draw_sp.line([(175, 630), (175, 1060)], fill=tip_col, width=2)
+        draw_sp.line([(203, 630), (203, 1060)], fill=tip_col, width=2)
+
+        draw_sp.rectangle([(1846, 630), (1870, 1060)], fill=so_col)
+        draw_sp.line([(1844, 630), (1844, 1060)], fill=tip_col, width=2)
+        draw_sp.line([(1872, 630), (1872, 1060)], fill=tip_col, width=2)
+
+        draw_sp.rectangle([(0, 630), (ATLAS - 1, 646)], fill=so_col)
+        atlas.paste(spine_layer, (0, 0), _mask_img(socks_mask))
+
+    elif socks_style == "gradient_dip":
+        dip_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_dp = ImageDraw.Draw(dip_layer)
+        draw_dp.rectangle([(0, 920), (ATLAS - 1, 1159)], fill=so_col)
+        draw_dp.rectangle([(0, 902), (ATLAS - 1, 908)], fill=tip_col)
+        draw_dp.rectangle([(0, 912), (ATLAS - 1, 916)], fill=tip_col)
+        atlas.paste(dip_layer, (0, 0), _mask_img(socks_mask))
+
     elif socks_style == "gradient_fade":
         fade_so = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_f = ImageDraw.Draw(fade_so)
-        for y in range(630, 1150):
-            t = (y - 630) / float(max(1, 1150 - 630))
+        for y in range(630, 1080):
+            t = ((y - 630) / float(max(1, 1080 - 630))) ** 1.3
             c = (int(socks_base[0] * (1 - t) + socks_accent[0] * t),
                  int(socks_base[1] * (1 - t) + socks_accent[1] * t),
                  int(socks_base[2] * (1 - t) + socks_accent[2] * t), 255)
-            draw_f.line([(0, y), (ATLAS, y)], fill=c)
-        _composite_layer(atlas, fade_so, masks["socks"])
+            draw_f.line([(0, y), (ATLAS - 1, y)], fill=c)
+        atlas.paste(fade_so, (0, 0), _mask_img(socks_mask))
+
+    elif socks_style == "ankle_bracket_cuff":
+        br_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_br = ImageDraw.Draw(br_layer)
+        draw_br.rectangle([(0, 630), (ATLAS - 1, 644)], fill=so_col)
+        draw_br.rectangle([(0, 955), (ATLAS - 1, 980)], fill=so_col)
+        draw_br.line([(0, 955), (ATLAS - 1, 955)], fill=tip_col, width=2)
+        draw_br.line([(0, 980), (ATLAS - 1, 980)], fill=tip_col, width=2)
+        draw_br.rectangle([(0, 995), (ATLAS - 1, 1015)], fill=so_col)
+        atlas.paste(br_layer, (0, 0), _mask_img(socks_mask))
+
+    elif socks_style == "chevron_stack":
+        ch_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_ch = ImageDraw.Draw(ch_layer)
+        for y_ch in [740, 775, 810, 845]:
+            draw_ch.polygon([(189, y_ch + 22), (189 - 36, y_ch), (189 - 22, y_ch), (189, y_ch + 14), (189 + 22, y_ch), (189 + 36, y_ch)], fill=so_col)
+            draw_ch.polygon([(1858, y_ch + 22), (1858 - 36, y_ch), (1858 - 22, y_ch), (1858, y_ch + 14), (1858 + 22, y_ch), (1858 + 36, y_ch)], fill=so_col)
+        atlas.paste(ch_layer, (0, 0), _mask_img(socks_mask))
 
 
 def _apply_engineered_collar(atlas, d, masks):
@@ -878,6 +1274,147 @@ def _apply_engineered_collar(atlas, d, masks):
         draw_g.line([(1044, 996), (1024, 1048)], fill=t1_rgba, width=2)
         _composite_layer(atlas, gusset_layer, body_front)
 
+    elif style == "wrap_v_neck":
+        # Overlapping kimono / crossover wrap collar with asymmetric angled lapel
+        rib_mask = np.zeros_like(collar_mask)
+        rib_mask[1868:1892, :] = collar_mask[1868:1892, :]
+        if np.any(rib_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(rib_mask))
+        t_mask = np.zeros_like(collar_mask)
+        t_mask[1868:1874, :] = collar_mask[1868:1874, :]
+        if np.any(t_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        # Asymmetric overlapping wrap lapels on body_front apex
+        wrap_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_w = ImageDraw.Draw(wrap_layer)
+        draw_w.polygon([(986, 996), (1014, 996), (1042, 1060), (1022, 1066)], fill=c_rgba)
+        draw_w.line([(1014, 996), (1042, 1060)], fill=t1_rgba, width=2)
+        draw_w.polygon([(1062, 996), (1034, 996), (1012, 1052), (1026, 1058)], fill=c_rgba)
+        draw_w.line([(1034, 996), (1012, 1052)], fill=t2_rgba, width=2)
+        draw_w.line([(986, 996), (1022, 1066)], fill=t1_rgba, width=2)
+        draw_w.line([(1062, 996), (1026, 1058)], fill=t1_rgba, width=2)
+        _composite_layer(atlas, wrap_layer, body_front)
+
+    elif style == "grandad_collar":
+        # Modern stand-up band collar with 2-button vertical Henley placket
+        band_mask = np.zeros_like(collar_mask)
+        band_mask[1868:1890, :] = collar_mask[1868:1890, :]
+        if np.any(band_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(band_mask))
+        t_mask = np.zeros_like(collar_mask)
+        t_mask[1868:1873, :] = collar_mask[1868:1873, :]
+        if np.any(t_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        henley_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_h = ImageDraw.Draw(henley_layer)
+        draw_h.rectangle([1014, 996, 1034, 1082], fill=c_rgba)
+        draw_h.rectangle([1014, 996, 1034, 1082], outline=t1_rgba, width=2)
+        draw_h.line([(1024, 996), (1024, 1080)], fill=t1_rgba, width=1)
+        btn_col = (245, 245, 248, 255) if _col_lum(collar) < 160 else (25, 25, 30, 255)
+        for by in (1026, 1062):
+            draw_h.ellipse([1020, by - 4, 1028, by + 4], fill=btn_col, outline=t1_rgba, width=1)
+            draw_h.line([(1022, by), (1026, by)], fill=t1_rgba, width=1)
+        _composite_layer(atlas, henley_layer, body_front)
+
+    elif style == "square_neck":
+        # Athletic square / trapezoidal neckline with mitered corners
+        rib_mask = np.zeros_like(collar_mask)
+        rib_mask[1868:1888, :] = collar_mask[1868:1888, :]
+        if np.any(rib_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(rib_mask))
+        t_mask = np.zeros_like(collar_mask)
+        t_mask[1868:1873, :] = collar_mask[1868:1873, :]
+        if np.any(t_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        sq_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_sq = ImageDraw.Draw(sq_layer)
+        draw_sq.polygon([(984, 996), (1064, 996), (1052, 1042), (996, 1042)], fill=c_rgba)
+        draw_sq.line([(984, 996), (996, 1042), (1052, 1042), (1064, 996)], fill=t1_rgba, width=3)
+        draw_sq.line([(996, 1042), (1004, 1032)], fill=t2_rgba, width=2)
+        draw_sq.line([(1052, 1042), (1044, 1032)], fill=t2_rgba, width=2)
+        _composite_layer(atlas, sq_layer, body_front)
+
+    elif style == "contrast_split_collar":
+        # Two-tone split collar: left half primary/collar_col, right half secondary/t1_rgba
+        c_left = np.zeros_like(collar_mask)
+        c_left[:, :1024] = collar_mask[:, :1024]
+        if np.any(c_left):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(c_left))
+
+        c_right = np.zeros_like(collar_mask)
+        c_right[:, 1024:] = collar_mask[:, 1024:]
+        if np.any(c_right):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(c_right))
+
+        split_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_sp = ImageDraw.Draw(split_layer)
+        draw_sp.line([(1024, 996), (1024, 1048)], fill=t2_rgba, width=2)
+        _composite_layer(atlas, split_layer, body_front)
+
+    elif style == "laced_placket":
+        # Heritage lace-up placket with cross-lacing and eyelets
+        crease_mask = np.zeros_like(collar_mask)
+        crease_mask[1945:1950, :] = collar_mask[1945:1950, :]
+        if np.any(crease_mask):
+            crease_col = (max(0, int(collar[0] * 0.75)),
+                          max(0, int(collar[1] * 0.75)),
+                          max(0, int(collar[2] * 0.75)), 220)
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), crease_col), (0, 0), _mask_img(crease_mask))
+
+        t_mask = np.zeros_like(collar_mask)
+        t_mask[1868:1878, :] = collar_mask[1868:1878, :]
+        if np.any(t_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        lace_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_l = ImageDraw.Draw(lace_layer)
+        draw_l.polygon([(1008, 996), (1040, 996), (1024, 1072)], fill=(20, 20, 24, 255))
+        draw_l.line([(1008, 996), (1024, 1072), (1040, 996)], fill=t1_rgba, width=2)
+
+        cord_col = (248, 246, 240, 255) if _col_lum(collar) < 170 else (30, 30, 35, 255)
+        eyelets = [(1012, 1012, 1036, 1012), (1014, 1032, 1034, 1032), (1017, 1052, 1031, 1052)]
+        for lx, ly, rx, ry in eyelets:
+            draw_l.ellipse([lx - 2, ly - 2, lx + 2, ly + 2], fill=t1_rgba)
+            draw_l.ellipse([rx - 2, ry - 2, rx + 2, ry + 2], fill=t1_rgba)
+        draw_l.line([(1012, 1012), (1034, 1032)], fill=cord_col, width=2)
+        draw_l.line([(1036, 1012), (1014, 1032)], fill=cord_col, width=2)
+        draw_l.line([(1014, 1032), (1031, 1052)], fill=cord_col, width=2)
+        draw_l.line([(1034, 1032), (1017, 1052)], fill=cord_col, width=2)
+        draw_l.line([(1024, 1052), (1020, 1078)], fill=cord_col, width=2)
+        draw_l.line([(1024, 1052), (1028, 1076)], fill=cord_col, width=2)
+        _composite_layer(atlas, lace_layer, body_front)
+
+    elif style == "mock_turtleneck_micro":
+        # Modern high compression athletic collar with center micro-slit
+        rib_mask = np.zeros_like(collar_mask)
+        rib_mask[1868:1915, :] = collar_mask[1868:1915, :]
+        if np.any(rib_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(rib_mask))
+
+        t_mask = np.zeros_like(collar_mask)
+        t_mask[1868:1874, :] = collar_mask[1868:1874, :]
+        if np.any(t_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+
+        y_c, x_c = np.where(rib_mask)
+        ribs = (x_c % 4 < 2)
+        if np.any(ribs):
+            rib_col = (max(0, int(collar[0] * 0.86)),
+                       max(0, int(collar[1] * 0.86)),
+                       max(0, int(collar[2] * 0.86)), 180)
+            arr = np.array(atlas)
+            arr[y_c[ribs], x_c[ribs]] = rib_col
+            atlas.paste(Image.fromarray(arr), (0, 0))
+
+        mock_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_m = ImageDraw.Draw(mock_layer)
+        draw_m.line([(1024, 996), (1024, 1036)], fill=t1_rgba, width=2)
+        draw_m.line([(1020, 1036), (1028, 1036)], fill=t2_rgba, width=2)
+        _composite_layer(atlas, mock_layer, body_front)
+
     else:
         # Classic Crew / Round Neck: outer ribbing tipping band + subtle elastic ribbing
         if tip1 != collar:
@@ -1004,16 +1541,106 @@ def _apply_engineered_cuffs(atlas, d, masks):
         if np.any(stripe_m3):
             atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(stripe_m3))
 
+    elif style in ("accent_ring_inner", "ring_inner"):
+        # Fluo/vibrant accent cuff band with a thin dark inner contrast stripe (BVB purple kit style)
+        cuff_mask = np.zeros_like(sleeve_mask)
+        cuff_mask[658:680, :] = sleeve_mask[658:680, :]
+        cuff_mask[710:732, :] = sleeve_mask[710:732, :]
+        cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
+        if np.any(cuff_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+
+        inner_mask = np.zeros_like(sleeve_mask)
+        inner_mask[667:671, :] = sleeve_mask[667:671, :]
+        inner_mask[719:723, :] = sleeve_mask[719:723, :]
+        inner_mask[1140:1144, :] = sleeve_mask[1140:1144, :]
+        if np.any(inner_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(inner_mask))
+
+    elif style == "tri_color_knit":
+        # 3-color heritage athletic cuff band
+        cuff_mask = np.zeros_like(sleeve_mask)
+        cuff_mask[658:680, :] = sleeve_mask[658:680, :]
+        cuff_mask[710:732, :] = sleeve_mask[710:732, :]
+        cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
+        if np.any(cuff_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+
+        s1 = np.zeros_like(sleeve_mask)
+        s2 = np.zeros_like(sleeve_mask)
+        s3 = np.zeros_like(sleeve_mask)
+
+        # Long sleeve wrist
+        s1[658:665, :] = sleeve_mask[658:665, :]
+        s2[665:672, :] = sleeve_mask[665:672, :]
+        s3[672:680, :] = sleeve_mask[672:680, :]
+
+        # Short sleeve front hem
+        s1[710:717, :] = sleeve_mask[710:717, :]
+        s2[717:724, :] = sleeve_mask[717:724, :]
+        s3[724:732, :] = sleeve_mask[724:732, :]
+
+        # Short sleeve rear hem
+        s1[1130:1138, :] = sleeve_mask[1130:1138, :]
+        s2[1138:1146, :] = sleeve_mask[1138:1146, :]
+        s3[1146:1155, :] = sleeve_mask[1146:1155, :]
+
+        if np.any(s1):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(s1))
+        if np.any(s2):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(s2))
+        if np.any(s3):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip2_col), (0, 0), _mask_img(s3))
+
+    elif style == "contrast_split":
+        # Two-tone split sleeve cuff
+        cuff_mask = np.zeros_like(sleeve_mask)
+        cuff_mask[658:680, :] = sleeve_mask[658:680, :]
+        cuff_mask[710:732, :] = sleeve_mask[710:732, :]
+        cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
+
+        left_half = np.zeros_like(sleeve_mask)
+        right_half = np.zeros_like(sleeve_mask)
+        left_half[:, :1024] = cuff_mask[:, :1024]
+        right_half[:, 1024:] = cuff_mask[:, 1024:]
+
+        if np.any(left_half):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(left_half))
+        if np.any(right_half):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(right_half))
+
+    elif style == "french_turnback":
+        # Luxury folded turnback cuff with contrast ridge piping
+        cuff_mask = np.zeros_like(sleeve_mask)
+        cuff_mask[658:680, :] = sleeve_mask[658:680, :]
+        cuff_mask[710:732, :] = sleeve_mask[710:732, :]
+        cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
+        if np.any(cuff_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+
+        ridge_mask = np.zeros_like(sleeve_mask)
+        ridge_mask[658:662, :] = sleeve_mask[658:662, :]
+        ridge_mask[710:714, :] = sleeve_mask[710:714, :]
+        ridge_mask[1130:1134, :] = sleeve_mask[1130:1134, :]
+        if np.any(ridge_mask):
+            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(ridge_mask))
+
 
 def _apply_sleeve_architecture(atlas, d, masks):
     """Render distinctive shoulder, sleeve, and yoke architecture:
-    - 'grunge_yoke': Aggressive urban brushstroke splatter across chest/shoulder saddle and sleeves (BVB Cup kit style)
-    - 'brand_track_tape': Continuous branded geometric track running down the sleeve outer ridge (LOSC Lille / Kappa style)
-    - 'seam_piping': Modern ergonomic contrast piping along the raglan diagonal seams
-    - 'raglan_piping': Contrast shoulder/raglan panels with dual piping along the seams (Rayo Vallecano style)
+    - 'solid': Classic clean authentic sleeve matching the base body or sleeve tone
+    - 'contrast_raglan': Contrast sleeve extending into raglan cut with seam piping
+    - 'shoulder_saddle_panel': Athletic yoke / saddle panel across clavicle & shoulder caps
+    - 'speed_chevrons': Racing speed chevrons repeating down outer lateral sleeve ridge
+    - 'gradient_sleeve_fade': Smooth vertical ombre fade from shoulder down to the cuff
+    - 'brand_track_tape': Continuous branded geometric track running down sleeve ridge
+    - 'split_dual_block': Half-and-half upper/lower dual color block split on sleeve
+    - 'sublimated_camo_sleeve': Subtle tonal digital/organic camo micro-pattern on sleeves
+    - 'seam_piping': Modern ergonomic contrast piping along raglan diagonal seams
+    - 'grunge_yoke': Urban brushstroke splatter across chest/shoulder saddle and sleeves
     """
     style = d.get("sleeve_style", "solid")
-    if style in ("solid", "raglan", "tipped"):
+    if style in ("solid", "tipped"):
         return
 
     body_front = masks["body_front"]
@@ -1024,46 +1651,88 @@ def _apply_sleeve_architecture(atlas, d, masks):
     acc_rgba = tuple(accent) + (255,)
     tip = d.get("third") or d.get("accent") or accent
     tip_rgba = tuple(tip) + (255,)
+    sleeve_col = tuple(d.get("sleeve") or d["body"])
 
-    if style in ("grunge_yoke", "brush_splatter"):
-        cid = int(d.get("team_id") or d.get("cid") or 126)
+    if style in ("contrast_raglan", "raglan_contrast", "raglan"):
+        raglan_col = tuple(d.get("sleeve") or d.get("second") or d["body"]) + (255,)
+        atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), raglan_col), (0, 0), _mask_img(sleeve_mask))
+        pipe_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_p = ImageDraw.Draw(pipe_layer)
+        draw_p.line([(730, 960), (830, 1010), (915, 1110)], fill=acc_rgba, width=4)
+        draw_p.line([(730, 960), (830, 1010), (915, 1110)], fill=tip_rgba, width=1)
+        draw_p.line([(1318, 960), (1218, 1010), (1133, 1110)], fill=acc_rgba, width=4)
+        draw_p.line([(1318, 960), (1218, 1010), (1133, 1110)], fill=tip_rgba, width=1)
+        _composite_layer(atlas, pipe_layer, body_front | sleeve_mask)
+
+    elif style in ("shoulder_saddle_panel", "saddle_panel", "shoulder_yoke"):
+        saddle_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_s = ImageDraw.Draw(saddle_layer)
+        # 1. Front chest clavicle saddle (Y: 955..1035, X: 680..1368)
+        draw_s.rectangle([(680, 955), (1368, 1035)], fill=acc_rgba)
+        draw_s.rectangle([(680, 1035), (1368, 1038)], fill=tip_rgba)
+        # 2. Upper sleeve crown (Y: 105..260)
+        draw_s.rectangle([(0, 105), (2048, 260)], fill=acc_rgba)
+        draw_s.rectangle([(0, 260), (2048, 263)], fill=tip_rgba)
+        _composite_layer(atlas, saddle_layer, body_front | sleeve_mask)
+
+    elif style in ("speed_chevrons", "chevrons", "chevron_sleeve"):
+        chev_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_c = ImageDraw.Draw(chev_layer)
+        # Long sleeves: outer lateral lines
+        for y in range(200, 580, 32):
+            draw_c.polygon([(320, y), (340, y + 16), (360, y), (360, y - 8), (340, y + 8), (320, y - 8)], fill=acc_rgba)
+            draw_c.polygon([(1688, y), (1708, y + 16), (1728, y), (1728, y - 8), (1708, y + 8), (1688, y - 8)], fill=acc_rgba)
+        # Short sleeves: outer lateral lines
+        for y in range(820, 1060, 28):
+            draw_c.polygon([(522, y), (536, y + 12), (550, y), (550, y - 6), (536, y + 6), (522, y - 6)], fill=acc_rgba)
+            draw_c.polygon([(1498, y), (1512, y + 12), (1526, y), (1526, y - 6), (1512, y + 6), (1498, y - 6)], fill=acc_rgba)
+        _composite_layer(atlas, chev_layer, sleeve_mask)
+
+    elif style in ("gradient_sleeve_fade", "gradient_fade", "sleeve_fade"):
+        arr = np.array(atlas)
+        sl_y, sl_x = np.where(sleeve_mask)
+        col_top = np.array(sleeve_col, dtype=np.float32)
+        col_bot = np.array(accent, dtype=np.float32)
+
+        long_idx = (sl_y >= 105) & (sl_y < 650)
+        t_long = np.clip((sl_y[long_idx] - 105) / 545.0, 0.0, 1.0) ** 1.2
+        c_long = (1.0 - t_long[:, None]) * col_top + t_long[:, None] * col_bot
+        arr[sl_y[long_idx], sl_x[long_idx], :3] = np.clip(c_long, 0, 255).astype(np.uint8)
+
+        short_idx = (sl_y >= 650) & (sl_y <= 1217)
+        t_short = np.clip((sl_y[short_idx] - 650) / 550.0, 0.0, 1.0) ** 1.2
+        c_short = (1.0 - t_short[:, None]) * col_top + t_short[:, None] * col_bot
+        arr[sl_y[short_idx], sl_x[short_idx], :3] = np.clip(c_short, 0, 255).astype(np.uint8)
+
+        atlas.paste(Image.fromarray(arr), (0, 0))
+
+    elif style in ("split_dual_block", "split_sleeve", "dual_block"):
+        split_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_sp = ImageDraw.Draw(split_layer)
+        draw_sp.rectangle([(0, 370), (2048, 650)], fill=acc_rgba)
+        draw_sp.rectangle([(0, 366), (2048, 370)], fill=tip_rgba)
+        draw_sp.rectangle([(0, 880), (2048, 1217)], fill=acc_rgba)
+        draw_sp.rectangle([(0, 876), (2048, 880)], fill=tip_rgba)
+        _composite_layer(atlas, split_layer, sleeve_mask)
+
+    elif style in ("sublimated_camo_sleeve", "camo_sleeve", "camo"):
+        cid = int(d.get("team_id") or d.get("cid") or 100)
         season = int(d.get("season", 2026))
         slot = str(d.get("slot", 1))
         seed_val = ((cid * 1000003) ^ (season * 999983) ^ (hash(slot) & 0xFFFFFFFF)) & 0xFFFFFFFF
         rng = np.random.default_rng(seed_val)
 
-        yoke_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-        draw_y = ImageDraw.Draw(yoke_layer)
-
-        # 1. Front chest & clavicle splatter (stops above chest sponsor Y: 1220)
-        for _ in range(110):
-            x = int(rng.integers(680, 1370))
-            y = int(rng.integers(955, 1140))
-            w = int(rng.integers(10, 36))
-            h = int(rng.integers(25, 90))
-            draw_y.polygon([(x, y), (x + w, y + 8), (x + w // 2, y + h), (x - w // 3, y + h - 12)], fill=acc_rgba)
-            if rng.random() > 0.6:
-                fx, fy = int(rng.integers(x - 15, x + 35)), int(rng.integers(y + h, y + h + 30))
-                draw_y.ellipse([fx, fy, fx + 6, fy + 6], fill=tip_rgba)
-
-        # 2. Back upper saddle (Y: 720..952)
-        for _ in range(90):
-            x = int(rng.integers(680, 1370))
-            y = int(rng.integers(740, 948))
-            w = int(rng.integers(10, 34))
-            h = int(rng.integers(25, 85))
-            draw_y.polygon([(x, y), (x + w, y + 8), (x + w // 2, y + h), (x - w // 3, y + h - 12)], fill=acc_rgba)
-
-        # 3. Sleeve deltoid tops (Y: 0..250)
-        for _ in range(120):
-            isle = 1450 if rng.random() > 0.5 else 0
-            x = int(rng.integers(isle + 30, isle + 550))
-            y = int(rng.integers(5, 230))
-            w = int(rng.integers(8, 28))
-            h = int(rng.integers(20, 65))
-            draw_y.polygon([(x, y), (x + w, y + 6), (x + w // 2, y + h), (x - w // 3, y + h - 8)], fill=acc_rgba)
-
-        _composite_layer(atlas, yoke_layer, body_front | body_back | sleeve_mask)
+        camo_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_cm = ImageDraw.Draw(camo_layer)
+        for _ in range(450):
+            cx = int(rng.integers(0, ATLAS))
+            cy = int(rng.integers(105, 1217))
+            cw = int(rng.integers(14, 45))
+            ch = int(rng.integers(10, 35))
+            poly = [(cx, cy), (cx + cw, cy + 4), (cx + cw - 6, cy + ch), (cx - 4, cy + ch - 4)]
+            c_fill = acc_rgba if rng.random() > 0.5 else (max(0, sleeve_col[0] - 25), max(0, sleeve_col[1] - 25), max(0, sleeve_col[2] - 25), 200)
+            draw_cm.polygon(poly, fill=c_fill)
+        _composite_layer(atlas, camo_layer, sleeve_mask)
 
     elif style in ("brand_track_tape", "track_tape"):
         tape_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1088,7 +1757,7 @@ def _apply_sleeve_architecture(atlas, d, masks):
 
         _composite_layer(atlas, tape_layer, sleeve_mask)
 
-    elif style in ("seam_piping", "piping"):
+    elif style in ("seam_piping", "piping", "raglan_piping"):
         pipe_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_p = ImageDraw.Draw(pipe_layer)
         draw_p.line([(740, 970), (840, 1020), (910, 1100)], fill=acc_rgba, width=4)
@@ -1097,19 +1766,49 @@ def _apply_sleeve_architecture(atlas, d, masks):
         draw_p.line([(1308, 970), (1208, 1020), (1138, 1100)], fill=tip_rgba, width=1)
         _composite_layer(atlas, pipe_layer, body_front | sleeve_mask)
 
-    elif style in ("raglan_piping", "contrast_raglan_piped"):
-        # Contrast shoulder raglan with dual piping along the seams (Rayo Vallecano style)
-        pipe_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-        draw_p = ImageDraw.Draw(pipe_layer)
-        # Raglan front diagonals
-        draw_p.line([(730, 960), (830, 1010), (915, 1110)], fill=acc_rgba, width=5)
-        draw_p.line([(730, 960), (830, 1010), (915, 1110)], fill=tip_rgba, width=2)
-        draw_p.line([(1318, 960), (1218, 1010), (1133, 1110)], fill=acc_rgba, width=5)
-        draw_p.line([(1318, 960), (1218, 1010), (1133, 1110)], fill=tip_rgba, width=2)
-        # Shoulder ridge stripes
-        draw_p.line([(50, 404), (440, 404)], fill=tip_rgba, width=3)
-        draw_p.line([(1610, 404), (1990, 404)], fill=tip_rgba, width=3)
-        _composite_layer(atlas, pipe_layer, body_front | sleeve_mask)
+    elif style in ("grunge_yoke", "brush_splatter", "splatter_brush"):
+        cid = int(d.get("team_id") or d.get("cid") or 126)
+        season = int(d.get("season", 2026))
+        slot = str(d.get("slot", 1))
+        seed_val = ((cid * 1000003) ^ (season * 999983) ^ (hash(slot) & 0xFFFFFFFF)) & 0xFFFFFFFF
+        rng = np.random.default_rng(seed_val)
+
+        yoke_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+        draw_y = ImageDraw.Draw(yoke_layer)
+
+        sleeve_acc = tuple(accent) + (255,)
+        atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sleeve_acc), (0, 0), _mask_img(sleeve_mask))
+
+        # 1. Front chest & clavicle splatter: vertical striated brush strokes tapering down
+        for _ in range(160):
+            x = int(rng.integers(680, 1370))
+            y = int(rng.integers(955, 1145))
+            w = int(rng.integers(4, 18))
+            h = int(rng.integers(30, 110))
+            draw_y.polygon([(x, y), (x + w, y + 6), (x + w // 2, y + h), (x - w // 3, y + h - 10)], fill=acc_rgba)
+            if rng.random() > 0.45:
+                fx, fy = int(rng.integers(x - 12, x + 24)), int(rng.integers(y + h - 10, y + h + 35))
+                rad = int(rng.integers(2, 6))
+                draw_y.ellipse([fx, fy, fx + rad, fy + rad], fill=acc_rgba)
+
+        # 2. Back upper saddle (Y: 720..952)
+        for _ in range(90):
+            x = int(rng.integers(680, 1370))
+            y = int(rng.integers(740, 948))
+            w = int(rng.integers(10, 34))
+            h = int(rng.integers(25, 85))
+            draw_y.polygon([(x, y), (x + w, y + 8), (x + w // 2, y + h), (x - w // 3, y + h - 12)], fill=acc_rgba)
+
+        # 3. Sleeve deltoid tops (Y: 0..250)
+        for _ in range(120):
+            isle = 1450 if rng.random() > 0.5 else 0
+            x = int(rng.integers(isle + 30, isle + 550))
+            y = int(rng.integers(5, 230))
+            w = int(rng.integers(8, 28))
+            h = int(rng.integers(20, 65))
+            draw_y.polygon([(x, y), (x + w, y + 6), (x + w // 2, y + h), (x - w // 3, y + h - 8)], fill=acc_rgba)
+
+        _composite_layer(atlas, yoke_layer, body_front | body_back | sleeve_mask)
 
 
 
@@ -1304,17 +2003,17 @@ def _fabric_texture_data(masks):
 
 
 def _apply_fabric_microtexture(atlas, d, masks):
-    """Apply authentic multi-zone micro-knit textile weave across garment fabric panels.
+    """Apply authentic multi-zone micro-knit textile weave and specialty fabric finishes.
 
-    Subtly modulates fabric luminance by +/- 2.5% to +/- 4.5%, producing a rich, tactile,
+    Subtly modulates fabric luminance by +/- 2.5% to +/- 6.0%, producing a rich, tactile,
     matte athletic cloth appearance in 3D replays and close-ups without altering team colors.
-    Zones:
-    - Torso front & back: Micro-honeycomb / jacquard piqué knit grain
-    - Collar & Cuffs: High-density vertical elastic ribbing
-    - Flanks & Underarms: Laser-perforated breathable mesh grain
-    - Shorts: Athletic micro-twill weave
-    - Socks: Compression ribbed turnover knit
-    - Sleeves: Fine athletic polyester knit grain
+    Specialty Finishes (d["fabric_finish"]):
+    - standard_microknit: High-density micro-honeycomb / jacquard piqué grain
+    - matte_vaporknit: Undulating aerowave engineered breathability channels (Nike Dri-Fit ADV / Adidas HEAT.RDY)
+    - embossed_damask: Subtle tonal heraldic crest / fleur-de-lis watermark tessellation
+    - heather_melange: Organic cross-hatch marl textile weave simulating performance streetwear
+    - geometric_jacquard: 3D optical isometric cube / diamond houndstooth jacquard weave
+    - corduroy_rib: Vintage vertical micro-needlecord ribs running continuously
     """
     if not d.get("fabric_texture", True):
         return
@@ -1323,13 +2022,65 @@ def _apply_fabric_microtexture(atlas, d, masks):
     if not len(fabric_idx):
         return
 
-    # Only touch fabric pixels.  The old full-atlas float32 conversion allocated
-    # a 64 MB temporary for every kit; precomputed flat indices keep this to a
-    # small scoped copy with no repeated boolean-mask scans.
+    finish = str(d.get("fabric_finish", "standard_microknit")).lower()
+
+    # Only touch fabric pixels. Precomputed flat indices keep this to a small scoped copy.
     arr = np.array(atlas)                      # uint8 RGBA copy
     rgb_flat = arr.reshape(-1, 4)[:, :3]
     patch = rgb_flat[fabric_idx].astype(np.float32)
     patch += delta_flat
+
+    # Specialty finish modulation across torso (body_front & body_back)
+    if finish != "standard_microknit":
+        torso_m = np.zeros((ATLAS, ATLAS), dtype=bool)
+        for key_name in ("body_front", "body_back"):
+            m = masks.get(key_name)
+            if m is not None:
+                torso_m |= m
+
+        if np.any(torso_m):
+            y_coords, x_coords = np.where(torso_m)
+            specialty_delta = np.zeros_like(y_coords, dtype=np.float32)
+
+            if finish in ("matte_vaporknit", "aero_knit", "vaporknit"):
+                # Engineered horizontal undulating breathability aerowaves with micro-perforations
+                waves = 5.5 * np.sin(y_coords / 4.0 + np.cos(x_coords / 12.0))
+                perfs = np.where((y_coords % 8 < 2) & (x_coords % 8 < 2), -4.0, 0.0)
+                specialty_delta = (waves + perfs).astype(np.float32)
+
+            elif finish in ("embossed_damask", "damask", "watermark"):
+                # Regal heraldic fleur-de-lis / diamond crest watermark tessellation (24x24 tile)
+                ty = y_coords % 24
+                tx = x_coords % 24
+                # Diamond border ridge
+                is_diag = (np.abs((tx - 12) + (ty - 12)) == 11) | (np.abs((tx - 12) - (ty - 12)) == 11)
+                # Center heraldic fleur icon
+                is_fleur = ((tx >= 10) & (tx <= 14) & (ty >= 6) & (ty <= 14)) | ((tx >= 7) & (tx <= 17) & (ty == 11))
+                specialty_delta = np.where(is_diag | is_fleur, 6.0, -2.5).astype(np.float32)
+
+            elif finish in ("heather_melange", "melange", "heather"):
+                # Organic stochastic cross-hatch marl textile weave
+                hash_val = (x_coords * 37 + y_coords * 73) % 11
+                specialty_delta = np.where(hash_val < 3, 5.0, np.where(hash_val > 7, -5.0, 0.0)).astype(np.float32)
+
+            elif finish in ("geometric_jacquard", "jacquard", "isometric"):
+                # 3D isometric diamond cube tessellation (16x16 tile)
+                ty = y_coords % 16
+                tx = x_coords % 16
+                # Top facet (light), left facet (shadow), right facet (neutral)
+                top_facet = (ty < 8) & ((tx >= (7 - ty)) & (tx <= (8 + ty)))
+                left_facet = (ty >= 8) & (tx < 8)
+                specialty_delta = np.where(top_facet, 5.5, np.where(left_facet, -4.5, 0.5)).astype(np.float32)
+
+            elif finish in ("corduroy_rib", "ribbed_fabric", "needle_cord"):
+                # High-density vertical micro-needlecord ribs
+                specialty_delta = np.where((x_coords % 6) < 3, 5.0, -5.0).astype(np.float32)
+
+            # Map torso coordinates into the flattened fabric patch
+            torso_flat_indices = np.ravel_multi_index((y_coords, x_coords), (ATLAS, ATLAS))
+            locs = np.searchsorted(fabric_idx, torso_flat_indices)
+            patch[locs] += specialty_delta[:, None]
+
     np.clip(patch, 0, 255, out=patch)
     rgb_flat[fabric_idx] = patch.astype(np.uint8)
     atlas.paste(Image.fromarray(arr), (0, 0))
@@ -1521,6 +2272,37 @@ def render_kit(design, out_png, masks=None):
     elif finish == "cyber_neon":
         d["accent"] = (215, 255, 30) if _col_lum(d["body"]) < 100 else (255, 20, 140)
         d["stripe_accent"] = d["accent"]
+    elif finish in ("blackout", "blackout_stealth"):
+        d["body"] = (18, 20, 24)
+        d["sleeve"] = (18, 20, 24)
+        d["shorts"] = (18, 20, 24)
+        d["socks"] = (18, 20, 24)
+        d["second"] = (38, 42, 48)
+        d["accent"] = (55, 60, 68)
+        d["stripe_accent"] = (55, 60, 68)
+        d["shorts_accent"] = (38, 42, 48)
+        d["socks_accent"] = (38, 42, 48)
+    elif finish in ("whiteout", "pure_whiteout"):
+        d["body"] = (250, 250, 252)
+        d["sleeve"] = (250, 250, 252)
+        d["shorts"] = (250, 250, 252)
+        d["socks"] = (250, 250, 252)
+        d["second"] = (228, 230, 235)
+        d["accent"] = (210, 214, 220)
+        d["stripe_accent"] = (210, 214, 220)
+        d["shorts_accent"] = (228, 230, 235)
+        d["socks_accent"] = (228, 230, 235)
+    elif finish in ("iridescent_neon", "neon_aurora"):
+        d["accent"] = (0, 240, 255)
+        d["stripe_accent"] = (255, 30, 140)
+        d["third"] = (215, 255, 30)
+    elif finish in ("pastel_streetwear", "pastel_couture"):
+        d["accent"] = (218, 212, 230)
+        d["stripe_accent"] = (226, 175, 160)
+        d["third"] = (205, 226, 232)
+    elif finish in ("retro_throwback", "vintage_archive"):
+        d["second"] = (244, 240, 228)
+        d["stripe_accent"] = (244, 240, 228)
 
     body = tuple(d["body"])
     sleeve = tuple(d["sleeve"] or d["body"])
@@ -1580,35 +2362,60 @@ def render_kit(design, out_png, masks=None):
     # logos with runtime UV validation & collision adjustment
     sp_item = None
     if d.get("sponsor"):
-        # Sample actual rendered canvas background under chest sponsor to guarantee high contrast
+        sample_arr = np.array(atlas)[1250:1370, 880:1168, :3]
+        sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
+        bg_lum = float(np.mean(sample_lums))
+        bg_std = float(np.std(sample_lums))
+
+        p_obj = Path(d["sponsor"])
+        base_stem = p_obj.stem
+        if base_stem.endswith("_white"):
+            base_stem = base_stem[:-6]
+        elif base_stem.endswith("_dark"):
+            base_stem = base_stem[:-5]
+
+        # Determine if we should use Light Mode or Dark Mode logo based on background luminance
         if not d.get("sponsor_plate"):
-            sample_arr = np.array(atlas)[1250:1370, 880:1168, :3]
-            sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
-            bg_lum = float(np.mean(sample_lums))
             if bg_lum < 130:
+                # Dark shirt fabric -> use Light Mode (_white.png)
                 d["sponsor_white"] = True
                 d.pop("sponsor_dark", None)
-                p_obj = Path(d["sponsor"])
-                if not p_obj.stem.endswith("_white"):
-                    cand_w = p_obj.parent / f"{p_obj.stem}_white.png"
-                    if cand_w.is_file():
-                        d["sponsor"] = str(cand_w)
+                cand_w = p_obj.parent / f"{base_stem}_white.png"
+                if cand_w.is_file():
+                    d["sponsor"] = str(cand_w)
             else:
+                # Light shirt fabric -> prefer authentic full-color logo if available, otherwise Dark Mode (_dark.png)
                 d["sponsor_white"] = False
-                p_obj = Path(d["sponsor"])
-                if p_obj.stem.endswith("_white"):
-                    orig_stem = p_obj.stem[:-6]
-                    cand_d = p_obj.parent / f"{orig_stem}.png"
-                    if cand_d.is_file():
-                        d["sponsor"] = str(cand_d)
-                    else:
-                        d["sponsor_dark"] = (15, 25, 45)
+                cand_c = p_obj.parent / f"{base_stem}.png"
+                cand_d = p_obj.parent / f"{base_stem}_dark.png"
+                if cand_c.is_file() and not d.get("sponsor_dark"):
+                    d["sponsor"] = str(cand_c)
+                    d.pop("sponsor_dark", None)
+                elif cand_d.is_file():
+                    d["sponsor"] = str(cand_d)
+                    d.pop("sponsor_dark", None)
+                else:
+                    d["sponsor_dark"] = (18, 22, 28)
+
+        # Contrast stroke handling for striped / multi-tone patterned shirts:
+        # If standard deviation of background luminance is high (e.g. black and white vertical stripes like Newcastle),
+        # letters will blend into matching stripes without a keyline stroke.
+        stroke_col = None
+        stroke_px = 0
+        if bg_std >= 32.0 and not d.get("sponsor_plate"):
+            if d.get("sponsor_white") or Path(d["sponsor"]).stem.endswith("_white"):
+                stroke_col = (18, 22, 28)  # Razor-sharp deep dark contrast stroke
+                stroke_px = 3
+            else:
+                stroke_col = (255, 255, 255)  # Crisp white contrast stroke for dark logos
+                stroke_px = 3
 
         sp_item = _prepare_stamp_item(d["sponsor"], *kit_regions.CHEST_SPONSOR,
                                       white=d.get("sponsor_white"),
                                       dark=d.get("sponsor_dark"),
                                       plate=body if d.get("sponsor_plate") else None,
-                                      max_w=340, max_h=140)
+                                      max_w=340, max_h=140,
+                                      stroke_color=stroke_col, stroke_px=stroke_px)
     bg_item = None
     if d.get("badge"):
         b_col, b_white = _resolve_badge_color(d["badge"], d["body"], d)
@@ -1647,9 +2454,11 @@ def render_kit(design, out_png, masks=None):
             draw.rectangle([x - pad_x, y - pad_y, x + cur_w + pad_x, y + cur_h + pad_y],
                            fill=tuple(item["plate"]) + (255,))
 
-        if d.get("heat_press_relief", True):
-            sh_op = 145 if key == "sponsor" else 65
-            _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=sh_op, highlight_opacity=35)
+        if key == "sponsor":
+            # Clean flat composite for sponsor logo - no artificial drop shadows, halos, or relief effects
+            atlas.alpha_composite(img, (x, y))
+        elif d.get("heat_press_relief", True):
+            _composite_with_relief(atlas, img, x, y, relief_depth=2, shadow_opacity=65, highlight_opacity=35)
         else:
             atlas.alpha_composite(img, (x, y))
 
@@ -1687,11 +2496,16 @@ def _defringe_white(logo):
     return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
 
-def _prepare_stamp_item(logo_path, cx, cy, area, white=False, dark=None, plate=None, max_w=None, max_h=None, defringe=True):
+def _prepare_stamp_item(logo_path, cx, cy, area, white=False, dark=None, plate=None, max_w=None, max_h=None, defringe=True, stroke_color=None, stroke_px=0):
     """Load, defringe, tint and measure a logo before validation and placement."""
     if not logo_path or not Path(logo_path).is_file():
         return None
     logo = Image.open(logo_path).convert("RGBA")
+    # Clean any low-alpha background noise/halo (< 35 alpha) across the canvas
+    l_arr = np.array(logo)
+    if np.any((l_arr[:, :, 3] > 0) & (l_arr[:, :, 3] < 35)):
+        l_arr[l_arr[:, :, 3] < 35] = 0
+        logo = Image.fromarray(l_arr)
     bbox = logo.getbbox()
     if bbox:
         logo = logo.crop(bbox)
@@ -1716,6 +2530,19 @@ def _prepare_stamp_item(logo_path, cx, cy, area, white=False, dark=None, plate=N
         nw = max(1, int(round(nw * s)))
 
     logo = logo.resize((nw, nh), Image.LANCZOS)
+
+    # Razor-sharp contrast keyline stroke for patterned / striped fabrics
+    if stroke_px and stroke_px > 0 and stroke_color is not None:
+        from PIL import ImageFilter
+        radius = int(stroke_px)
+        alpha_channel = logo.split()[3]
+        stroke_alpha = alpha_channel.filter(ImageFilter.MaxFilter(radius * 2 + 1))
+        sc = tuple(stroke_color[:3])
+        stroke_layer = Image.new("RGBA", logo.size, sc + (0,))
+        stroke_layer.putalpha(stroke_alpha)
+        stroke_layer.alpha_composite(logo, (0, 0))
+        logo = stroke_layer
+
     arr = np.asarray(logo)
     alpha = arr[:, :, 3] if (arr.ndim == 3 and arr.shape[2] == 4) else None
     pad = (int(nw * 0.10), int(nh * 0.35)) if plate is not None else None
@@ -1796,6 +2623,26 @@ def _render_jocktag(atlas, d, masks):
         border_col = (190, 120, 60, 255)
         holo_col = (235, 160, 100, 220)
         text_col = (215, 140, 80, 240)
+    elif finish in ("blackout", "blackout_stealth"):
+        bg_col = (12, 14, 16, 245)
+        border_col = (45, 48, 55, 255)
+        holo_col = (65, 70, 80, 220)
+        text_col = (55, 60, 70, 240)
+    elif finish in ("cyber_neon", "iridescent_neon", "neon_aurora"):
+        bg_col = (10, 14, 26, 245)
+        border_col = (0, 240, 255, 255)
+        holo_col = (255, 30, 140, 220)
+        text_col = (0, 240, 255, 240)
+    elif finish in ("pastel_streetwear", "pastel_couture"):
+        bg_col = (30, 28, 36, 245)
+        border_col = (226, 175, 160, 255)
+        holo_col = (218, 212, 230, 220)
+        text_col = (226, 175, 160, 240)
+    elif finish in ("retro_throwback", "vintage_archive"):
+        bg_col = (40, 36, 28, 245)
+        border_col = (214, 195, 150, 255)
+        holo_col = (244, 240, 228, 220)
+        text_col = (214, 195, 150, 240)
     else:
         bg_col = (20, 22, 26, 240)
         border_col = (160, 165, 175, 230)
@@ -1834,17 +2681,28 @@ def _render_jocktag(atlas, d, masks):
 
 
 def _render_shorts_branding(atlas, d, masks):
-    """Render authentic club crest on right leg and supplier mark on left leg of shorts."""
+    """Render authentic club crest and supplier mark on shorts, dynamically opposing ShortsNumberSide."""
     shorts_mask = masks.get("shorts")
     if shorts_mask is None:
         return
 
-    # 1. Shorts Club Badge (Right leg)
+    # Check which leg the squad number appears on (0=Left leg, 1=Right leg)
+    num_side = int(d.get("shorts_number_side", 0))
+    if num_side == 1:
+        # Number is on right leg -> Place badge on LEFT leg, supplier on RIGHT leg
+        badge_anchor = getattr(kit_regions, "SHORTS_BADGE_LEFT", (1898, 1620, 5000))
+        sup_anchor = getattr(kit_regions, "SHORTS_SUPPLIER_RIGHT", (150, 1620, 3200))
+    else:
+        # Number is on left leg (default) -> Place badge on RIGHT leg, supplier on LEFT leg
+        badge_anchor = getattr(kit_regions, "SHORTS_BADGE_RIGHT", (150, 1620, 5000))
+        sup_anchor = getattr(kit_regions, "SHORTS_SUPPLIER_LEFT", (1898, 1620, 3200))
+
+    # 1. Shorts Club Badge
     if d.get("shorts_badge", True) and d.get("badge"):
         shorts_c = d.get("shorts") or d["body"]
         b_col, b_white = _resolve_badge_color(d["badge"], shorts_c, d)
         bg_item = _prepare_stamp_item(
-            d["badge"], *kit_regions.SHORTS_BADGE,
+            d["badge"], *badge_anchor,
             white=b_white,
             dark=b_col,
             max_w=95, max_h=95, defringe=False
@@ -1866,7 +2724,7 @@ def _render_shorts_branding(atlas, d, masks):
                     stamp_layer.paste(img, (adj["x"], adj["y"]), img)
                     _composite_layer(atlas, stamp_layer, shorts_mask)
 
-    # 2. Shorts Supplier Logo (Left leg)
+    # 2. Shorts Supplier Logo
     if d.get("shorts_supplier", True) and d.get("supplier"):
         shorts_base = d.get("shorts") or d["body"]
         l_sh = _col_lum(shorts_base)
@@ -1889,7 +2747,7 @@ def _render_shorts_branding(atlas, d, masks):
 
         sup_white = (sup_col == (245, 245, 245) or d.get("supplier_white", False))
         sup_item = _prepare_stamp_item(
-            d["supplier"], *kit_regions.SHORTS_SUPPLIER,
+            d["supplier"], *sup_anchor,
             white=sup_white if not sup_col or sup_col == (245, 245, 245) else False,
             dark=sup_col if not sup_white else None,
             max_w=85, max_h=55, defringe=True
@@ -1945,7 +2803,7 @@ def _render_sleeve_sponsor(atlas, d, masks):
     #   - Long sleeve forearm: (cx = 541, cy = 403), rotated 90 deg CW (-90)
     # Stamping on BOTH short sleeve and long sleeve islands guarantees the sponsor
     # is visible whether the player wears short sleeves (summer/standard) or long sleeves (winter/rain).
-    side_mode = d.get("sleeve_sponsor_side", "both")
+    side_mode = d.get("sleeve_sponsor_side", "left")
     anchors = []
     if side_mode in ("both", "left"):
         anchors.append((1485, 935, 90.0))    # Player's Left arm SHORT sleeve
@@ -1960,20 +2818,32 @@ def _render_sleeve_sponsor(atlas, d, masks):
         if sample_arr.size > 0:
             sample_lums = 0.2126 * sample_arr[:, :, 0] + 0.7152 * sample_arr[:, :, 1] + 0.0722 * sample_arr[:, :, 2]
             bg_lum = float(np.mean(sample_lums))
+            bg_std = float(np.std(sample_lums))
         else:
             bg_lum = 128.0
+            bg_std = 0.0
 
         logo_path = p
+        base_stem = logo_path.stem
+        if base_stem.endswith("_white"):
+            base_stem = base_stem[:-6]
+        elif base_stem.endswith("_dark"):
+            base_stem = base_stem[:-5]
+
+        is_white_variant = False
         if bg_lum < 130 or d.get("sleeve_sponsor_white"):
             # Dark sleeve fabric: pick white variant
-            if not logo_path.stem.endswith("_white"):
-                cand_w = logo_path.parent / f"{logo_path.stem}_white.png"
-                if cand_w.is_file():
-                    logo_path = cand_w
+            cand_w = logo_path.parent / f"{base_stem}_white.png"
+            if cand_w.is_file():
+                logo_path = cand_w
+            is_white_variant = True
         else:
-            # Light sleeve fabric: pick color variant
-            if logo_path.stem.endswith("_white"):
-                cand_c = logo_path.parent / f"{logo_path.stem[:-6]}.png"
+            # Light sleeve fabric: pick dark variant or color
+            cand_d = logo_path.parent / f"{base_stem}_dark.png"
+            if cand_d.is_file():
+                logo_path = cand_d
+            else:
+                cand_c = logo_path.parent / f"{base_stem}.png"
                 if cand_c.is_file():
                     logo_path = cand_c
 
@@ -1995,6 +2865,18 @@ def _render_sleeve_sponsor(atlas, d, masks):
 
         raw_scaled = raw_img.resize((target_w, target_h), Image.LANCZOS)
 
+        # Apply keyline contrast stroke if striped / multi-tone sleeve pattern
+        if bg_std >= 32.0:
+            from PIL import ImageFilter
+            radius = 3
+            alpha_ch = raw_scaled.split()[3]
+            stroke_alpha = alpha_ch.filter(ImageFilter.MaxFilter(radius * 2 + 1))
+            sc = (18, 22, 28) if is_white_variant else (255, 255, 255)
+            stroke_layer = Image.new("RGBA", raw_scaled.size, sc + (0,))
+            stroke_layer.putalpha(stroke_alpha)
+            stroke_layer.alpha_composite(raw_scaled, (0, 0))
+            raw_scaled = stroke_layer
+
         # Rotate along sleeve wrap orientation:
         rot_img = raw_scaled.rotate(wrap_angle, resample=Image.BICUBIC, expand=True)
         fw, fh = rot_img.size
@@ -2002,10 +2884,8 @@ def _render_sleeve_sponsor(atlas, d, masks):
         rx = int(cx - fw / 2)
         ry = int(cy - fh / 2)
 
-        if d.get("heat_press_relief", True):
-            _composite_with_relief(atlas, rot_img, rx, ry, relief_depth=2, shadow_opacity=135, highlight_opacity=40, mask=None)
-        else:
-            atlas.alpha_composite(rot_img, (rx, ry))
+        # Clean flat composite for sleeve sponsor - no artificial drop shadows or relief effects
+        atlas.alpha_composite(rot_img, (rx, ry))
 
 
 # --------------------------------------------------------------------------- #
@@ -2165,9 +3045,24 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
                     else:
                         design["sponsor_dark"] = (12, 14, 18)
 
-        cand_logo = Path(logo_dir) / (brand + ("_white" if white else "") + ".png")
-        if not cand_logo.is_file():
-            cand_logo = Path(logo_dir) / (brand + ".png")
+        cand_white = Path(logo_dir) / f"{brand}_white.png"
+        cand_dark = Path(logo_dir) / f"{brand}_dark.png"
+        cand_std = Path(logo_dir) / f"{brand}.png"
+
+        if white:
+            if cand_white.is_file():
+                cand_logo = cand_white
+            elif cand_std.is_file():
+                cand_logo = cand_std
+            else:
+                cand_logo = cand_white
+        else:
+            if cand_dark.is_file():
+                cand_logo = cand_dark
+            elif cand_std.is_file():
+                cand_logo = cand_std
+            else:
+                cand_logo = cand_dark
         design["sponsor"] = str(cand_logo)
 
         if not white and not design.get("sponsor_dark"):
@@ -2185,11 +3080,13 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
                         if white_ratio >= noir_ratio:
                             design["sponsor_white"] = True
                             white = True
-                            cand_w = Path(logo_dir) / (brand + "_white.png")
-                            if cand_w.is_file():
-                                design["sponsor"] = str(cand_w)
+                            if cand_white.is_file():
+                                design["sponsor"] = str(cand_white)
                         else:
-                            design["sponsor_dark"] = (12, 14, 18)
+                            if cand_dark.is_file():
+                                design["sponsor"] = str(cand_dark)
+                            else:
+                                design["sponsor_dark"] = (12, 14, 18)
             except Exception:
                 pass
     else:
@@ -2250,6 +3147,21 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
             design["sleeve_sponsor"] = str(cand_sp_w)
         elif (Path(__file__).resolve().parent / "sleeve_logos" / f"{sleeve_sp}.png").is_file():
             design["sleeve_sponsor"] = str(Path(__file__).resolve().parent / "sleeve_logos" / f"{sleeve_sp}.png")
+
+    # Shorts squad number placement detection (0=Left leg, 1=Right leg)
+    cid = club.get("id") or club.get("team_id")
+    if "shorts_number_side" in club:
+        design["shorts_number_side"] = int(club["shorts_number_side"])
+    elif cid is not None:
+        try:
+            import club_resolver
+            slot_str = f"p{slot}" if isinstance(slot, int) else str(slot)
+            design["shorts_number_side"] = club_resolver.get_shorts_number_side(cid, slot=slot_str)
+        except Exception:
+            design["shorts_number_side"] = 0
+    else:
+        design["shorts_number_side"] = 0
+
     return design
 
 
@@ -2391,6 +3303,45 @@ def mockup(design, club_name, season, out_png):
                 canvas.paste(Image.new("RGBA", (W, H), tip2_c), (0, 0), Image.fromarray((s2 * 255).astype("uint8"), "L"))
             if np.any(s3):
                 canvas.paste(Image.new("RGBA", (W, H), tip_col), (0, 0), Image.fromarray((s3 * 255).astype("uint8"), "L"))
+        elif style_cuff == "tri_color_knit":
+            band_top = 265
+            cm = np.zeros_like(sm)
+            cm[band_top:283, :] = sm[band_top:283, :]
+            s1 = np.zeros_like(sm)
+            s2 = np.zeros_like(sm)
+            s3 = np.zeros_like(sm)
+            s1[band_top:band_top + 6, :] = sm[band_top:band_top + 6, :]
+            s2[band_top + 6:band_top + 12, :] = sm[band_top + 6:band_top + 12, :]
+            s3[band_top + 12:283, :] = sm[band_top + 12:283, :]
+            tip2_c = tuple(design.get("third") or design.get("second") or cuff_tip) + (255,)
+            if np.any(s1):
+                canvas.paste(Image.new("RGBA", (W, H), cuff_col), (0, 0), Image.fromarray((s1 * 255).astype("uint8"), "L"))
+            if np.any(s2):
+                canvas.paste(Image.new("RGBA", (W, H), tip_col), (0, 0), Image.fromarray((s2 * 255).astype("uint8"), "L"))
+            if np.any(s3):
+                canvas.paste(Image.new("RGBA", (W, H), tip2_c), (0, 0), Image.fromarray((s3 * 255).astype("uint8"), "L"))
+        elif style_cuff == "contrast_split":
+            band_top = 270
+            cm = np.zeros_like(sm)
+            cm[band_top:283, :] = sm[band_top:283, :]
+            s_left = np.zeros_like(sm)
+            s_right = np.zeros_like(sm)
+            s_left[:, :240] = cm[:, :240]
+            s_right[:, 240:] = cm[:, 240:]
+            if np.any(s_left):
+                canvas.paste(Image.new("RGBA", (W, H), cuff_col), (0, 0), Image.fromarray((s_left * 255).astype("uint8"), "L"))
+            if np.any(s_right):
+                canvas.paste(Image.new("RGBA", (W, H), tip_col), (0, 0), Image.fromarray((s_right * 255).astype("uint8"), "L"))
+        elif style_cuff == "french_turnback":
+            band_top = 268
+            cm = np.zeros_like(sm)
+            cm[band_top:283, :] = sm[band_top:283, :]
+            ridge_m = np.zeros_like(sm)
+            ridge_m[band_top:band_top + 3, :] = sm[band_top:band_top + 3, :]
+            if np.any(cm):
+                canvas.paste(Image.new("RGBA", (W, H), cuff_col), (0, 0), Image.fromarray((cm * 255).astype("uint8"), "L"))
+            if np.any(ridge_m):
+                canvas.paste(Image.new("RGBA", (W, H), tip_col), (0, 0), Image.fromarray((ridge_m * 255).astype("uint8"), "L"))
 
     d = ImageDraw.Draw(canvas)
 
@@ -2488,6 +3439,10 @@ def mockup(design, club_name, season, out_png):
     collar_tip = design.get("collar_tip")
     tip_col = tuple(collar_tip) + (255,) if (collar_tip and collar_tip != trim) else (tuple(trim) + (255,))
 
+    # Fill torso fabric behind high and square neckline collars
+    if c_style in ("crew", "retro_crew", "dual_tipped", "grandad_collar", "square_neck", "wrap_v_neck", "contrast_split_collar", "mock_turtleneck_micro"):
+        d.polygon([(192, 40), (288, 40), (240, 86)], fill=body + (255,))
+
     if c_style == "polo":
         # Folded wings contour
         d.polygon([(194, 40), (216, 68), (236, 52), (244, 52), (264, 68), (286, 40), (272, 38), (240, 44), (208, 38)],
@@ -2544,6 +3499,38 @@ def mockup(design, club_name, season, out_png):
         d.arc([198, 26, 282, 78], 15, 165, fill=tip_col, width=2)
         tip2_c = tuple(design.get("third") or design.get("second") or trim) + (255,)
         d.arc([204, 32, 276, 72], 15, 165, fill=tip2_c, width=2)
+    elif c_style == "wrap_v_neck":
+        d.polygon([(194, 38), (246, 88), (254, 84), (210, 38)], fill=trim + (255,))
+        d.line([(194, 38), (246, 88)], fill=tip_col, width=2)
+        d.polygon([(286, 38), (234, 82), (226, 78), (270, 38)], fill=trim + (255,))
+        d.line([(286, 38), (234, 82)], fill=tip_col, width=2)
+    elif c_style == "grandad_collar":
+        d.arc([198, 30, 282, 74], 25, 155, fill=trim + (255,), width=8)
+        d.rectangle([236, 52, 244, 86], fill=trim + (255,), outline=tip_col, width=1)
+        btn_c = (245, 245, 248, 255) if _col_lum(trim) < 160 else (25, 25, 30, 255)
+        d.ellipse([238, 60, 242, 64], fill=btn_c)
+        d.ellipse([238, 74, 242, 78], fill=btn_c)
+    elif c_style == "square_neck":
+        d.polygon([(206, 40), (274, 40), (266, 70), (214, 70)], fill=trim + (255,), outline=tip_col, width=2)
+        d.line([(214, 70), (218, 64)], fill=tip_col, width=2)
+        d.line([(266, 70), (262, 64)], fill=tip_col, width=2)
+    elif c_style == "contrast_split_collar":
+        d.arc([198, 26, 282, 78], 90, 165, fill=trim + (255,), width=8)
+        d.arc([198, 26, 282, 78], 15, 90, fill=tip_col, width=8)
+        d.line([(240, 52), (240, 78)], fill=tip_col, width=2)
+    elif c_style == "laced_placket":
+        d.polygon([(194, 40), (216, 68), (236, 52), (244, 52), (264, 68), (286, 40), (272, 38), (240, 44), (208, 38)],
+                  fill=trim + (255,), outline=tip_col)
+        d.polygon([(234, 50), (246, 50), (240, 86)], fill=(20, 20, 25, 255))
+        d.line([(235, 56), (245, 68)], fill=(245, 245, 245, 255), width=1)
+        d.line([(245, 56), (235, 68)], fill=(245, 245, 245, 255), width=1)
+        d.line([(236, 68), (244, 80)], fill=(245, 245, 245, 255), width=1)
+        d.line([(244, 68), (236, 80)], fill=(245, 245, 245, 255), width=1)
+    elif c_style == "mock_turtleneck_micro":
+        d.arc([198, 22, 282, 74], 15, 165, fill=trim + (255,), width=10)
+        d.arc([198, 22, 282, 74], 15, 165, fill=tip_col, width=2)
+        d.line([(240, 48), (240, 68)], fill=tip_col, width=2)
+        d.line([(238, 68), (242, 68)], fill=tip_col, width=2)
     else:  # crew
         d.arc([198, 26, 282, 78], 15, 165, fill=trim + (255,), width=8)
         if collar_tip and collar_tip != trim:
@@ -2577,37 +3564,119 @@ def mockup(design, club_name, season, out_png):
             pass
 
     if design.get("sponsor"):
-        logo = Image.open(design["sponsor"]).convert("RGBA")
-        if design.get("sponsor_white"):
+        sp_p = Path(design["sponsor"])
+        base_stem = sp_p.stem
+        if base_stem.endswith("_white"):
+            base_stem = base_stem[:-6]
+        elif base_stem.endswith("_dark"):
+            base_stem = base_stem[:-5]
+
+        # Measure canvas under chest sponsor on preview card
+        c_arr = np.array(canvas)[160:230, 145:335, :3]
+        if c_arr.size > 0:
+            c_lums = 0.2126 * c_arr[:, :, 0] + 0.7152 * c_arr[:, :, 1] + 0.0722 * c_arr[:, :, 2]
+            c_lum = float(np.mean(c_lums))
+            c_std = float(np.std(c_lums))
+        else:
+            c_lum = 128.0
+            c_std = 0.0
+
+        is_white_logo = False
+        if not design.get("sponsor_plate"):
+            if c_lum < 130 or design.get("sponsor_white"):
+                cand_w = sp_p.parent / f"{base_stem}_white.png"
+                if cand_w.is_file():
+                    sp_p = cand_w
+                is_white_logo = True
+            else:
+                cand_c = sp_p.parent / f"{base_stem}.png"
+                cand_d = sp_p.parent / f"{base_stem}_dark.png"
+                if cand_c.is_file() and not design.get("sponsor_dark"):
+                    sp_p = cand_c
+                elif cand_d.is_file():
+                    sp_p = cand_d
+                is_white_logo = False
+        else:
+            is_white_logo = design.get("sponsor_white", False)
+
+        logo = Image.open(sp_p).convert("RGBA")
+        if design.get("sponsor_white") and not sp_p.stem.endswith("_white"):
             logo = _flatten_white(logo)
-        elif design.get("sponsor_dark"):
-            col = design["sponsor_dark"] if isinstance(design["sponsor_dark"], (tuple, list)) else (15, 25, 45)
+        elif design.get("sponsor_dark") and not sp_p.stem.endswith("_dark"):
+            col = design["sponsor_dark"] if isinstance(design["sponsor_dark"], (tuple, list)) else (18, 22, 28)
             logo = _flatten_color(logo, col)
         s = min(190 / logo.width, 60 / logo.height)
-        logo = logo.resize((max(1, int(logo.width * s)), max(1, int(logo.height * s))))
+        logo = logo.resize((max(1, int(logo.width * s)), max(1, int(logo.height * s))), Image.LANCZOS)
+
         if design.get("sponsor_plate", False):
             d.rounded_rectangle([118, 160, 362, 236], radius=10, fill=body + (255,))
+        elif c_std >= 32.0:
+            from PIL import ImageFilter
+            alpha_ch = logo.split()[3]
+            stroke_alpha = alpha_ch.filter(ImageFilter.MaxFilter(5))  # ~2px radius in preview card scale
+            sc = (18, 22, 28) if is_white_logo else (255, 255, 255)
+            stroke_layer = Image.new("RGBA", logo.size, sc + (0,))
+            stroke_layer.putalpha(stroke_alpha)
+            stroke_layer.alpha_composite(logo, (0, 0))
+            logo = stroke_layer
+
         canvas.alpha_composite(logo, (240 - logo.width // 2, 170))
 
     if design.get("sleeve_sponsor"):
         try:
             sl_path = Path(design["sleeve_sponsor"])
+            base_sl = sl_path.stem
+            if base_sl.endswith("_white"):
+                base_sl = base_sl[:-6]
+            elif base_sl.endswith("_dark"):
+                base_sl = base_sl[:-5]
+
             if not sl_path.is_file():
-                cand = Path(__file__).resolve().parent / "sleeve_logos" / f"{sl_path.stem}.png"
+                cand = Path(__file__).resolve().parent / "sleeve_logos" / f"{base_sl}.png"
                 if cand.is_file():
                     sl_path = cand
             if sl_path.is_file():
-                sl_logo = Image.open(sl_path).convert("RGBA")
                 canvas_arr = np.array(canvas)
-                sl_lum = _col_lum(canvas_arr[175, 395, :3])
+                sl_patch = canvas_arr[160:190, 375:415, :3]
+                if sl_patch.size > 0:
+                    sl_lums = 0.2126 * sl_patch[:, :, 0] + 0.7152 * sl_patch[:, :, 1] + 0.0722 * sl_patch[:, :, 2]
+                    sl_lum = float(np.mean(sl_lums))
+                    sl_std = float(np.std(sl_lums))
+                else:
+                    sl_lum = _col_lum(canvas_arr[175, 395, :3])
+                    sl_std = 0.0
+
+                is_white_sl = False
                 if sl_lum < 130 or design.get("sleeve_sponsor_white"):
-                    cand_w = sl_path.parent / f"{sl_path.stem.replace('_white', '')}_white.png"
+                    cand_w = sl_path.parent / f"{base_sl}_white.png"
                     if cand_w.is_file():
-                        sl_logo = Image.open(cand_w).convert("RGBA")
+                        sl_path = cand_w
+                    is_white_sl = True
+                else:
+                    cand_d = sl_path.parent / f"{base_sl}_dark.png"
+                    if cand_d.is_file():
+                        sl_path = cand_d
                     else:
-                        sl_logo = _flatten_white(sl_logo)
+                        cand_c = sl_path.parent / f"{base_sl}.png"
+                        if cand_c.is_file():
+                            sl_path = cand_c
+
+                sl_logo = Image.open(sl_path).convert("RGBA")
+                if design.get("sleeve_sponsor_white") and not sl_path.stem.endswith("_white"):
+                    sl_logo = _flatten_white(sl_logo)
                 sl_scale = min(36 / max(1, sl_logo.width), 20 / max(1, sl_logo.height))
                 sl_logo = sl_logo.resize((max(1, int(sl_logo.width * sl_scale)), max(1, int(sl_logo.height * sl_scale))), Image.LANCZOS)
+
+                if sl_std >= 32.0:
+                    from PIL import ImageFilter
+                    alpha_ch = sl_logo.split()[3]
+                    stroke_alpha = alpha_ch.filter(ImageFilter.MaxFilter(5))
+                    sc = (18, 22, 28) if is_white_sl else (255, 255, 255)
+                    stroke_layer = Image.new("RGBA", sl_logo.size, sc + (0,))
+                    stroke_layer.putalpha(stroke_alpha)
+                    stroke_layer.alpha_composite(sl_logo, (0, 0))
+                    sl_logo = stroke_layer
+
                 canvas.alpha_composite(sl_logo, (395 - sl_logo.width // 2, 175 - sl_logo.height // 2))
         except Exception:
             pass
@@ -2629,6 +3698,606 @@ def mockup(design, club_name, season, out_png):
 
     canvas.convert("RGB").save(out_png)
     return out_png
+
+
+def generate_shorts_mockup(design, club_name, season, out_png, badge_path=None, supplier_path=None):
+    """Render a dedicated 2D athletic shorts presentation mockup."""
+    W, H = 480, 480
+    canvas = Image.new("RGBA", (W, H), (28, 30, 36, 255))
+    draw = ImageDraw.Draw(canvas)
+
+    base = tuple(design.get("shorts") or design["body"])
+    acc = tuple(design.get("shorts_accent") or design.get("second") or (245, 245, 245))
+    tip = tuple(design.get("shorts_tip") or design.get("third") or acc)
+    style = design.get("shorts_style", "solid")
+
+    s_mask = Image.new("L", (W, H), 0)
+    d_mask = ImageDraw.Draw(s_mask)
+
+    shorts_poly = [
+        (120, 80), (360, 80),   # Waistband top
+        (368, 120),             # Hip right
+        (395, 380),             # Hem outer right
+        (258, 380),             # Inseam hem right
+        (240, 260),             # Crotch center
+        (222, 380),             # Inseam hem left
+        (85, 380),              # Hem outer left
+        (112, 120),             # Hip left
+    ]
+    d_mask.polygon(shorts_poly, fill=255)
+
+    body_layer = Image.new("RGBA", (W, H), base + (255,))
+    if style == "two_tone_halves":
+        d_body = ImageDraw.Draw(body_layer)
+        d_body.rectangle([(240, 0), (W, H)], fill=acc + (255,))
+
+    canvas.paste(body_layer, (0, 0), s_mask)
+
+    fx_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d_fx = ImageDraw.Draw(fx_layer)
+
+    if style == "contrast_flank_panel":
+        d_fx.polygon([(112, 120), (145, 120), (160, 380), (85, 380)], fill=acc + (255,))
+        d_fx.line([(145, 120), (160, 380)], fill=tip + (255,), width=2)
+        d_fx.polygon([(368, 120), (335, 120), (320, 380), (395, 380)], fill=acc + (255,))
+        d_fx.line([(335, 120), (320, 380)], fill=tip + (255,), width=2)
+
+    elif style == "side_stripe":
+        d_fx.polygon([(112, 120), (128, 120), (110, 380), (94, 380)], fill=acc + (255,))
+        d_fx.polygon([(368, 120), (352, 120), (370, 380), (386, 380)], fill=acc + (255,))
+
+    elif style == "dual_side_stripes":
+        d_fx.polygon([(112, 120), (120, 120), (98, 380), (90, 380)], fill=acc + (255,))
+        d_fx.polygon([(124, 120), (132, 120), (110, 380), (102, 380)], fill=acc + (255,))
+        d_fx.polygon([(368, 120), (360, 120), (390, 380), (382, 380)], fill=acc + (255,))
+        d_fx.polygon([(356, 120), (348, 120), (378, 380), (370, 380)], fill=acc + (255,))
+
+    elif style == "hem_tape":
+        d_fx.polygon([(85, 360), (222, 360), (222, 380), (85, 380)], fill=acc + (255,))
+        d_fx.polygon([(258, 360), (395, 360), (395, 380), (258, 380)], fill=acc + (255,))
+
+    elif style == "hem_turnup_notch":
+        d_fx.polygon([(85, 362), (222, 362), (222, 380), (85, 380)], fill=acc + (255,))
+        d_fx.polygon([(258, 362), (395, 362), (395, 380), (258, 380)], fill=acc + (255,))
+        d_fx.polygon([(87, 362), (100, 335), (113, 362)], fill=acc + (255,))
+        d_fx.line([(87, 362), (100, 335), (113, 362)], fill=tip + (255,), width=2)
+        d_fx.polygon([(393, 362), (380, 335), (367, 362)], fill=acc + (255,))
+        d_fx.line([(393, 362), (380, 335), (367, 362)], fill=tip + (255,), width=2)
+
+    elif style == "gradient_side_fade":
+        for y in range(160, 380):
+            t = (y - 160) / float(380 - 160)
+            a = int(255 * (t ** 1.4))
+            col = acc + (a,)
+            xl = int(112 + (85 - 112) * t)
+            xr = int(368 + (395 - 368) * t)
+            d_fx.line([(xl, y), (xl + 32, y)], fill=col)
+            d_fx.line([(xr - 32, y), (xr, y)], fill=col)
+
+    elif style == "contrast_waistband":
+        d_fx.polygon([(120, 80), (360, 80), (368, 120), (112, 120)], fill=acc + (255,))
+        d_fx.line([(116, 95), (364, 95)], fill=(0, 0, 0, 70), width=2)
+        d_fx.line([(114, 108), (366, 108)], fill=(255, 255, 255, 60), width=2)
+        d_fx.rectangle([(236, 96), (239, 100)], fill=(20, 20, 20, 255))
+        d_fx.rectangle([(243, 96), (246, 100)], fill=(20, 20, 20, 255))
+        d_fx.line([(237, 100), (235, 116)], fill=tip + (255,), width=2)
+        d_fx.line([(244, 100), (246, 116)], fill=tip + (255,), width=2)
+
+    elif style == "split_leg":
+        d_fx.polygon([(85, 360), (222, 375), (222, 380), (85, 380)], fill=acc + (255,))
+        d_fx.polygon([(258, 375), (395, 360), (395, 380), (258, 380)], fill=acc + (255,))
+
+    canvas.paste(fx_layer, (0, 0), fx_layer)
+
+    if style != "contrast_waistband":
+        draw.line([(112, 120), (368, 120)], fill=(0, 0, 0, 90), width=2)
+
+    draw.line([(240, 120), (240, 260)], fill=(0, 0, 0, 90), width=2)
+
+    if badge_path:
+        try:
+            b_img = Image.open(badge_path).convert("RGBA")
+            b_img.thumbnail((48, 48), Image.LANCZOS)
+            canvas.paste(b_img, (145, 305), b_img)
+        except Exception:
+            pass
+
+    if supplier_path:
+        try:
+            s_img = Image.open(supplier_path).convert("RGBA")
+            s_img.thumbnail((42, 28), Image.LANCZOS)
+            canvas.paste(s_img, (295, 315), s_img)
+        except Exception:
+            pass
+
+    try:
+        font = ImageFont.truetype("arialbd.ttf", 16)
+        subfont = ImageFont.truetype("arial.ttf", 13)
+    except Exception:
+        font = ImageFont.load_default()
+        subfont = font
+
+    draw.text((16, 16), f"{club_name} {season} • Shorts", fill=(240, 240, 245, 255), font=font)
+    draw.text((16, 38), f"Style: {style}", fill=(180, 185, 195, 255), font=subfont)
+
+    canvas.save(out_png)
+    return out_png
+
+
+def generate_socks_mockup(design, club_name, season, out_png, supplier_path=None):
+    """Render a dedicated 2D athletic socks presentation mockup showcasing matched pair styling."""
+    W, H = 480, 480
+    canvas = Image.new("RGBA", (W, H), (28, 30, 36, 255))
+    draw = ImageDraw.Draw(canvas)
+
+    base = tuple(design.get("socks") or design["body"])
+    acc = tuple(design.get("socks_accent") or design.get("second") or (245, 245, 245))
+    tip = tuple(design.get("socks_tip") or design.get("third") or acc)
+    style = design.get("socks_style", "solid")
+
+    def make_sock_polygon(x_c, y_top=75, flip=False):
+        w_cuff = 46
+        w_calf = 42
+        w_ank = 34
+        poly = [
+            (x_c - w_cuff, y_top),
+            (x_c + w_cuff, y_top),
+            (x_c + w_cuff, y_top + 48),  # Turnover bottom
+            (x_c + w_calf, y_top + 160), # Mid calf
+            (x_c + w_ank, y_top + 245),  # Ankle
+            (x_c + (w_ank + 14 if flip else w_ank + 4), y_top + 300), # Foot lateral
+            (x_c + (14 if flip else 6), y_top + 322), # Toe tip
+            (x_c - (6 if flip else 14), y_top + 322),
+            (x_c - (w_ank + 4 if flip else w_ank + 14), y_top + 300), # Foot medial
+            (x_c - w_ank, y_top + 245),
+            (x_c - w_calf, y_top + 160),
+            (x_c - w_cuff, y_top + 48),
+        ]
+        return poly
+
+    poly_l = make_sock_polygon(165, 75, flip=False)
+    poly_r = make_sock_polygon(315, 75, flip=True)
+
+    s_mask = Image.new("L", (W, H), 0)
+    d_m = ImageDraw.Draw(s_mask)
+    d_m.polygon(poly_l, fill=255)
+    d_m.polygon(poly_r, fill=255)
+
+    # Base garment fill
+    body_layer = Image.new("RGBA", (W, H), base + (255,))
+
+    # FX Layer
+    fx_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d_fx = ImageDraw.Draw(fx_layer)
+
+    centers = [165, 315]
+
+    if style == "turnover_hoop":
+        d_fx.rectangle([(0, 75), (W, 123)], fill=acc + (255,))
+        d_fx.rectangle([(0, 119), (W, 125)], fill=tip + (255,))
+
+    elif style == "dual_hoop_turnover":
+        d_fx.rectangle([(0, 77), (W, 95)], fill=acc + (255,))
+        d_fx.rectangle([(0, 103), (W, 121)], fill=acc + (255,))
+        d_fx.rectangle([(0, 121), (W, 125)], fill=tip + (255,))
+
+    elif style == "triple_hoop_turnover":
+        d_fx.rectangle([(0, 77), (W, 89)], fill=acc + (255,))
+        d_fx.rectangle([(0, 93), (W, 105)], fill=acc + (255,))
+        d_fx.rectangle([(0, 109), (W, 121)], fill=acc + (255,))
+        d_fx.rectangle([(0, 121), (W, 125)], fill=tip + (255,))
+
+    elif style == "full_hooped_body":
+        for y in range(75, 330, 28):
+            d_fx.rectangle([(0, y), (W, y + 15)], fill=acc + (255,))
+            d_fx.line([(0, y), (W, y)], fill=tip + (255,), width=1)
+            d_fx.line([(0, y + 15), (W, y + 15)], fill=tip + (255,), width=1)
+
+    elif style == "calf_band":
+        d_fx.rectangle([(0, 205), (W, 252)], fill=acc + (255,))
+        d_fx.rectangle([(0, 202), (W, 205)], fill=tip + (255,))
+        d_fx.rectangle([(0, 252), (W, 255)], fill=tip + (255,))
+
+    elif style == "triple_calf_hoops":
+        for y in [185, 212, 239]:
+            d_fx.rectangle([(0, y), (W, y + 14)], fill=acc + (255,))
+            d_fx.line([(0, y + 7), (W, y + 7)], fill=tip + (255,), width=2)
+
+    elif style == "vertical_back_spine":
+        for xc in centers:
+            d_fx.rectangle([(xc - 9, 75), (xc + 9, 320)], fill=acc + (255,))
+            d_fx.line([(xc - 11, 75), (xc - 11, 320)], fill=tip + (255,), width=2)
+            d_fx.line([(xc + 11, 75), (xc + 11, 320)], fill=tip + (255,), width=2)
+        d_fx.rectangle([(0, 75), (W, 87)], fill=acc + (255,))
+
+    elif style == "gradient_dip":
+        d_fx.rectangle([(0, 270), (W, H)], fill=acc + (255,))
+        d_fx.rectangle([(0, 258), (W, 262)], fill=tip + (255,))
+        d_fx.rectangle([(0, 264), (W, 268)], fill=tip + (255,))
+
+    elif style == "gradient_fade":
+        for y in range(75, 340):
+            t = ((y - 75) / float(340 - 75)) ** 1.3
+            c = (int(base[0] * (1 - t) + acc[0] * t),
+                 int(base[1] * (1 - t) + acc[1] * t),
+                 int(base[2] * (1 - t) + acc[2] * t), 255)
+            d_fx.line([(0, y), (W, y)], fill=c)
+
+    elif style == "ankle_bracket_cuff":
+        d_fx.rectangle([(0, 75), (W, 85)], fill=acc + (255,))
+        d_fx.rectangle([(0, 275), (W, 295)], fill=acc + (255,))
+        d_fx.line([(0, 275), (W, 275)], fill=tip + (255,), width=2)
+        d_fx.line([(0, 295), (W, 295)], fill=tip + (255,), width=2)
+        d_fx.rectangle([(0, 305), (W, 318)], fill=acc + (255,))
+
+    elif style == "chevron_stack":
+        for xc in centers:
+            for y in [170, 195, 220, 245]:
+                d_fx.polygon([(xc, y + 14), (xc - 22, y), (xc - 13, y), (xc, y + 9), (xc + 13, y), (xc + 22, y)], fill=acc + (255,))
+
+    body_layer.paste(fx_layer, (0, 0), fx_layer)
+    canvas.paste(body_layer, (0, 0), s_mask)
+
+    # Outline & turnover seam definition
+    draw.polygon(poly_l, outline=(85, 95, 110, 255), width=2)
+    draw.polygon(poly_r, outline=(85, 95, 110, 255), width=2)
+    draw.line([(165 - 46, 123), (165 + 46, 123)], fill=(140, 150, 165, 200), width=2)
+    draw.line([(315 - 46, 123), (315 + 46, 123)], fill=(140, 150, 165, 200), width=2)
+
+    # Supplier stamp on shin (between y=140 and 165)
+    if supplier_path and os.path.exists(supplier_path):
+        try:
+            s_img = Image.open(supplier_path).convert("RGBA")
+            s_img.thumbnail((32, 20), Image.LANCZOS)
+            canvas.paste(s_img, (165 - s_img.width // 2, 145), s_img)
+            canvas.paste(s_img, (315 - s_img.width // 2, 145), s_img)
+        except Exception:
+            pass
+
+    try:
+        font = ImageFont.truetype("arialbd.ttf", 16)
+        subfont = ImageFont.truetype("arial.ttf", 13)
+    except Exception:
+        font = ImageFont.load_default()
+        subfont = font
+
+    draw.text((16, 16), f"{club_name} {season} • Socks", fill=(240, 240, 245, 255), font=font)
+    draw.text((16, 38), f"Style: {style}", fill=(180, 185, 195, 255), font=subfont)
+
+    canvas.save(out_png)
+    return out_png
+
+
+def generate_sleeve_mockup(design, club_name, season, out_png, badge_path=None, sleeve_sponsor_path=None, supplier_path=None):
+    """Render a dedicated 2D athletic sleeve presentation mockup showcasing sleeve construction,
+    raglan/saddle tailoring, sleeve sponsor & badge placement, and coordinated undersleeves."""
+    import os
+    W, H = 540, 520
+    canvas = Image.new("RGBA", (W, H), (14, 18, 26, 255))
+    draw = ImageDraw.Draw(canvas)
+
+    body = tuple(design.get("body") or (20, 20, 20))
+    sleeve = tuple(design.get("sleeve") or body)
+    accent = tuple(design.get("stripe_accent") or design.get("second") or design.get("accent") or (240, 240, 245))
+    tip = tuple(design.get("third") or design.get("accent") or accent)
+    style = design.get("sleeve_style", "solid")
+    undershirt_col = tuple(design.get("undershirt_color_rgb") or sleeve)
+
+    # 1. Torso silhouette backdrop (subtle chest/clavicle context)
+    t_poly = [(40, 160), (95, 70), (140, 75), (95, 290), (40, 280)]
+    draw.polygon(t_poly, fill=body + (255,), outline=(45, 52, 65, 255))
+
+    # 2. Base layer undersleeve (long compression arm extending below short sleeve cuff)
+    u_mask = Image.new("L", (W, H), 0)
+    u_draw = ImageDraw.Draw(u_mask)
+    u_poly = [(138, 255), (235, 240), (218, 435), (148, 442)]
+    u_draw.polygon(u_poly, fill=255)
+
+    u_layer = Image.new("RGBA", (W, H), undershirt_col + (255,))
+    u_d = ImageDraw.Draw(u_layer)
+    for wy in range(426, 442, 3):
+        u_d.line([(140, wy), (225, wy)], fill=(max(0, undershirt_col[0] - 25), max(0, undershirt_col[1] - 25), max(0, undershirt_col[2] - 25), 255), width=1)
+    canvas.paste(u_layer, (0, 0), u_mask)
+    draw.polygon(u_poly, outline=(60, 70, 85, 255), width=2)
+
+    # 3. Main Jersey Short Sleeve & Shoulder Assembly
+    s_mask = Image.new("L", (W, H), 0)
+    s_draw = ImageDraw.Draw(s_mask)
+    s_poly = [(95, 70), (225, 115), (242, 250), (135, 270), (110, 175), (95, 70)]
+    s_draw.polygon(s_poly, fill=255)
+
+    s_base_col = accent if style in ("contrast_raglan", "raglan_contrast", "raglan") else sleeve
+    s_body = Image.new("RGBA", (W, H), s_base_col + (255,))
+    s_fx = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d_fx = ImageDraw.Draw(s_fx)
+
+    if style in ("shoulder_saddle_panel", "saddle_panel", "shoulder_yoke"):
+        d_fx.polygon([(95, 70), (225, 115), (215, 150), (100, 115)], fill=accent + (255,))
+        d_fx.line([(100, 115), (215, 150)], fill=tip + (255,), width=3)
+
+    elif style in ("speed_chevrons", "chevrons", "chevron_sleeve"):
+        for cy in range(125, 240, 26):
+            d_fx.polygon([(185, cy), (198, cy + 12), (211, cy), (211, cy - 6), (198, cy + 6), (185, cy - 6)], fill=accent + (255,))
+
+    elif style in ("gradient_sleeve_fade", "gradient_fade", "sleeve_fade"):
+        for gy in range(70, 270):
+            t = ((gy - 70) / 200.0) ** 1.2
+            c_fade = (
+                int(sleeve[0] * (1 - t) + accent[0] * t),
+                int(sleeve[1] * (1 - t) + accent[1] * t),
+                int(sleeve[2] * (1 - t) + accent[2] * t),
+                255
+            )
+            d_fx.line([(90, gy), (250, gy)], fill=c_fade, width=1)
+
+    elif style in ("split_dual_block", "split_sleeve", "dual_block"):
+        d_fx.polygon([(115, 185), (236, 175), (242, 250), (135, 270)], fill=accent + (255,))
+        d_fx.line([(115, 185), (236, 175)], fill=tip + (255,), width=3)
+
+    elif style in ("brand_track_tape", "track_tape"):
+        d_fx.polygon([(188, 110), (202, 110), (216, 248), (202, 248)], fill=accent + (255,))
+        for cy in range(118, 242, 18):
+            d_fx.polygon([(195, cy), (202, cy + 6), (209, cy), (202, cy - 6)], fill=sleeve + (255,))
+
+    elif style in ("sublimated_camo_sleeve", "camo_sleeve", "camo"):
+        import numpy as np
+        rng = np.random.default_rng(season * 10007 + hash(club_name) & 0xFFFFFFFF)
+        for _ in range(35):
+            cx = int(rng.integers(100, 235))
+            cy = int(rng.integers(80, 245))
+            cw = int(rng.integers(12, 32))
+            ch = int(rng.integers(8, 22))
+            c_fill = accent + (180,) if rng.random() > 0.5 else (max(0, sleeve[0] - 25), max(0, sleeve[1] - 25), max(0, sleeve[2] - 25), 180)
+            d_fx.polygon([(cx, cy), (cx + cw, cy + 3), (cx + cw - 4, cy + ch), (cx - 3, cy + ch - 3)], fill=c_fill)
+
+    elif style in ("grunge_yoke", "brush_splatter", "splatter_brush"):
+        import numpy as np
+        rng = np.random.default_rng(season * 10007 + hash(club_name) & 0xFFFFFFFF)
+        for _ in range(40):
+            cx = int(rng.integers(95, 230))
+            cy = int(rng.integers(70, 160))
+            cw = int(rng.integers(4, 14))
+            ch = int(rng.integers(15, 45))
+            d_fx.polygon([(cx, cy), (cx + cw, cy + 4), (cx + cw // 2, cy + ch), (cx - 2, cy + ch - 4)], fill=accent + (255,))
+
+    s_body.paste(s_fx, (0, 0), s_fx)
+    canvas.paste(s_body, (0, 0), s_mask)
+
+    # 4. Sleeve Cuff Band (at y=252..270)
+    cuff_mask = Image.new("L", (W, H), 0)
+    c_draw = ImageDraw.Draw(cuff_mask)
+    c_poly = [(135, 270), (242, 250), (240, 236), (133, 256)]
+    c_draw.polygon(c_poly, fill=255)
+    cuff_col = tuple(design.get("cuff") or accent)
+    canvas.paste(Image.new("RGBA", (W, H), cuff_col + (255,)), (0, 0), cuff_mask)
+    draw.polygon(c_poly, outline=tip + (255,), width=1)
+
+    # 5. Seam Outline & Raglan Piping
+    draw.polygon(s_poly, outline=(60, 70, 85, 255), width=2)
+    if style in ("contrast_raglan", "raglan_contrast", "raglan", "seam_piping", "piping", "raglan_piping"):
+        draw.line([(95, 70), (110, 175)], fill=accent + (255,), width=4)
+        draw.line([(95, 70), (110, 175)], fill=tip + (255,), width=1)
+    else:
+        draw.line([(95, 70), (110, 175)], fill=(75, 85, 105, 255), width=2)
+
+    # 6. Sleeve Sponsor Stamp (on bicep y=165..215)
+    if sleeve_sponsor_path and os.path.exists(sleeve_sponsor_path):
+        try:
+            sp_img = Image.open(sleeve_sponsor_path).convert("RGBA")
+            sp_img.thumbnail((72, 38), Image.LANCZOS)
+            canvas.paste(sp_img, (175 - sp_img.width // 2, 195 - sp_img.height // 2), sp_img)
+        except Exception:
+            pass
+
+    # 7. Sleeve Badge Stamp (outer sleeve y=140..175)
+    if badge_path and os.path.exists(badge_path):
+        try:
+            bd_img = Image.open(badge_path).convert("RGBA")
+            bd_img.thumbnail((34, 34), Image.LANCZOS)
+            canvas.paste(bd_img, (205, 140), bd_img)
+        except Exception:
+            pass
+
+    # 8. Right side info panel & swatches
+    try:
+        font = ImageFont.truetype("arialbd.ttf", 16)
+        subfont = ImageFont.truetype("arial.ttf", 12)
+        boldfont = ImageFont.truetype("arialbd.ttf", 12)
+    except Exception:
+        font = ImageFont.load_default()
+        subfont = font
+        boldfont = font
+
+    draw.text((20, 18), f"{club_name} {season} • Sleeve & Construction", fill=(240, 240, 245, 255), font=font)
+    draw.text((20, 40), f"Active Style: {style.upper()}", fill=(180, 185, 195, 255), font=subfont)
+
+    rx, ry = 280, 75
+    draw.rectangle([(rx, ry), (rx + 235, ry + 395)], fill=(20, 24, 34, 255), outline=(45, 55, 70, 255), width=1)
+    draw.text((rx + 14, ry + 14), "CONSTRUCTION SPECS", fill=(220, 225, 235, 255), font=boldfont)
+
+    y_off = ry + 42
+    specs = [
+        ("Sleeve Style", style),
+        ("Cuff Style", design.get("cuff_style", "solid")),
+        ("Collar Model", str(design.get("collar_model", 1))),
+        ("Supplier", str(design.get("supplier", "generic")).upper()),
+    ]
+    for k, v in specs:
+        draw.text((rx + 14, y_off), k, fill=(140, 145, 160, 255), font=subfont)
+        draw.text((rx + 130, y_off), str(v), fill=(235, 235, 245, 255), font=boldfont)
+        y_off += 24
+
+    draw.line([(rx + 14, y_off + 8), (rx + 221, y_off + 8)], fill=(45, 55, 70, 255), width=1)
+    y_off += 18
+    draw.text((rx + 14, y_off), "BASE LAYER UNDERSLEEVE", fill=(220, 225, 235, 255), font=boldfont)
+    y_off += 20
+    hex_u = f"#{undershirt_col[0]:02x}{undershirt_col[1]:02x}{undershirt_col[2]:02x}"
+    draw.rectangle([(rx + 14, y_off), (rx + 48, y_off + 32)], fill=undershirt_col + (255,), outline=(90, 100, 120, 255), width=1)
+    draw.text((rx + 58, y_off + 2), hex_u.upper(), fill=(240, 240, 245, 255), font=boldfont)
+    draw.text((rx + 58, y_off + 18), "Sider UniColor_Color1 Synced", fill=(100, 200, 120, 255), font=subfont)
+
+    y_off += 45
+    draw.rectangle([(rx + 14, y_off), (rx + 221, y_off + 54)], fill=(15, 20, 28, 255), outline=(35, 45, 60, 255), width=1)
+    draw.text((rx + 22, y_off + 8), "PES 2021 / FL27 Engine", fill=(140, 150, 170, 255), font=subfont)
+    draw.text((rx + 22, y_off + 24), "100% In-Game Compression Sync", fill=(100, 220, 140, 255), font=boldfont)
+
+    canvas.save(out_png)
+    return out_png
+
+
+def generate_fabric_mockup(design, club_name, season, out_png):
+    """Render a standalone 2D presentation card showcasing garment fabric finish & weave structure.
+
+    Dimensions: 540 x 520 px.
+    Shows:
+    - Realistic draped textile swatch with active club body color and finish weave
+    - High-magnification 8x circular macro loupe displaying individual knit/damask/perforation details
+    - Twin-needle chainstitch hem construction
+    - Technical fabric specifications and Master League runtime status
+    """
+    W, H = 540, 520
+    canvas = Image.new("RGBA", (W, H), (18, 22, 28, 255))
+    draw = ImageDraw.Draw(canvas)
+
+    subfont = ImageFont.load_default()
+    boldfont = ImageFont.load_default()
+    titlefont = ImageFont.load_default()
+
+    # Outer border
+    draw.rectangle([0, 0, W - 1, H - 1], outline=(40, 48, 62, 255), width=1)
+
+    finish = str(design.get("fabric_finish", "standard_microknit")).lower()
+    body_col = tuple(design.get("body", (20, 25, 45)))
+    sec_col = tuple(design.get("second", (220, 35, 45)))
+    acc_col = tuple(design.get("stripe_accent", (245, 245, 250)))
+
+    # Header
+    draw.rectangle([1, 1, W - 2, 54], fill=(14, 18, 24, 255))
+    draw.text((24, 12), f"{club_name} {season} • Fabric Architecture", fill=(245, 248, 252, 255), font=titlefont)
+    draw.text((24, 30), f"Active Weave: {finish.upper()}", fill=(140, 160, 185, 255), font=subfont)
+
+    # 1. Base draped fabric swatch (220 x 390 px)
+    sw_x, sw_y = 28, 75
+    sw_w, sw_h = 220, 390
+
+    swatch = Image.new("RGBA", (sw_w, sw_h), body_col + (255,))
+    sw_arr = np.array(swatch).astype(np.float32)
+
+    # Shading drape waves across swatch (simulating cloth fold lighting)
+    xx, yy = np.meshgrid(np.arange(sw_w), np.arange(sw_h))
+    drape = 12.0 * np.sin(xx / 28.0) * np.cos(yy / 120.0)
+
+    # Finish microtexture modulation
+    f_mod = np.zeros((sw_h, sw_w), dtype=np.float32)
+    if finish in ("matte_vaporknit", "aero_knit", "vaporknit"):
+        waves = 7.0 * np.sin(yy / 4.0 + np.cos(xx / 12.0))
+        perfs = np.where((yy % 8 < 2) & (xx % 8 < 2), -6.0, 0.0)
+        f_mod = waves + perfs
+    elif finish in ("embossed_damask", "damask", "watermark"):
+        ty = yy % 24
+        tx = xx % 24
+        is_diag = (np.abs((tx - 12) + (ty - 12)) == 11) | (np.abs((tx - 12) - (ty - 12)) == 11)
+        is_fleur = ((tx >= 10) & (tx <= 14) & (ty >= 6) & (ty <= 14)) | ((tx >= 7) & (tx <= 17) & (ty == 11))
+        f_mod = np.where(is_diag | is_fleur, 8.0, -3.5)
+    elif finish in ("heather_melange", "melange", "heather"):
+        hash_val = (xx * 37 + yy * 73) % 11
+        f_mod = np.where(hash_val < 3, 7.0, np.where(hash_val > 7, -7.0, 0.0))
+    elif finish in ("geometric_jacquard", "jacquard", "isometric"):
+        ty = yy % 16
+        tx = xx % 16
+        top_facet = (ty < 8) & ((tx >= (7 - ty)) & (tx <= (8 + ty)))
+        left_facet = (ty >= 8) & (tx < 8)
+        f_mod = np.where(top_facet, 7.5, np.where(left_facet, -6.5, 0.5))
+    elif finish in ("corduroy_rib", "ribbed_fabric", "needle_cord"):
+        f_mod = np.where((xx % 6) < 3, 7.0, -7.0)
+    else:  # standard_microknit
+        k_piq = np.array([[4.0, -3.0], [-3.0, 4.0]], dtype=np.float32)
+        f_mod = np.tile(k_piq, (sw_h // 2 + 1, sw_w // 2 + 1))[:sw_h, :sw_w]
+
+    total_delta = drape + f_mod
+    sw_arr[:, :, :3] += total_delta[:, :, None]
+    np.clip(sw_arr, 0, 255, out=sw_arr)
+    swatch = Image.fromarray(sw_arr.astype(np.uint8))
+
+    canvas.paste(swatch, (sw_x, sw_y))
+    draw.rectangle([sw_x, sw_y, sw_x + sw_w, sw_y + sw_h], outline=(55, 65, 80, 255), width=1)
+
+    # Twin-needle flatlock chainstitch along bottom hem
+    stitch_y = sw_y + sw_h - 18
+    draw.line([(sw_x + 5, stitch_y), (sw_x + sw_w - 5, stitch_y)], fill=sec_col + (220,), width=2)
+    draw.line([(sw_x + 5, stitch_y + 4), (sw_x + sw_w - 5, stitch_y + 4)], fill=sec_col + (220,), width=2)
+    for sx in range(sw_x + 8, sw_x + sw_w - 8, 8):
+        draw.line([(sx, stitch_y - 1), (sx + 3, stitch_y + 5)], fill=acc_col + (255,), width=1)
+
+    # 2. High-Magnification Macro Loupe (Radius 62 px)
+    cx, cy, r = sw_x + sw_w // 2, sw_y + 160, 62
+    crop_size = 28
+    crop_x0 = max(0, min(sw_w - crop_size, sw_w // 2 - crop_size // 2))
+    crop_y0 = max(0, min(sw_h - crop_size, 160 - crop_size // 2))
+    macro_crop = swatch.crop((crop_x0, crop_y0, crop_x0 + crop_size, crop_y0 + crop_size))
+    macro_zoom = macro_crop.resize((r * 2, r * 2), Image.Resampling.BOX)
+
+    # Circular mask for loupe
+    loupe_mask = Image.new("L", (r * 2, r * 2), 0)
+    ImageDraw.Draw(loupe_mask).ellipse([0, 0, r * 2, r * 2], fill=255)
+    canvas.paste(macro_zoom, (cx - r, cy - r), loupe_mask)
+
+    # Reticle and lens frame
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(220, 180, 50, 255), width=3)
+    draw.ellipse([cx - r - 2, cy - r - 2, cx + r + 2, cy + r + 2], outline=(15, 20, 28, 255), width=1)
+    draw.line([(cx - r + 8, cy), (cx - 15, cy)], fill=(220, 180, 50, 200), width=1)
+    draw.line([(cx + 15, cy), (cx + r - 8, cy)], fill=(220, 180, 50, 200), width=1)
+    draw.line([(cx, cy - r + 8), (cx, cy - 15)], fill=(220, 180, 50, 200), width=1)
+    draw.line([(cx, cy + 15), (cx, cy + r - 8)], fill=(220, 180, 50, 200), width=1)
+
+    # Loupe badge
+    draw.rectangle([cx - 45, cy + r - 12, cx + 45, cy + r + 6], fill=(12, 16, 22, 240), outline=(220, 180, 50, 255))
+    draw.text((cx - 36, cy + r - 9), "8x MACRO ZOOM", fill=(250, 250, 250, 255), font=subfont)
+
+    # Swatch caption
+    draw.text((sw_x + 10, sw_y + sw_h + 12), "ENGINEERED JERSEY SWATCH", fill=(140, 155, 175, 255), font=subfont)
+
+    # 3. Technical Specifications Card (Right side)
+    rx = 270
+    draw.rectangle([rx, 75, W - 24, 480], fill=(14, 18, 24, 255), outline=(40, 48, 62, 255), width=1)
+    draw.text((rx + 16, 92), "FABRIC SPECIFICATIONS", fill=(245, 248, 252, 255), font=boldfont)
+    draw.line([(rx + 16, 112), (W - 40, 112)], fill=(45, 55, 70, 255), width=1)
+
+    desc_map = {
+        "matte_vaporknit": ("Matte VaporKnit Aerowave", "Undulating Aeration Channels", "140 g/m² Ultralight", "Elite Match Pro"),
+        "embossed_damask": ("Regal Embossed Damask", "Tonal Heraldic Watermark", "155 g/m² Heritage Knit", "Luxury Collector Tier"),
+        "heather_melange": ("Streetwear Marl Melange", "Organic Cross-Hatch Slub", "160 g/m² Cotton-Poly", "Modern Lifestyle Tier"),
+        "geometric_jacquard": ("3D Optical Jacquard", "Isometric Cube Tessellation", "150 g/m² Engineered Weave", "High-Tech Dynamic"),
+        "corduroy_rib": ("Vintage Corduroy Rib", "Micro-Needlecord Channels", "165 g/m² Heritage Weave", "Retro Classic Tier"),
+        "standard_microknit": ("Elite Micro-Honeycomb", "High-Density Piqué Grain", "145 g/m² Technical Poly", "Authentic Standard"),
+    }
+    f_info = desc_map.get(finish, desc_map["standard_microknit"])
+
+    specs = [
+        ("Weave Profile:", f_info[0]),
+        ("Knit Structure:", f_info[1]),
+        ("Fabric Weight:", f_info[2]),
+        ("Performance Tier:", f_info[3]),
+        ("3D Mesh Shading:", "Luminance Mod +/- 6.0%"),
+        ("Sider Runtime:", "Master League Dynamic ML"),
+        ("Exhibition Mode:", "Original Licensed Kits"),
+    ]
+
+    y_cur = 126
+    for lbl, val in specs:
+        draw.text((rx + 16, y_cur), lbl, fill=(120, 135, 155, 255), font=subfont)
+        draw.text((rx + 16, y_cur + 16), val, fill=(235, 240, 248, 255), font=boldfont)
+        y_cur += 38
+
+    # Bottom status banner
+    draw.rectangle([rx + 14, 420, W - 38, 465], fill=(18, 24, 32, 255), outline=(55, 130, 85, 255), width=1)
+    draw.ellipse([rx + 24, 437, rx + 34, 447], fill=(50, 220, 110, 255))
+    draw.text((rx + 42, 429), "PES 2021 / FL27 Engine Verified", fill=(210, 245, 220, 255), font=subfont)
+    draw.text((rx + 42, 444), "Tactile Microtexture In-Game Active", fill=(100, 220, 140, 255), font=boldfont)
+
+    canvas.save(out_png)
+    return out_png
+
 
 
 def uv_contact_sheet(atlas_png, out_png, masks=None, cell=460):

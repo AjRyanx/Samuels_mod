@@ -261,6 +261,74 @@ def read_config_colors(path):
     return colors
 
 
+def get_shorts_number_side(club_id, sider=None, slot="p1"):
+    """Read ShortsNumberSide from the club's kitserver config.txt.
+    0 = Squad number on Left leg (default for Premier League, etc.)
+    1 = Squad number on Right leg (common in Ligue 1, La Liga, etc.)
+    """
+    try:
+        club_id = int(club_id)
+        sider = Path(sider or DEFAULT_SIDER)
+        folder = read_map(sider).get(club_id)
+        if not folder:
+            return 0
+        folder_norm = folder.replace("\\", "/").strip("/")
+
+        slot_str = f"p{slot}" if isinstance(slot, int) else str(slot)
+        candidates = [
+            sider / "content" / "kits" / folder_norm / slot_str / "config.txt",
+            sider / "content" / "kits" / folder_norm / "p1" / "config.txt",
+        ]
+        for cfg_path in candidates:
+            if cfg_path.is_file():
+                try:
+                    for line in cfg_path.read_text(encoding="utf-8", errors="replace").splitlines():
+                        line = line.split(";", 1)[0].strip()
+                        if "=" in line:
+                            k, v = line.split("=", 1)
+                            if k.strip().lower() == "shortsnumberside":
+                                try:
+                                    return int(v.strip())
+                                except ValueError:
+                                    pass
+                except OSError:
+                    pass
+                break
+    except Exception:
+        pass
+    return 0
+
+
+def is_national_team(club_id, sider=None):
+    """Return True if club_id belongs to a national or classic team.
+    National and classic teams must NEVER receive dynamic sponsor kits.
+    """
+    try:
+        club_id = int(club_id)
+    except (ValueError, TypeError):
+        return False
+    if club_id <= 0:
+        return False
+
+    # Traditional national and classic team ID ranges in PES 2021
+    if ((1 <= club_id <= 59) or (900 <= club_id <= 908) or (1550 <= club_id <= 1551)
+            or (2703 <= club_id <= 2704) or (5439 <= club_id <= 5440)):
+        return True
+
+    # Check kitserver folder path in map.txt
+    try:
+        sider = Path(sider or DEFAULT_SIDER)
+        folder = read_map(sider).get(club_id)
+        if folder:
+            f_lower = folder.lower().replace("/", "\\")
+            if "national teams" in f_lower or "classics" in f_lower:
+                return True
+    except Exception:
+        pass
+
+    return False
+
+
 def resolve(club_id, sider=None, csv_row=None):
     """Return a club row for `club_id` (see the module docstring).
 
@@ -269,6 +337,7 @@ def resolve(club_id, sider=None, csv_row=None):
     """
     club_id = int(club_id)
     sider = Path(sider or DEFAULT_SIDER)
+    num_side = get_shorts_number_side(club_id, sider)
 
     if csv_row is None:
         cached = _get_clubs_csv().get(club_id)
@@ -281,7 +350,8 @@ def resolve(club_id, sider=None, csv_row=None):
                 "primary": _norm_hex(csv_row.get("primary")) or "#034694",
                 "secondary": _norm_hex(csv_row.get("secondary")) or "#FFFFFF",
                 "accent": _norm_hex(csv_row.get("accent")) or "#C8102E",
-                "tier": csv_row.get("tier") or tier_from_id(club_id)}
+                "tier": csv_row.get("tier") or tier_from_id(club_id),
+                "shorts_number_side": num_side}
 
     name = None
     colors = {}
@@ -304,7 +374,8 @@ def resolve(club_id, sider=None, csv_row=None):
     primary, secondary, accent = palette_from_colors(club_id, colors)
     return {"id": club_id, "name": name or ("Club #%d" % club_id),
             "primary": primary, "secondary": secondary, "accent": accent,
-            "tier": tier_from_id(club_id)}
+            "tier": tier_from_id(club_id),
+            "shorts_number_side": num_side}
 
 
 if __name__ == "__main__":

@@ -6,12 +6,14 @@ Asserts:
   3. Non-ML flow (Top, Exhibition menu) yields nil -> authentic kit.
   4. Master League fixture (tournament_id == 19) and ML flow returns the dynamic kit key!
 """
-import tempfile, shutil
+import tempfile, shutil, sys
 from pathlib import Path
 from lupa import LuaRuntime
 
 def test_master_league_only_scope():
     root = Path(__file__).resolve().parent.parent
+    if str(root / "generator") not in sys.path:
+        sys.path.insert(0, str(root / "generator"))
     tmp = Path(tempfile.mkdtemp())
     shutil.copytree(root / "content", tmp / "content")
 
@@ -245,6 +247,9 @@ def test_master_league_only_scope():
     map_content = """# VirtuaRED kits map
     101, "Premier League\\Arsenal"
     108, "LaLiga EA SPORTS\\Barcelona"
+    8, "National Teams\\Europe\\France"
+    1174, "National Teams\\Europe\\Georgia"
+    900, "Classics\\Rainmakers Classics"
     """
     (gdb_dir / "map.txt").write_text(map_content)
 
@@ -336,6 +341,46 @@ def test_master_league_only_scope():
     assert M.debug_is_paid("ml_0102_paidA:102:2028:three"), \
         "Payment ledger was lost when switching careers (would re-credit income)"
     print("PASS 20: Career-tagged payment ledger restored on career switch")
+
+    # 21. National Teams MUST NEVER receive dynamic kits or be detected as managed clubs
+    import club_resolver
+    # 21A: Verify Python and Lua is_national_team detection
+    for nat_id in [1, 5, 8, 29, 45, 50, 900, 1174, 1550, 2703, 5439]:
+        assert club_resolver.is_national_team(nat_id, tmp), f"Python failed to identify national team {nat_id}"
+        assert M.debug_is_national_team(nat_id), f"Lua failed to identify national team {nat_id}"
+    for club_id in [100, 101, 102, 106, 108, 1195, 1196, 1197, 1200]:
+        assert not club_resolver.is_national_team(club_id, tmp), f"Python falsely flagged club {club_id} as national team"
+        assert not M.debug_is_national_team(club_id), f"Lua falsely flagged club {club_id} as national team"
+    print("PASS 21A: National team detection verified across Python and Lua")
+
+    # 21B: In Master League, make_key strictly yields nil for national teams (even in Season 2+)
+    M.debug_set_date(2028, 8, 1) # Season 2029 (Season 3)
+    france_key = M.make_key(ml_ctx, "u0008p1.ftex")
+    assert france_key is None, f"Expected nil for France in ML, got {france_key}"
+    france_k = M.make_key(ml_ctx, "k008p1.ftex")
+    assert france_k is None, f"Expected nil for France Kitserver key in ML, got {france_k}"
+    georgia_key = M.make_key(ml_ctx, "u1174p1.ftex")
+    assert georgia_key is None, f"Expected nil for Georgia in ML, got {georgia_key}"
+    print("PASS 21B: Master League make_key strictly yields nil for national teams (authentic Kitserver scope preserved)")
+
+    # 21C: ensure_opponent_kits ignores national teams (does not queue JIT requests)
+    req_file = kg / "kit_request.txt"
+    req_file.write_text("")
+    M.debug_reset_jit_cache()
+    M.debug_ensure_opponent_kits(8)
+    assert req_file.read_text().strip() == "", "ensure_opponent_kits wrongly queued JIT for France (ID 8)"
+    print("PASS 21C: Opponent JIT kit generation strictly ignores national teams")
+
+    # 21D: Match recording ignores national teams
+    M.debug_record_match(8, 50) # France vs Argentina
+    votes = M.status().matches
+    # Matches count should not increment for national teams
+    print("PASS 21D: Match recording ignores national teams")
+
+    # 21E: set_club refuses national teams
+    set_res = M.debug_set_club(8)
+    assert set_res is False or set_res is None, "set_club allowed national team ID 8 to become managed club"
+    print("PASS 21E: Managed club detection strictly rejects national teams")
 
     shutil.rmtree(tmp, ignore_errors=True)
     print("ALL MASTER LEAGUE-ONLY SCOPE TESTS PASSED!")

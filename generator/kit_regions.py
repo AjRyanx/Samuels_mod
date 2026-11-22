@@ -53,10 +53,15 @@ CLUB_BADGE = (1145, 1150, 6000)
 KIT_SUPPLIER = (905, 1150, 3600)
 
 # Shorts leg anchors:
-# Island 1 (UV left, x: 0..658, y: 1159..1971): Player's right leg. Lower front hem centers at (130, 1680).
-# Island 2 (UV right, x: 1390..2048, y: 1159..1971): Player's left leg. Lower front hem centers at (1918, 1680).
-SHORTS_BADGE = (130, 1680, 5000)
-SHORTS_SUPPLIER = (1918, 1680, 3200)
+# Island 1 (UV left, x: 0..658, y: 1159..1971): Player's right leg. Lower front thigh centers at (150, 1620).
+# Island 2 (UV right, x: 1390..2048, y: 1159..1971): Player's left leg. Lower front thigh centers at (1898, 1620).
+SHORTS_BADGE_RIGHT = (150, 1620, 5000)
+SHORTS_BADGE_LEFT = (1898, 1620, 5000)
+SHORTS_SUPPLIER_LEFT = (1898, 1620, 3200)
+SHORTS_SUPPLIER_RIGHT = (150, 1620, 3200)
+
+SHORTS_BADGE = SHORTS_BADGE_RIGHT
+SHORTS_SUPPLIER = SHORTS_SUPPLIER_LEFT
 
 # Lower jocktag / authenticity foil stamp (bottom-right of front torso / player's left hem):
 JOCKTAG_ANCHOR = (1270, 1835, 1400)
@@ -343,7 +348,7 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
         if res["jocktag"]["adjusted"]:
             adjustments.append(f"jocktag: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
 
-    # 4. Process Shorts Badge (Right leg)
+    # 4. Process Shorts Badge (Island 1 Right leg or Island 2 Left leg)
     if shorts_badge:
         cur_w, cur_h = shorts_badge["w"], shorts_badge["h"]
         cur_cx, cur_cy = shorts_badge["cx"], shorts_badge["cy"]
@@ -352,6 +357,8 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
         orig_cx, orig_cy = cur_cx, cur_cy
 
         if sh is not None:
+            is_left_leg = cur_cx >= 1024
+            min_x, max_x = (1750, 1980) if is_left_leg else (60, 300)
             for _ in range(10):
                 x0 = int(cur_cx - cur_w / 2)
                 y0 = int(cur_cy - cur_h / 2)
@@ -359,13 +366,13 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
                 y1 = y0 + cur_h
                 if check_stamp_containment(sh, x0, y0, x1, y1, alpha=alpha, margin=margin):
                     break
-                if cur_cx < 400:
+                if cur_cx < min_x:
                     cur_cx += 4
-                elif cur_cx > 520:
+                elif cur_cx > max_x:
                     cur_cx -= 4
-                if cur_cy > 1880:
+                if cur_cy > 1700:
                     cur_cy -= 4
-                elif cur_cy < 1780:
+                elif cur_cy < 1550:
                     cur_cy += 4
                 cur_w = max(16, int(cur_w * 0.95))
                 cur_h = max(16, int(cur_h * 0.95))
@@ -378,7 +385,7 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
         if res["shorts_badge"]["adjusted"]:
             adjustments.append(f"shorts_badge: adjusted ({orig_cx},{orig_cy},{orig_w}x{orig_h}) -> ({cur_cx},{cur_cy},{cur_w}x{cur_h})")
 
-    # 5. Process Shorts Supplier (Left leg)
+    # 5. Process Shorts Supplier (Island 2 Left leg or Island 1 Right leg)
     if shorts_supplier:
         cur_w, cur_h = shorts_supplier["w"], shorts_supplier["h"]
         cur_cx, cur_cy = shorts_supplier["cx"], shorts_supplier["cy"]
@@ -387,6 +394,8 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
         orig_cx, orig_cy = cur_cx, cur_cy
 
         if sh is not None:
+            is_left_leg = cur_cx >= 1024
+            min_x, max_x = (1750, 1980) if is_left_leg else (60, 300)
             for _ in range(10):
                 x0 = int(cur_cx - cur_w / 2)
                 y0 = int(cur_cy - cur_h / 2)
@@ -394,13 +403,13 @@ def validate_and_adjust_stamps(masks, sponsor=None, badge=None, supplier=None,
                 y1 = y0 + cur_h
                 if check_stamp_containment(sh, x0, y0, x1, y1, alpha=alpha, margin=margin):
                     break
-                if cur_cx < 1500:
+                if cur_cx < min_x:
                     cur_cx += 4
-                elif cur_cx > 1650:
+                elif cur_cx > max_x:
                     cur_cx -= 4
-                if cur_cy > 1880:
+                if cur_cy > 1700:
                     cur_cy -= 4
-                elif cur_cy < 1780:
+                elif cur_cy < 1550:
                     cur_cy += 4
                 cur_w = max(16, int(cur_w * 0.95))
                 cur_h = max(16, int(cur_h * 0.95))

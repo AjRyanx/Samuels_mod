@@ -70,7 +70,7 @@ def test_uv_containment_and_adjustment():
     assert not kit_regions.boxes_intersect(b_box, s_box, margin=12)
     print("PASS: Badge and supplier collision resolved.")
 
-    # 5. Shorts Stamps & Jocktag Containment Test
+    # 5. Shorts Stamps & Jocktag Containment Test (both standard and swapped leg orientations)
     sh = masks["shorts"]
     sh_badge_std = {"cx": kit_regions.SHORTS_BADGE[0], "cy": kit_regions.SHORTS_BADGE[1], "w": 65, "h": 65}
     sh_supplier_std = {"cx": kit_regions.SHORTS_SUPPLIER[0], "cy": kit_regions.SHORTS_SUPPLIER[1], "w": 65, "h": 38}
@@ -84,6 +84,16 @@ def test_uv_containment_and_adjustment():
     assert not res_shorts["shorts_supplier"]["adjusted"], "Standard shorts supplier should not require adjustment"
     assert not res_shorts["jocktag"]["adjusted"], "Standard jocktag should not require adjustment"
 
+    # Verify swapped anchors (when ShortsNumberSide=1: badge on left leg, supplier on right leg)
+    sh_badge_swap = {"cx": kit_regions.SHORTS_BADGE_LEFT[0], "cy": kit_regions.SHORTS_BADGE_LEFT[1], "w": 65, "h": 65}
+    sh_supplier_swap = {"cx": kit_regions.SHORTS_SUPPLIER_RIGHT[0], "cy": kit_regions.SHORTS_SUPPLIER_RIGHT[1], "w": 65, "h": 38}
+    res_swap = kit_regions.validate_and_adjust_stamps(
+        masks, shorts_badge=sh_badge_swap, shorts_supplier=sh_supplier_swap
+    )
+    assert res_swap["valid"] is True
+    assert not res_swap["shorts_badge"]["adjusted"], "Swapped shorts badge should not require adjustment"
+    assert not res_swap["shorts_supplier"]["adjusted"], "Swapped shorts supplier should not require adjustment"
+
     # Verify containment directly on masks
     assert kit_regions.check_stamp_containment(
         sh, res_shorts["shorts_badge"]["x"], res_shorts["shorts_badge"]["y"],
@@ -96,11 +106,32 @@ def test_uv_containment_and_adjustment():
         res_shorts["shorts_supplier"]["y"] + res_shorts["shorts_supplier"]["h"], margin=4
     )
     assert kit_regions.check_stamp_containment(
+        sh, res_swap["shorts_badge"]["x"], res_swap["shorts_badge"]["y"],
+        res_swap["shorts_badge"]["x"] + res_swap["shorts_badge"]["w"],
+        res_swap["shorts_badge"]["y"] + res_swap["shorts_badge"]["h"], margin=4
+    )
+    assert kit_regions.check_stamp_containment(
+        sh, res_swap["shorts_supplier"]["x"], res_swap["shorts_supplier"]["y"],
+        res_swap["shorts_supplier"]["x"] + res_swap["shorts_supplier"]["w"],
+        res_swap["shorts_supplier"]["y"] + res_swap["shorts_supplier"]["h"], margin=4
+    )
+    assert kit_regions.check_stamp_containment(
         bf, res_shorts["jocktag"]["x"], res_shorts["jocktag"]["y"],
         res_shorts["jocktag"]["x"] + res_shorts["jocktag"]["w"],
         res_shorts["jocktag"]["y"] + res_shorts["jocktag"]["h"], margin=4
     )
     print("PASS: Shorts badge, shorts supplier, and lower hem jocktag containment verified.")
+
+
+def test_shorts_number_side_resolution():
+    import club_resolver
+    # Newcastle (106) has ShortsNumberSide=0 in Premier League
+    assert club_resolver.get_shorts_number_side(106) == 0
+    # PSG (114) has ShortsNumberSide=1 in Ligue 1
+    assert club_resolver.get_shorts_number_side(114) == 1
+    # Barcelona (108) has ShortsNumberSide=1 in La Liga
+    assert club_resolver.get_shorts_number_side(108) == 1
+    print("PASS: ShortsNumberSide detection verified across clubs.")
 
 if __name__ == "__main__":
     test_uv_containment_and_adjustment()

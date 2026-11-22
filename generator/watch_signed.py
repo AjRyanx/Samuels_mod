@@ -48,10 +48,21 @@ DEFAULT_GAME_ROOT = Path(r"C:\Games\SP Football Life 2027")
 LOCK_PORT = 51517
 POLL_SECONDS = 2.0
 
-# Club-level rebuilds stay at 2 workers so the game is never starved.  Bulk
-# rollovers are low-priority and get one extra pair once the optimized renderer
-# made each club ~4x cheaper; 8 workers previously exhausted memory.
-ROLLOVER_WORKERS = max(2, min(os.cpu_count() or 4, 4))
+# Club-level rebuilds stay at 2 workers so the game is never starved.
+# Rollover workers are intelligently scaled based on CPU core count:
+# - Low-end 4-core systems: 2 workers (leaves 2 dedicated cores for FOX Engine + DirectX)
+# - 6-core systems: 3 workers (leaves 3 cores free)
+# - 8+ core systems: 4 workers (leaves 4+ cores free)
+def _calc_rollover_workers() -> int:
+    cpus = os.cpu_count() or 4
+    if cpus <= 4:
+        return 2
+    elif cpus <= 6:
+        return 3
+    else:
+        return 4
+
+ROLLOVER_WORKERS = _calc_rollover_workers()
 
 # region the active .ftex files are installed into, relative to the game root
 ACTIVE_SUBDIR = Path("SiderAddons/content/KitGenerator/active")
@@ -380,6 +391,9 @@ def rebuild(club_id, season, brand, sider, game_root, logfile,
                 src_font = active_dir / f"{name}_{ftype}.ftex"
                 if src_font.is_file():
                     shutil.copy2(src_font, career_dir / f"{name}_{ftype}.ftex")
+            src_json = active_dir / f"{name}.json"
+            if src_json.is_file():
+                shutil.copy2(src_json, career_dir / f"{name}.json")
         _log("  profile isolation: mirrored kit set to careers/%s/" % career_id, logfile)
 
     # Auto-cleanup old staging folders (recovers disk space, keeps current & recent season)
@@ -435,6 +449,16 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
             _mark_done(state_file, req["offer"])
             seen.add(req["offer"])
             continue
+
+        # National and classic teams must NEVER receive dynamic sponsor kits
+        if req["club_id"] > 0:
+            import club_resolver
+            if club_resolver.is_national_team(req["club_id"], sider):
+                _log("retiring kit request for national/classic team #%d (%s)"
+                     % (req["club_id"], req["offer"]), logfile)
+                _mark_done(state_file, req["offer"])
+                seen.add(req["offer"])
+                continue
 
         if current_season and req["season"] < current_season and not is_rollover:
             _mark_done(state_file, req["offer"])   # retire stale-season work permanently

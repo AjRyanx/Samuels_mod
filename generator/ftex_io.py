@@ -341,11 +341,13 @@ def image_to_ftex(img, fmt=4, mip_count=None, template=None):
         mip_count = int(math.log2(max(w, h))) + 1
 
     frames = []
+    cur = img
     for i in range(mip_count):
         lw, lh = max(1, w >> i), max(1, h >> i)
-        lvl = img if (lw, lh) == (w, h) else img.resize((lw, lh), Image.BILINEAR)
+        if (lw, lh) != cur.size:
+            cur = cur.resize((lw, lh), Image.BILINEAR)
         buf = io.BytesIO()
-        lvl.save(buf, format="DDS", pixel_format=PIL_FORMAT[fmt])
+        cur.save(buf, format="DDS", pixel_format=PIL_FORMAT[fmt])
         frames.append(buf.getvalue()[128:])
 
     version = template["version"] if template else None

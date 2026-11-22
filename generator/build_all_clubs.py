@@ -98,6 +98,9 @@ def _render_club_task(
     global _WORKER_MASKS, _WORKER_TEMPLATE, _WORKER_LOGO_DIR, _WORKER_BADGE_DIR
     cid = club["id"]
     cname = club.get("name", f"Club #{cid}")
+    import club_resolver
+    if club_resolver.is_national_team(cid):
+        return {"id": cid, "name": cname, "sponsor": sponsor, "skipped": True, "count": 0, "reason": "national_team"}
     outdir = Path(outdir_path)
 
     slots_to_generate = []
@@ -131,6 +134,9 @@ def _render_club_task(
         ftex_io.write_ftex(target, ftex_data)
         generated += 1
         designs.append(design)
+
+    # Low-end CPU protection: gentle 5ms breather between clubs prevents thermal throttling on budget PCs
+    time.sleep(0.005)
 
     dt = time.time() - t0
     return {
@@ -190,9 +196,48 @@ def load_user_club_info(sider_dir: Path) -> tuple[Optional[int], Optional[str], 
     return user_cid, user_sponsor, is_opted_in
 
 
+# Permanent Anchor Sponsors: Clubs with corporate ownership or multi-decade
+# iconic heritage ties that permanently retain their authentic sponsor in ML.
+ANCHOR_SPONSORS: Dict[int | str, str] = {
+    # Red Bull clubs (Owned by Red Bull GmbH)
+    5010: "red_bull",             # RB Leipzig
+    1586: "red_bull",             # Red Bull Salzburg
+    "leipzig": "red_bull",
+    "salzburg": "red_bull",
+
+    # Corporate factory clubs (100% owned subsidiaries)
+    232: "volkswagen_roundel",    # VfL Wolfsburg (Volkswagen AG factory club)
+    "wolfsburg": "volkswagen_roundel",
+    128: "bayer_cross",          # Bayer 04 Leverkusen (Bayer AG factory club)
+    "leverkusen": "bayer_cross",
+    118: "philips",              # PSV Eindhoven (Philips Sport Vereniging)
+    "psv": "philips",
+
+    # Long-term iconic anchors (20+ years partnership)
+    127: "telekom",              # Bayern Munich (Deutsche Telekom since 2002)
+    "munchen": "telekom",
+    "bayern": "telekom",
+}
+
+
 def pick_ai_sponsor(club: Dict[str, Any], season: int, brands: List[str]) -> str:
-    """Deterministically assign a multi-year AI sponsorship contract from the brand pool."""
-    cid = club["id"]
+    """Deterministically assign a multi-year AI sponsorship contract from the brand pool.
+    Clubs with permanent corporate ownership or iconic heritage anchor ties (e.g. RB Leipzig,
+    Salzburg, Wolfsburg, Leverkusen, PSV, Bayern) permanently retain their authentic sponsors."""
+    cid = club.get("id")
+    cname = str(club.get("name", "")).lower()
+
+    # 1. Check permanent anchor sponsorship
+    if cid in ANCHOR_SPONSORS:
+        cand = ANCHOR_SPONSORS[cid]
+        if cand in brands or not brands:
+            return cand
+    for key, cand in ANCHOR_SPONSORS.items():
+        if isinstance(key, str) and key in cname:
+            if cand in brands or not brands:
+                return cand
+
+    # 2. Standard multi-year realistic rotation for other AI clubs
     duration = 2 if (cid % 2 == 0) else 3
     cycle_start = 2026 + ((season - 2026) // duration) * duration
     rng = season_rng(cid, cycle_start, salt="ai-sponsor-deal")
@@ -220,7 +265,7 @@ def generate_all_kits(
     sider_dir = Path(sider_dir or outdir.parent.parent.parent)
     base_ftex = Path(base_ftex_path or DEFAULT_BASE)
     clubs_file = Path(clubs_path or ROOT / "generator" / "clubs.csv")
-    workers = workers or min(os.cpu_count() or 4, 2)
+    workers = workers or (2 if (os.cpu_count() or 4) <= 4 else min((os.cpu_count() or 4) - 2, 4))
 
     if not base_ftex.is_file():
         candidates = list(sider_dir.glob("content/kits/**/p1/*.ftex"))
@@ -264,6 +309,9 @@ def generate_all_kits(
         clubs = [c for c in clubs if c["id"] in target_ids]
     if limit is not None:
         clubs = clubs[:limit]
+
+    import club_resolver
+    clubs = [c for c in clubs if not club_resolver.is_national_team(c["id"], sider_dir)]
 
     outdir.mkdir(parents=True, exist_ok=True)
     user_cid, user_sponsor, is_opted_in = load_user_club_info(sider_dir)
@@ -311,7 +359,7 @@ def generate_all_kits(
     total_tasks = len(tasks)
 
     init_args = (str(base_ftex), str(logo_dir_path), str(badge_dir_path), low_priority)
-    with ProcessPoolExecutor(max_workers=workers, initializer=_init_worker, initargs=init_args) as executor:
+    with ProcessPoolExecutor(max_workers=workers, initializer=_init_worker, initargs=init_args, max_tasks_per_child=60) as executor:
         futures = {
             executor.submit(_render_club_task, c, s, sp, out, skip, sl): c["id"]
             for (c, s, sp, out, skip, sl) in tasks

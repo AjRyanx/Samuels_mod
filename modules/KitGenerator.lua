@@ -400,10 +400,62 @@ local function game_date()
   return nil
 end
 
+-- The game's own team -> kit-folder map, used to put a readable name on the
+-- office card and to resolve authentic GDB kits during Master League menus.
+local GDB_MAP_LOADED = false
+local GDB_MAP = {}
+local MAP_NAMES = nil
+
+local function load_gdb_map()
+  if GDB_MAP_LOADED then return end
+  GDB_MAP_LOADED = true
+  local f = io.open(sider_path('content/kits/map.txt'), 'r') or io.open(DIR .. 'content/kits/map.txt', 'r')
+  if not f then return end
+  MAP_NAMES = MAP_NAMES or {}
+  for line in f:lines() do
+    local clean = line:gsub('#.*', '')
+    local tid, folder = clean:match('^%s*(%d+)%s*,%s*"([^"]*)"')
+    if not tid then tid, folder = clean:match('^%s*(%d+)%s*,%s*(%S+)') end
+    tid = tonumber(tid)
+    if tid and folder and #folder > 0 then
+      folder = folder:gsub('^%s+', ''):gsub('%s+$', '')
+      folder = folder:gsub('[\\/]+$', '')
+      if #folder > 0 then
+        GDB_MAP[tid] = folder
+        local name = folder:match('([^\\/]+)$') or folder
+        if #name > 0 then MAP_NAMES[tid] = name end
+      end
+    end
+  end
+  f:close()
+end
+
+local function is_national_team(tid)
+  if not tid then return false end
+  tid = tonumber(tid)
+  if not tid or tid <= 0 then return false end
+  -- Quick ID range checks for traditional national & classic teams in PES 2021
+  if (tid >= 1 and tid <= 59) or (tid >= 900 and tid <= 908)
+     or (tid >= 1550 and tid <= 1551) or (tid >= 2703 and tid <= 2704)
+     or (tid >= 5439 and tid <= 5440) then
+    return true
+  end
+  -- Check kitserver folder path in map.txt
+  if not GDB_MAP_LOADED then load_gdb_map() end
+  local folder = GDB_MAP[tid]
+  if folder then
+    local lower = folder:lower()
+    if lower:find("national teams", 1, true) or lower:find("classics", 1, true) then
+      return true
+    end
+  end
+  return false
+end
+
 -- Read the human managed team ID directly from Master League memory
 local function read_career_team(mode)
   local y, mo, d, tid = read_career_info(mode)
-  if tid and tid > 0 and tid < 65000 then
+  if tid and tid > 0 and tid < 65000 and not is_national_team(tid) then
     return tid
   end
   return nil
@@ -455,36 +507,6 @@ local CLUB_SOURCE_LABEL = {
 }
 local function club_source_label()
   return CLUB_SOURCE_LABEL[club_source()] or tostring(club_source())
-end
-
--- The game's own team -> kit-folder map, used to put a readable name on the
--- office card and to resolve authentic GDB kits during Master League menus.
-local GDB_MAP_LOADED = false
-local GDB_MAP = {}
-local MAP_NAMES = nil
-
-local function load_gdb_map()
-  if GDB_MAP_LOADED then return end
-  GDB_MAP_LOADED = true
-  local f = io.open(sider_path('content/kits/map.txt'), 'r') or io.open(DIR .. 'content/kits/map.txt', 'r')
-  if not f then return end
-  MAP_NAMES = MAP_NAMES or {}
-  for line in f:lines() do
-    local clean = line:gsub('#.*', '')
-    local tid, folder = clean:match('^%s*(%d+)%s*,%s*"([^"]*)"')
-    if not tid then tid, folder = clean:match('^%s*(%d+)%s*,%s*(%S+)') end
-    tid = tonumber(tid)
-    if tid and folder and #folder > 0 then
-      folder = folder:gsub('^%s+', ''):gsub('%s+$', '')
-      folder = folder:gsub('[\\/]+$', '')
-      if #folder > 0 then
-        GDB_MAP[tid] = folder
-        local name = folder:match('([^\\/]+)$') or folder
-        if #name > 0 then MAP_NAMES[tid] = name end
-      end
-    end
-  end
-  f:close()
 end
 
 local function club_display_name(cid)
@@ -579,7 +601,7 @@ local function load_club_file()
     if #line > 0 and line:sub(1, 1) ~= '#' then
       local t = split(line)
       local cid = tonumber(t[1])
-      if cid and cid > 0 then
+      if cid and cid > 0 and not is_national_team(cid) then
         STATE.club, STATE.club_source = cid, 'saved'
         STATE.club_name = (t[2] and #t[2] > 0) and t[2] or nil
         if t[3] and #t[3] > 0 then
@@ -597,6 +619,10 @@ local function set_club(cid, source, persist)
   cid = tonumber(cid)
   if not cid or cid <= 0 then return false end
   cid = math.floor(cid)
+  if is_national_team(cid) then
+    L(string.format('ignoring national/classic team #%d for managed club detection', cid))
+    return false
+  end
   if STATE.club ~= cid or STATE.club_source ~= source then
     STATE.club, STATE.club_source = cid, source or 'manual'
     L(string.format('managed club -> #%d (%s)', cid, tostring(STATE.club_source)))
@@ -608,7 +634,7 @@ end
 -- Sponsor Office: type a club id by hand; this becomes the manual override
 local function set_manual_club(cid)
   cid = tonumber(cid)
-  if not cid or cid <= 0 then return false end
+  if not cid or cid <= 0 or is_national_team(cid) then return false end
   CFG.MANAGED_CLUB = math.floor(cid)
   STATE.club, STATE.club_source = CFG.MANAGED_CLUB, 'manual'
   save_club()
@@ -628,6 +654,7 @@ end
 local function record_match(home, away)
   home, away = tonumber(home), tonumber(away)
   if not home or not away or home == away then return end
+  if is_national_team(home) or is_national_team(away) then return end
   STATE.votes[home] = (STATE.votes[home] or 0) + 1
   STATE.votes[away] = (STATE.votes[away] or 0) + 1
   STATE.matches = STATE.matches + 1
@@ -1617,6 +1644,7 @@ end
 local function ensure_opponent_kits(opp_id)
   opp_id = tonumber(opp_id)
   if not opp_id or opp_id <= 0 then return end
+  if is_national_team(opp_id) then return end
   local start_season = CFG.DYNAMIC_KIT_START_SEASON or 2028
   local cid = club_id()
   -- From Season 2 the human club's kit is owned by the deal/clean rebuild path.
@@ -1655,6 +1683,104 @@ local function ensure_opponent_kits(opp_id)
   end
 end
 
+-- ===== undersleeve & kit details sync =====================================
+local orig_kits_set = nil
+local orig_kits_set_gk = nil
+
+local function read_kit_meta(tid, slot_str)
+  local candidates = {}
+  local cid = club_id()
+  if cid and tid == cid and CAREER and CAREER ~= 'unknown' then
+    candidates[#candidates + 1] = string.format('careers/%s/u%04d%s.json', CAREER, tid, slot_str)
+  end
+  candidates[#candidates + 1] = string.format('active/u%04d%s.json', tid, slot_str)
+
+  for _, rel in ipairs(candidates) do
+    local lines = read_lines(rel)
+    if #lines > 0 then
+      local meta = {}
+      for _, line in ipairs(lines) do
+        for key, val in line:gmatch('"([%w_]+)"%s*:%s*"([^"]+)"') do
+          meta[key] = val
+        end
+        for key, val in line:gmatch('"([%w_]+)"%s*:%s*(%d+)') do
+          meta[key] = tonumber(val) or val
+        end
+      end
+      if meta.undershirt_color or meta.collar_model then
+        return meta
+      end
+    end
+  end
+  return nil
+end
+
+local function get_slot_code(kit_id, cfg, is_gk)
+  if cfg and cfg.KitFile then
+    local code = tostring(cfg.KitFile):match("([pg]%d+)")
+    if code then return code end
+  end
+  if is_gk then return "g1" end
+  return string.format("p%d", (kit_id or 0) + 1)
+end
+
+local function sync_undershirt_color(ctx, team_id, kit_id, cfg, is_gk)
+  if not cfg or not team_id then return end
+  local slot_code = get_slot_code(kit_id, cfg, is_gk)
+  local meta = read_kit_meta(team_id, slot_code)
+  if meta then
+    if meta.undershirt_color then
+      local old_col = cfg.UndershirtColor
+      cfg.UndershirtColor = meta.undershirt_color
+      cfg.UniColor_Color1 = meta.undershirt_color
+      cfg.UniColor_Color2 = meta.undershirt_color
+      L(string.format("undersleeve sync for team %d [%s]: %s -> %s (UniColor synced)", team_id, slot_code, tostring(old_col), tostring(cfg.UndershirtColor)))
+    end
+    if meta.shirt_color_1 then
+      cfg.ShirtColor1 = meta.shirt_color_1
+      if not meta.undershirt_color then
+        cfg.UniColor_Color1 = meta.shirt_color_1
+      end
+    end
+    if meta.shirt_color_2 then cfg.ShirtColor2 = meta.shirt_color_2 end
+    if meta.shorts_color then cfg.ShortsColor = meta.shorts_color end
+    if meta.socks_color then cfg.SocksColor = meta.socks_color end
+    if meta.collar_model then
+      local c_val = tonumber(meta.collar_model)
+      if c_val and c_val > 0 then
+        local old_collar = cfg.Collar
+        cfg.Collar = c_val
+        cfg.WinterCollar = c_val
+        L(string.format("collar model sync for team %d [%s]: %s -> %d", team_id, slot_code, tostring(old_collar), c_val))
+      end
+    end
+  end
+end
+
+local function install_undersleeve_hook(ctx)
+  if not (ctx and ctx.kits and ctx.kits.set) then return end
+  if orig_kits_set then return end
+
+  orig_kits_set = ctx.kits.set
+  ctx.kits.set = function(team_id, kit_id, cfg, radar_flag)
+    if is_in_ml(ctx) and not is_national_team(team_id) and cfg then
+      sync_undershirt_color(ctx, team_id, kit_id, cfg, false)
+    end
+    return orig_kits_set(team_id, kit_id, cfg, radar_flag)
+  end
+
+  if ctx.kits.set_gk then
+    orig_kits_set_gk = ctx.kits.set_gk
+    ctx.kits.set_gk = function(team_id, cfg)
+      if is_in_ml(ctx) and not is_national_team(team_id) and cfg then
+        sync_undershirt_color(ctx, team_id, 0, cfg, true)
+      end
+      return orig_kits_set_gk(team_id, cfg)
+    end
+  end
+  L("undersleeve sync hook installed on ctx.kits.set and ctx.kits.set_gk")
+end
+
 -- Every match the game sets up tells us which two clubs are playing.  A career
 -- fixture is the strong signal (your club plays them all); a friendly
 -- (tournament_id 65535) is ignored so exhibition opponents cannot muddy the
@@ -1666,15 +1792,18 @@ function m.set_teams(ctx, home, away)
   if CFG.ENABLE_SPONSORSHIP and CFG.CREDIT_BUDGET and not BUDGET.attempted then
     install_budget_hook()
   end
+  install_undersleeve_hook(ctx)
   STATE.in_edit_mode = false
   local career = not (ctx and ctx.tournament_id == 65535)
   if career then
     STATE.in_ml_flow = true
-    record_match(home, away)
-    fetch_colors(ctx, home)
-    fetch_colors(ctx, away)
-    ensure_opponent_kits(home)
-    ensure_opponent_kits(away)
+    if not is_national_team(home) and not is_national_team(away) then
+      record_match(home, away)
+      fetch_colors(ctx, home)
+      fetch_colors(ctx, away)
+      ensure_opponent_kits(home)
+      ensure_opponent_kits(away)
+    end
   else
     STATE.in_ml_flow = false
   end
@@ -1718,6 +1847,9 @@ function m.make_key(ctx, filename)
   local tid, slot_type, slot, suffix = string.match(lower, "[ku]0*(%d+)([pg])(%d)([_%a%d]*)%.ftex$")
   if not tid or not slot_type or not slot then return nil end
   tid = tonumber(tid)
+  if is_national_team(tid) then
+    return nil
+  end
   slot = tonumber(slot)
   if slot_type == "p" then
     if slot < 1 or slot > 3 then return nil end
@@ -1886,6 +2018,7 @@ function m.display_frame(ctx)
   if not WATCHER_STARTED and CFG.START_PROCESS and CFG.ENABLE_KITS then
     start_watcher()
   end
+  install_undersleeve_hook(ctx)
   FRAME_COUNT = FRAME_COUNT + 1
   if (FRAME_COUNT % 30 == 0) or not STATE.date_ok then
     if is_in_ml(ctx) then
@@ -1907,6 +2040,7 @@ function m.init(ctx)
   load_paid()
   load_gdb_map()
   install_date_reader()
+  install_undersleeve_hook(ctx)
   -- install_budget_hook and start_watcher deferred to display_frame / set_teams
   -- to guarantee game process and loader locks are fully initialized first
   refresh_date(ctx)
@@ -2100,9 +2234,25 @@ function m.debug_ensure_opponent_kits(opp_id)
   return ensure_opponent_kits(opp_id)
 end
 
+function m.debug_is_national_team(tid)
+  return is_national_team(tid)
+end
+
 function m.debug_reset_jit_cache()
   JIT_REQUESTED = {}
   REQ_LEAGUE = {}
+end
+
+function m.debug_read_kit_meta(tid, slot_str)
+  return read_kit_meta(tid, slot_str)
+end
+
+function m.debug_sync_undershirt(ctx, team_id, kit_id, cfg, is_gk)
+  sync_undershirt_color(ctx, team_id, kit_id, cfg, is_gk)
+end
+
+function m.debug_install_undersleeve_hook(ctx)
+  install_undersleeve_hook(ctx)
 end
 
 return m

@@ -28,6 +28,7 @@ Notes
 * Nothing is overwritten without a timestamped .bak next to it.
 """
 import argparse
+import json
 import shutil
 import sys
 from datetime import datetime
@@ -104,10 +105,79 @@ def pack_atlas(atlas_png, out_ftex, template):
     return out_ftex
 
 
+def _color_to_hex(col, default=(20, 20, 20)):
+    if not col:
+        col = default
+    if isinstance(col, str):
+        c = col.strip()
+        if c.startswith("#") and len(c) == 7:
+            return c.lower()
+        if c.startswith("0x") and len(c) == 8:
+            return f"#{c[2:]}".lower()
+    if isinstance(col, (tuple, list)) and len(col) >= 3:
+        return f"#{int(col[0]):02x}{int(col[1]):02x}{int(col[2]):02x}".lower()
+    return "#141414"
+
+
+def emit_kit_metadata(club, slot, design, outdir, active_dir=None, quiet=False):
+    """Emit companion JSON metadata for a kit slot (undershirt, shirt, shorts, socks)."""
+    slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
+    cid = int(club.get("id") or club.get("team_id", 0))
+    name = f"u{cid:04d}{slot_code}"
+
+    body = design.get("body") or (20, 20, 20)
+    sleeve = design.get("sleeve") or body
+    second = design.get("second") or body
+    shorts = design.get("shorts") or body
+    socks = design.get("socks") or body
+    c_style = design.get("collar_style", "crew")
+    c_model = design.get("collar_model")
+    if not c_model:
+        try:
+            import kit_dna
+            c_model = kit_dna.COLLAR_STYLE_TO_MODEL.get(c_style, 1)
+        except Exception:
+            c_model = 1
+
+    meta = {
+        "team_id": cid,
+        "slot": slot_code,
+        "undershirt_color": _color_to_hex(sleeve, body),
+        "shirt_color_1": _color_to_hex(body),
+        "shirt_color_2": _color_to_hex(second, body),
+        "shorts_color": _color_to_hex(shorts, body),
+        "shorts_style": str(design.get("shorts_style", "solid")),
+        "socks_color": _color_to_hex(socks, body),
+        "socks_style": str(design.get("socks_style", "solid")),
+        "sleeve_style": str(design.get("sleeve_style", "solid")),
+        "fabric_finish": str(design.get("fabric_finish", "standard_microknit")),
+        "thematic_finish": str(design.get("finish", "standard")),
+        "collar_style": str(c_style),
+        "collar_model": int(c_model),
+    }
+
+    out_json = Path(outdir) / f"{name}.json"
+    out_json.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+    if active_dir:
+        dst = Path(active_dir) / f"{name}.json"
+        if dst.resolve() != out_json.resolve():
+            shutil.copy2(out_json, dst)
+        if not quiet:
+            print(f"  active metadata deployed -> {dst}")
+    return meta
+
+
 def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1", "g2"),
               install=False, game_root=DEFAULT_GAME_ROOT, quiet=False, sponsor=None,
               logo_dir=None, badge_dir=None, badge=None, sleeve_sponsor=None,
               previews=True):
+    import club_resolver
+    cid = club.get("id") or 0
+    if cid and club_resolver.is_national_team(cid):
+        if not quiet:
+            print(f"Skipping kit generation: Team #{cid} is a national or classic team.")
+        return []
     """Render + pack a club's kit set (outfield and goalkeeper). Returns [(slot, atlas, ftex, design)].
 
     When `sponsor` is given (a brand name from content/KitGenerator/logos), the
@@ -198,6 +268,20 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
             if not quiet:
                 print(f"  [font warning] failed to process fonts for {slot_code}: {e}")
 
+        # Companion JSON metadata for undersleeve color and radar sync
+        try:
+            emit_kit_metadata(
+                club=club,
+                slot=slot,
+                design=design,
+                outdir=outdir,
+                active_dir=active_dir,
+                quiet=quiet,
+            )
+        except Exception as e:
+            if not quiet:
+                print(f"  [meta warning] failed to emit metadata for {slot_code}: {e}")
+
         atlas_ref = str(atlas) if isinstance(atlas, (str, Path)) else ""
         results.append((slot, atlas_ref, str(out_ftex), design))
     return results
@@ -259,6 +343,11 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     sider = args.sider or (Path(args.game_root) / "SiderAddons")
+    import club_resolver
+    if club_resolver.is_national_team(args.club_id, sider):
+        if not args.quiet:
+            print(f"Skipping kit generation: Team #{args.club_id} is a national or classic team.")
+        return 0
     club = _load_club(args.club_id, sider)
     results = build_set(club, args.season, args.outdir,
                         base_ftex=args.base, slots=_parse_slots(args.slots),
