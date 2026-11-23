@@ -232,17 +232,17 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
     if active_dir:
         active_dir.mkdir(parents=True, exist_ok=True)
 
-    results = []
-    for slot, atlas, _preview, design in rendered:
+    def _pack_and_deploy(item):
+        slot, atlas, _preview, design = item
         if slot not in norm_slots:
-            continue
+            return None
         slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
         name = f"u{club['id']:04d}{slot_code}"
         out_ftex = outdir / f"{name}.ftex"
         pack_atlas(atlas, out_ftex, template)
         if not quiet:
             print(f"packed {out_ftex.name}  ({out_ftex.stat().st_size} bytes)  "
-                  f"<- {Path(atlas).name}")
+                  f"<- {Path(atlas).name if isinstance(atlas, (str, Path)) else 'memory'}")
 
         if active_dir:
             dst = active_dir / f"{name}.ftex"
@@ -283,7 +283,18 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
                 print(f"  [meta warning] failed to emit metadata for {slot_code}: {e}")
 
         atlas_ref = str(atlas) if isinstance(atlas, (str, Path)) else ""
-        results.append((slot, atlas_ref, str(out_ftex), design))
+        return (slot, atlas_ref, str(out_ftex), design)
+
+    if len(rendered) > 1:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(len(rendered), 4)) as ex:
+            raw_results = list(ex.map(_pack_and_deploy, rendered))
+        results = [r for r in raw_results if r is not None]
+    elif len(rendered) == 1:
+        r = _pack_and_deploy(rendered[0])
+        results = [r] if r is not None else []
+    else:
+        results = []
     return results
 
 

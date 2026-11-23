@@ -338,7 +338,12 @@ def image_to_ftex(img, fmt=4, mip_count=None, template=None):
     img = img.convert("RGBA" if fmt != 9 else "RGB")
     w, h = img.size
     if mip_count is None:
-        mip_count = int(math.log2(max(w, h))) + 1
+        if template and "mip_count" in template and template["mip_count"] > 0:
+            mip_count = template["mip_count"]
+        elif template and "frames" in template and len(template["frames"]) > 0:
+            mip_count = len(template["frames"])
+        else:
+            mip_count = 1
 
     frames = []
     cur = img

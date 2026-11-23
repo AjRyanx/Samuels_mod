@@ -112,20 +112,32 @@ def choose_contrasting_colors(bg_rgb, club=None, design=None):
 # --------------------------------------------------------------------------- #
 #  Font Texture Analysis & Tinting
 # --------------------------------------------------------------------------- #
-def detect_font_color(img):
+_FONT_COLOR_CACHE = {}
+
+
+def detect_font_color(img, cache_key=None):
     """Analyze a font PIL Image and return (dominant_fill_rgb, is_light_fill)."""
-    arr = np.array(img)
+    if cache_key and cache_key in _FONT_COLOR_CACHE:
+        return _FONT_COLOR_CACHE[cache_key]
+
+    arr = np.asarray(img)[::4, ::4]
     alpha = arr[:, :, 3]
     core_mask = alpha > 180
     if not np.any(core_mask):
         core_mask = alpha > 40
     if not np.any(core_mask):
-        return (255, 255, 255), True
+        res = ((255, 255, 255), True)
+        if cache_key:
+            _FONT_COLOR_CACHE[cache_key] = res
+        return res
 
     core_rgb = arr[core_mask, :3]
-    mean_rgb = tuple(core_rgb.mean(axis=0).astype(int))
+    mean_rgb = tuple(int(x) for x in core_rgb.mean(axis=0))
     lum = relative_luminance(mean_rgb)
-    return mean_rgb, (lum > 0.22)
+    res = (mean_rgb, (lum > 0.22))
+    if cache_key:
+        _FONT_COLOR_CACHE[cache_key] = res
+    return res
 
 
 def tint_font_image(img, target_fill, target_outline):
@@ -282,7 +294,7 @@ def process_kit_fonts(club, slot, design, outdir, game_root=None,
         dds_bytes = ftex_io.ftex_to_dds(raw_ftex)
         img = Image.open(io.BytesIO(dds_bytes))
 
-        existing_rgb, _ = detect_font_color(img)
+        existing_rgb, _ = detect_font_color(img, cache_key=str(source_ftex))
         cr = contrast_ratio(existing_rgb, bg_col)
 
         was_tinted = False
@@ -295,7 +307,10 @@ def process_kit_fonts(club, slot, design, outdir, game_root=None,
             was_tinted = True
 
         # Pack to .ftex
-        out_ftex_data = ftex_io.image_to_ftex(img, template=tmpl)
+        if was_tinted:
+            out_ftex_data = ftex_io.image_to_ftex(img, template=tmpl)
+        else:
+            out_ftex_data = raw_ftex
         slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
         out_name = f"u{club_id:04d}{slot_code}_{ftype}.ftex"
         out_path = outdir / out_name

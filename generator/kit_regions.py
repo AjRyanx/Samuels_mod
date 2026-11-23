@@ -99,9 +99,15 @@ class MaskSet(dict):
     boxes = None
 
 
+_MASKS_CACHE = {}
+
+
 def build_masks(mask_dir=None):
     """Return {region_name: bool mask} in 2048x2048 UV space."""
     d = Path(mask_dir) if mask_dir else MASK_DIR
+    cache_key = str(d.resolve())
+    if cache_key in _MASKS_CACHE:
+        return _MASKS_CACHE[cache_key]
 
     erase = _load_alpha(d / "body_erase.png")
     body = ~erase
@@ -134,6 +140,7 @@ def build_masks(mask_dir=None):
         if len(xs):
             result.boxes[name] = (int(xs.min()), int(ys.min()),
                                   int(xs.max()), int(ys.max()))
+    _MASKS_CACHE[cache_key] = result
     return result
 
 

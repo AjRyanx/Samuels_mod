@@ -150,6 +150,35 @@ def _wcag_contrast(c1, c2):
     return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
 
 
+_BADGE_STATS_CACHE = {}
+
+
+def _get_badge_stats(badge_path):
+    """Return cached (unique_q, std, b_mean) for a badge image using fast thumbnail analysis."""
+    if not badge_path:
+        return None
+    p_str = str(Path(badge_path).resolve())
+    if p_str in _BADGE_STATS_CACHE:
+        return _BADGE_STATS_CACHE[p_str]
+    try:
+        im = Image.open(badge_path).convert("RGBA")
+        # 64x64 thumbnail preserves color palette and distribution while analyzing ~4k pixels instead of ~4M
+        small = im.resize((64, 64), Image.Resampling.BOX)
+        arr = np.asarray(small)
+        vis = arr[arr[:, :, 3] > 80][:, :3]
+        if len(vis) == 0:
+            stats = None
+        else:
+            unique_q = len(np.unique(vis // 24, axis=0))
+            std = float(np.std(vis, axis=0).mean())
+            b_mean = tuple(int(x) for x in vis.mean(axis=0))
+            stats = (unique_q, std, b_mean)
+    except Exception:
+        stats = None
+    _BADGE_STATS_CACHE[p_str] = stats
+    return stats
+
+
 def _resolve_badge_color(badge_path, base_color, design):
     """Determine if a badge is a monochrome silhouette or has low contrast against base_color.
     Returns (badge_color, is_white) where badge_color is an RGB tuple or None."""
@@ -167,36 +196,30 @@ def _resolve_badge_color(badge_path, base_color, design):
         if _wcag_contrast(base_color, (250, 250, 252)) >= 3.0:
             return None, True
 
-    try:
-        im = Image.open(badge_path).convert("RGBA")
-        arr = np.asarray(im)
-        vis = arr[arr[:, :, 3] > 80][:, :3]
-        if len(vis) == 0:
-            return None, False
+    stats = _get_badge_stats(badge_path)
+    if not stats and not explicit_col:
+        return None, False
 
-        unique_q = len(np.unique(vis // 24, axis=0))
-        std = float(np.std(vis, axis=0).mean())
+    unique_q, std, b_mean = stats if stats else (99, 99.0, (128, 128, 128))
 
-        # Adapt monochrome or low-diversity silhouette badges (e.g. Liverpool Liverbird, Forest Tree)
-        if unique_q <= 4 or std < 15.0 or explicit_col:
-            b_mean = tuple(int(x) for x in vis.mean(axis=0)) if not explicit_col else tuple(explicit_col)
-            ratio = _wcag_contrast(base_color, b_mean)
-            if ratio < 3.5:
-                # Need contrast resolution!
-                body_c = tuple(design.get("body", (20, 20, 24)))
-                second_c = tuple(design.get("second", (250, 250, 252)))
-                third_c = tuple(design.get("third")) if design.get("third") else None
-                # If primary shirt color has good contrast (e.g. red badge on white shorts), prioritize it!
-                if _wcag_contrast(base_color, body_c) >= 3.5:
-                    return body_c, False
-                cands = [second_c]
-                if third_c:
-                    cands.append(third_c)
-                cands.extend([(250, 250, 252), (20, 20, 24)])
-                best_c = max(cands, key=lambda c: _wcag_contrast(base_color, c))
-                return best_c, False
-    except Exception:
-        pass
+    # Adapt monochrome or low-diversity silhouette badges (e.g. Liverpool Liverbird, Forest Tree)
+    if unique_q <= 4 or std < 15.0 or explicit_col:
+        eff_mean = tuple(explicit_col) if explicit_col else b_mean
+        ratio = _wcag_contrast(base_color, eff_mean)
+        if ratio < 3.5:
+            # Need contrast resolution!
+            body_c = tuple(design.get("body", (20, 20, 24)))
+            second_c = tuple(design.get("second", (250, 250, 252)))
+            third_c = tuple(design.get("third")) if design.get("third") else None
+            # If primary shirt color has good contrast (e.g. red badge on white shorts), prioritize it!
+            if _wcag_contrast(base_color, body_c) >= 3.5:
+                return body_c, False
+            cands = [second_c]
+            if third_c:
+                cands.append(third_c)
+            cands.extend([(250, 250, 252), (20, 20, 24)])
+            best_c = max(cands, key=lambda c: _wcag_contrast(base_color, c))
+            return best_c, False
 
     return None, False
 
@@ -2002,6 +2025,51 @@ def _fabric_texture_data(masks):
     return data
 
 
+_SPECIALTY_TILES = {}
+
+
+def _get_specialty_tile(finish):
+    """Return cached 2048x2048 delta tile for specialty fabric finish."""
+    if finish in _SPECIALTY_TILES:
+        return _SPECIALTY_TILES[finish]
+
+    tile_2d = None
+    if finish in ("matte_vaporknit", "aero_knit", "vaporknit"):
+        gy, gx = np.ogrid[:96, :96]
+        waves = 5.5 * np.sin(gy / 4.0 + np.cos(gx / 12.0))
+        perfs = np.where((gy % 8 < 2) & (gx % 8 < 2), -4.0, 0.0)
+        t = (waves + perfs).astype(np.float32)
+        tile_2d = np.tile(t, (ATLAS // 96 + 1, ATLAS // 96 + 1))[:ATLAS, :ATLAS]
+
+    elif finish in ("embossed_damask", "damask", "watermark"):
+        gy, gx = np.ogrid[:24, :24]
+        is_diag = (np.abs((gx - 12) + (gy - 12)) == 11) | (np.abs((gx - 12) - (gy - 12)) == 11)
+        is_fleur = ((gx >= 10) & (gx <= 14) & (gy >= 6) & (gy <= 14)) | ((gx >= 7) & (gx <= 17) & (gy == 11))
+        t = np.where(is_diag | is_fleur, 6.0, -2.5).astype(np.float32)
+        tile_2d = np.tile(t, (ATLAS // 24 + 1, ATLAS // 24 + 1))[:ATLAS, :ATLAS]
+
+    elif finish in ("heather_melange", "melange", "heather"):
+        gy, gx = np.ogrid[:77, :77]
+        hash_val = (gx * 37 + gy * 73) % 11
+        t = np.where(hash_val < 3, 5.0, np.where(hash_val > 7, -5.0, 0.0)).astype(np.float32)
+        tile_2d = np.tile(t, (ATLAS // 77 + 1, ATLAS // 77 + 1))[:ATLAS, :ATLAS]
+
+    elif finish in ("geometric_jacquard", "jacquard", "isometric"):
+        gy, gx = np.ogrid[:16, :16]
+        top_facet = (gy < 8) & ((gx >= (7 - gy)) & (gx <= (8 + gy)))
+        left_facet = (gy >= 8) & (gx < 8)
+        t = np.where(top_facet, 5.5, np.where(left_facet, -4.5, 0.5)).astype(np.float32)
+        tile_2d = np.tile(t, (ATLAS // 16, ATLAS // 16))
+
+    elif finish in ("corduroy_rib", "ribbed_fabric", "needle_cord"):
+        gx = np.arange(ATLAS, dtype=np.int32)
+        t_row = np.where((gx % 6) < 3, 5.0, -5.0).astype(np.float32)
+        tile_2d = np.tile(t_row, (ATLAS, 1))
+
+    _SPECIALTY_TILES[finish] = tile_2d
+    return tile_2d
+
+
 def _apply_fabric_microtexture(atlas, d, masks):
     """Apply authentic multi-zone micro-knit textile weave and specialty fabric finishes.
 
@@ -2032,54 +2100,17 @@ def _apply_fabric_microtexture(atlas, d, masks):
 
     # Specialty finish modulation across torso (body_front & body_back)
     if finish != "standard_microknit":
-        torso_m = np.zeros((ATLAS, ATLAS), dtype=bool)
-        for key_name in ("body_front", "body_back"):
-            m = masks.get(key_name)
-            if m is not None:
-                torso_m |= m
+        specialty_tile = _get_specialty_tile(finish)
+        if specialty_tile is not None:
+            torso_m = np.zeros((ATLAS, ATLAS), dtype=bool)
+            for key_name in ("body_front", "body_back"):
+                m = masks.get(key_name)
+                if m is not None:
+                    torso_m |= m
 
-        if np.any(torso_m):
-            y_coords, x_coords = np.where(torso_m)
-            specialty_delta = np.zeros_like(y_coords, dtype=np.float32)
-
-            if finish in ("matte_vaporknit", "aero_knit", "vaporknit"):
-                # Engineered horizontal undulating breathability aerowaves with micro-perforations
-                waves = 5.5 * np.sin(y_coords / 4.0 + np.cos(x_coords / 12.0))
-                perfs = np.where((y_coords % 8 < 2) & (x_coords % 8 < 2), -4.0, 0.0)
-                specialty_delta = (waves + perfs).astype(np.float32)
-
-            elif finish in ("embossed_damask", "damask", "watermark"):
-                # Regal heraldic fleur-de-lis / diamond crest watermark tessellation (24x24 tile)
-                ty = y_coords % 24
-                tx = x_coords % 24
-                # Diamond border ridge
-                is_diag = (np.abs((tx - 12) + (ty - 12)) == 11) | (np.abs((tx - 12) - (ty - 12)) == 11)
-                # Center heraldic fleur icon
-                is_fleur = ((tx >= 10) & (tx <= 14) & (ty >= 6) & (ty <= 14)) | ((tx >= 7) & (tx <= 17) & (ty == 11))
-                specialty_delta = np.where(is_diag | is_fleur, 6.0, -2.5).astype(np.float32)
-
-            elif finish in ("heather_melange", "melange", "heather"):
-                # Organic stochastic cross-hatch marl textile weave
-                hash_val = (x_coords * 37 + y_coords * 73) % 11
-                specialty_delta = np.where(hash_val < 3, 5.0, np.where(hash_val > 7, -5.0, 0.0)).astype(np.float32)
-
-            elif finish in ("geometric_jacquard", "jacquard", "isometric"):
-                # 3D isometric diamond cube tessellation (16x16 tile)
-                ty = y_coords % 16
-                tx = x_coords % 16
-                # Top facet (light), left facet (shadow), right facet (neutral)
-                top_facet = (ty < 8) & ((tx >= (7 - ty)) & (tx <= (8 + ty)))
-                left_facet = (ty >= 8) & (tx < 8)
-                specialty_delta = np.where(top_facet, 5.5, np.where(left_facet, -4.5, 0.5)).astype(np.float32)
-
-            elif finish in ("corduroy_rib", "ribbed_fabric", "needle_cord"):
-                # High-density vertical micro-needlecord ribs
-                specialty_delta = np.where((x_coords % 6) < 3, 5.0, -5.0).astype(np.float32)
-
-            # Map torso coordinates into the flattened fabric patch
-            torso_flat_indices = np.ravel_multi_index((y_coords, x_coords), (ATLAS, ATLAS))
-            locs = np.searchsorted(fabric_idx, torso_flat_indices)
-            patch[locs] += specialty_delta[:, None]
+            if np.any(torso_m):
+                torso_in_fabric = torso_m.ravel()[fabric_idx]
+                patch[torso_in_fabric] += specialty_tile[torso_m][:, None]
 
     np.clip(patch, 0, 255, out=patch)
     rgb_flat[fabric_idx] = patch.astype(np.uint8)
@@ -3194,8 +3225,8 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
                              and not p.stem.startswith("_"))
 
     team = club["id"]
-    out = []
-    for slot in slots:
+
+    def _render_slot(slot):
         slot_code = f"p{slot}" if isinstance(slot, int) else str(slot)
         if previews:
             atlas = outdir / f"u{team:04d}{slot_code}_atlas.png"
@@ -3219,7 +3250,16 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
         else:
             atlas_ref = atlas_img
             preview_ref = None
-        out.append((slot, atlas_ref, preview_ref, design))
+        return (slot, atlas_ref, preview_ref, design)
+
+    if len(slots) > 1:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(len(slots), 4)) as executor:
+            out = list(executor.map(_render_slot, slots))
+    elif len(slots) == 1:
+        out = [_render_slot(slots[0])]
+    else:
+        out = []
     return out
 
 
