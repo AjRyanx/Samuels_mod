@@ -180,6 +180,31 @@ def _read_state(state_file):
     return set(lines)
 
 
+_STATE_CACHE = {}
+
+
+def _read_state_cached(state_file):
+    """Cached state snapshot for hot poll/abort checks.
+
+    The state file is ~170 MB.  Reloading it for every completed rollover club
+    added ~16 minutes to a 587-club refresh even though workers had already
+    rendered the kits.  The cache key includes mtime and size, so any real
+    state change still invalidates it immediately.
+    """
+    path = Path(state_file)
+    try:
+        st = path.stat()
+        key = (str(path.resolve()), st.st_mtime_ns, st.st_size)
+    except OSError:
+        key = (str(path), None, None)
+    cached = _STATE_CACHE.get(key)
+    if cached is None:
+        cached = _read_state(path)
+        _STATE_CACHE.clear()
+        _STATE_CACHE[key] = cached
+    return cached
+
+
 def _read_pid(pid_file):
     """Return the game's pid from pid_file, or None if it is missing/unreadable."""
     try:
@@ -286,7 +311,7 @@ def _urgent_requests_pending(req_file, state_file, exclude=None):
     Opponent JIT and the user club's seasonal rebuild now run *after* the
     baseline, so they must not abort it.  Only an actual user action does.
     """
-    seen = _read_state(state_file)
+    seen = _read_state_cached(state_file)
     for line in safe_read_lines(req_file, lock=False):
         req = _parse_request(line)
         if not req or req["offer"] == exclude or req["offer"] in seen:
@@ -294,6 +319,24 @@ def _urgent_requests_pending(req_file, state_file, exclude=None):
         if _is_urgent_user(req):
             return True
     return False
+
+
+def _season_high_water(lines, seen):
+    """Highest completed rollover season, scoped to each career.
+
+    The request file keeps history from every career.  A global maximum would
+    make a fresh season-2 save look stale next to an old save's season-7 marker
+    and silently retire its rebuild/JIT requests.
+    """
+    high = {}
+    for line in lines:
+        prior = _parse_request(line)
+        if not prior or prior["club_id"] != 0 or prior["offer"] not in seen:
+            continue
+        career = prior.get("career_id") or ""
+        if prior["season"] > high.get(career, 0):
+            high[career] = prior["season"]
+    return high
 
 
 # --------------------------------------------------------------------------- #
@@ -424,16 +467,11 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     rollover_requests = []
     active_dir = Path(game_root) / "SiderAddons" / "content" / "KitGenerator" / "active"
 
-    # A completed rollover is the season high-water mark.  Previous-season JIT
-    # and rebuild requests must stay retired even when a refresh prunes their
-    # on-disk "already built" marker (p2/p3/g2) - otherwise they regenerate
-    # last season's kits over the new season's baseline.
-    current_season = 0
-    for line in lines:
-        prior = _parse_request(line)
-        if (prior and prior["club_id"] == 0 and prior["offer"] in seen
-                and prior["season"] > current_season):
-            current_season = prior["season"]
+    # A completed rollover is the season high-water mark for *its own career*.
+    # Previous-season JIT and rebuild requests must stay retired even when a
+    # refresh prunes their on-disk "already built" marker (p2/p3/g2), but a
+    # different career's later season must never make this save's work stale.
+    high_water = _season_high_water(lines, seen)
 
     for line in lines:
         req = _parse_request(line)
@@ -460,6 +498,7 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                 seen.add(req["offer"])
                 continue
 
+        current_season = high_water.get(req.get("career_id") or "", 0)
         if current_season and req["season"] < current_season and not is_rollover:
             _mark_done(state_file, req["offer"])   # retire stale-season work permanently
             seen.add(req["offer"])

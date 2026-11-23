@@ -308,85 +308,91 @@ def build_tile(design):
         draw_bolt.line(poly + [poly[0]], fill=tuple(tip_c) + (255,), width=4)
         canvas.alpha_composite(bolt_img)
     elif macro == "prismatic_shards":
-        # 90s Jorge Campos / Schmeichel iconic angular faceted geometric shards
+        # Low-poly faceted geometric shards at soft tonal alpha, leaving chest clear
         shard_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
         draw_sh = ImageDraw.Draw(shard_img)
         W, H = kit_gen.W, kit_gen.H
-        s_fill1 = tuple(second) + (240,)
-        s_fill2 = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (240,)
-        s_fill3 = tuple(d.get("accent") or (255, 30, 100)) + (230,)
-        draw_sh.polygon([(0, 0), (int(W * 0.35), 0), (int(W * 0.20), int(H * 0.40)), (0, int(H * 0.25))], fill=s_fill1)
-        draw_sh.polygon([(int(W * 0.35), 0), (int(W * 0.65), 0), (int(W * 0.50), int(H * 0.45)), (int(W * 0.20), int(H * 0.40))], fill=s_fill2)
-        draw_sh.polygon([(int(W * 0.65), 0), (W, 0), (W, int(H * 0.25)), (int(W * 0.80), int(H * 0.40))], fill=s_fill3)
-        draw_sh.polygon([(int(W * 0.50), int(H * 0.45)), (W, int(H * 0.25)), (int(W * 0.80), int(H * 0.40)), (int(W * 0.65), int(H * 0.65))], fill=s_fill1)
-        draw_sh.polygon([(0, int(H * 0.25)), (int(W * 0.20), int(H * 0.40)), (int(W * 0.35), int(H * 0.65)), (0, int(H * 0.55))], fill=s_fill2)
-        draw_sh.polygon([(int(W * 0.20), int(H * 0.40)), (int(W * 0.50), int(H * 0.45)), (int(W * 0.50), int(H * 0.75)), (int(W * 0.35), int(H * 0.65))], fill=s_fill3)
-        draw_sh.polygon([(int(W * 0.50), int(H * 0.45)), (int(W * 0.80), int(H * 0.40)), (int(W * 0.65), int(H * 0.65)), (int(W * 0.50), int(H * 0.75))], fill=s_fill2)
+        s_fill1 = tuple(second) + (45,)
+        s_fill2 = tuple(d.get("third") or second) + (35,)
+        draw_sh.polygon([(0, 0), (int(W * 0.35), 0), (int(W * 0.20), int(H * 0.26)), (0, int(H * 0.22))], fill=s_fill1)
+        draw_sh.polygon([(int(W * 0.65), 0), (W, 0), (W, int(H * 0.22)), (int(W * 0.80), int(H * 0.26))], fill=s_fill1)
+        draw_sh.polygon([(0, int(H * 0.65)), (int(W * 0.35), int(H * 0.65)), (int(W * 0.20), H), (0, H)], fill=s_fill2)
+        draw_sh.polygon([(int(W * 0.65), int(H * 0.65)), (W, int(H * 0.65)), (W, H), (int(W * 0.80), H)], fill=s_fill2)
         canvas.alpha_composite(shard_img)
     elif macro == "optical_warp":
-        # 90s hypnotic kaleidoscopic wave warp across upper torso
+        # Sleek aerodynamic tonal soundwaves across lower abdomen and shoulders
         warp_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
         draw_w = ImageDraw.Draw(warp_img)
         W, H = kit_gen.W, kit_gen.H
-        s_fill = tuple(second) + (220,)
-        t_fill = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (200,)
-        for y_step in range(0, int(H * 0.75), 24):
+        s_fill = tuple(second) + (45,)
+        for y_step in list(range(0, int(H * 0.22), 16)) + list(range(int(H * 0.65), int(H * 0.95), 18)):
             pts = []
             for x in range(0, W + 10, 20):
-                y_offset = int(18 * math.sin(x / 35.0 + y_step / 20.0))
+                y_offset = int(10 * math.sin(x / 40.0 + y_step / 25.0))
                 pts.append((x, y_step + y_offset))
-            c = s_fill if (y_step // 24) % 2 == 0 else t_fill
-            draw_w.line(pts, fill=c, width=12)
+            draw_w.line(pts, fill=s_fill, width=4)
         canvas.alpha_composite(warp_img)
     elif macro == "dual_contrast_split":
-        # High-contrast diagonal chevron color blocking split
+        # Athletic asymmetric raglan / flank contrast panel
         split_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
         draw_sp = ImageDraw.Draw(split_img)
         W, H = kit_gen.W, kit_gen.H
-        s_fill = tuple(second) + (255,)
-        draw_sp.polygon([(0, 0), (W, 0), (W, int(H * 0.35)), (int(W * 0.5), int(H * 0.58)), (0, int(H * 0.35))], fill=s_fill)
-        tip_c = tuple(d.get("third") or d.get("accent") or body) + (255,)
-        draw_sp.line([(0, int(H * 0.35)), (int(W * 0.5), int(H * 0.58)), (W, int(H * 0.35))], fill=tip_c, width=6)
+        s_fill = tuple(second) + (55,)
+        draw_sp.polygon([(0, 0), (W, 0), (W, int(H * 0.18)), (0, int(H * 0.18))], fill=s_fill)
         canvas.alpha_composite(split_img)
     elif macro == "graffiti_splatter":
-        # Urban 90s streetwear spray/splatter graphics bursting across torso
+        # Technical luxury micro-speckle / heather spray
         sp_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
         draw_gp = ImageDraw.Draw(sp_img)
         W, H = kit_gen.W, kit_gen.H
         rng = np.random.default_rng(42)
-        s_fill = tuple(second) + (240,)
-        t_fill = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (240,)
-        for _ in range(70):
-            cx = int(rng.integers(int(W * 0.1), int(W * 0.9)))
-            cy = int(rng.integers(int(H * 0.05), int(H * 0.70)))
-            rad = int(rng.integers(12, 38))
-            c = s_fill if rng.random() > 0.4 else t_fill
-            draw_gp.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=c)
-            for _ in range(6):
-                ox = int(rng.integers(-40, 40))
-                oy = int(rng.integers(-40, 40))
-                dr = int(rng.integers(2, 6))
-                draw_gp.ellipse([cx + ox - dr, cy + oy - dr, cx + ox + dr, cy + oy + dr], fill=c)
+        s_fill = tuple(second) + (35,)
+        for _ in range(120):
+            cx = int(rng.integers(int(W * 0.05), int(W * 0.95)))
+            cy = int(rng.integers(0, H))
+            if int(W * 0.22) < cx < int(W * 0.78) and int(H * 0.28) < cy < int(H * 0.58):
+                continue
+            rad = int(rng.integers(2, 6))
+            draw_gp.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=s_fill)
         canvas.alpha_composite(sp_img)
     elif macro == "flame_sunburst":
-        # Iconic 90s flame starburst / sunburst spikes radiating outward from chest
+        # Radiant sonic pulse at lower torso
         flame_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
         draw_fl = ImageDraw.Draw(flame_img)
         W, H = kit_gen.W, kit_gen.H
-        cx, cy = int(W * 0.5), int(H * 0.42)
-        s_fill = tuple(second) + (240,)
-        t_fill = tuple(d.get("third") or d.get("accent") or (255, 230, 40)) + (240,)
-        num_spikes = 14
-        for i in range(num_spikes):
-            angle = i * (2 * math.pi / num_spikes)
-            r_outer = int(H * 0.38)
-            r_inner = int(H * 0.14)
-            p1 = (int(cx + r_inner * math.cos(angle - 0.15)), int(cy + r_inner * math.sin(angle - 0.15)))
-            p2 = (int(cx + r_outer * math.cos(angle)), int(cy + r_outer * math.sin(angle)))
-            p3 = (int(cx + r_inner * math.cos(angle + 0.15)), int(cy + r_inner * math.sin(angle + 0.15)))
-            c = s_fill if i % 2 == 0 else t_fill
-            draw_fl.polygon([p1, p2, p3], fill=c)
+        cx, cy = int(W * 0.5), int(H * 0.85)
+        s_fill = tuple(second) + (40,)
+        for i in range(12):
+            angle = i * (math.pi / 12)
+            r = int(H * 0.22)
+            p1 = (int(cx + r * math.cos(angle)), int(cy - r * math.sin(angle)))
+            p2 = (int(cx + (r + 40) * math.cos(angle + 0.1)), int(cy - (r + 40) * math.sin(angle + 0.1)))
+            p3 = (int(cx + r * math.cos(angle + 0.2)), int(cy - r * math.sin(angle + 0.2)))
+            draw_fl.polygon([p1, p2, p3], fill=s_fill)
         canvas.alpha_composite(flame_img)
+    elif macro == "tonal_jacquard":
+        # Subtle technical diamond / honeycomb micro-knit
+        jq_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_jq = ImageDraw.Draw(jq_img)
+        W, H = kit_gen.W, kit_gen.H
+        step = 28
+        s_fill = tuple(second) + (35,)
+        for y in range(0, H, step):
+            for x in range(0, W, step):
+                if ((x // step) + (y // step)) % 2 == 0:
+                    draw_jq.polygon([(x + step // 2, y), (x + step, y + step // 2), (x + step // 2, y + step), (x, y + step // 2)], fill=s_fill)
+        canvas.alpha_composite(jq_img)
+    elif macro == "side_panel_contrast":
+        # Athletic side flank rib panels
+        side_img = Image.new("RGBA", (kit_gen.W, kit_gen.H), (0, 0, 0, 0))
+        draw_sd = ImageDraw.Draw(side_img)
+        W, H = kit_gen.W, kit_gen.H
+        s_fill = tuple(second) + (140,)
+        draw_sd.polygon([(0, 0), (int(W * 0.12), 0), (int(W * 0.16), H), (0, H)], fill=s_fill)
+        draw_sd.polygon([(int(W * 0.88), 0), (W, 0), (W, H), (int(W * 0.84), H)], fill=s_fill)
+        canvas.alpha_composite(side_img)
+    elif macro in ("gardien_sleeve", "solid"):
+        pass
 
     # Optional Micro Jacquard Layer overlay
     if micro:
@@ -426,6 +432,22 @@ def _paint_shirt(atlas, tile, masks, d=None):
     fw, fh = fx1 - fx0 + 1, fy1 - fy0 + 1
     front = tile.resize((fw, fh), Image.LANCZOS)
     fmask_raw = masks["body_front"][fy0:fy1 + 1, fx0:fx1 + 1].copy()
+
+    is_gk = bool(d and (d.get("is_gk") or d.get("slot") in ("g1", "g2", 4, 5)))
+    if is_gk and d and d.get("sponsor") and mask_mode in ("full", "front_only"):
+        # Softly attenuate pattern in the chest sponsor landing zone
+        # to ensure the goalkeeper sponsor is 100% crystal-clear and never clashed
+        front_arr = np.array(front, dtype=np.float32)
+        body_col = np.array(d.get("body", (255, 255, 255)), dtype=np.float32)[:3]
+        cx = int(fw * 0.50)
+        cy = int(fh * 0.38)
+        rx = int(fw * 0.32)
+        ry = int(fh * 0.16)
+        yy, xx = np.ogrid[:fh, :fw]
+        dist_sq = ((xx - cx) / float(max(1, rx))) ** 2 + ((yy - cy) / float(max(1, ry))) ** 2
+        atten = np.clip((dist_sq - 0.35) / 0.75, 0.0, 1.0)[:, :, None]
+        front_arr[:, :, :3] = front_arr[:, :, :3] * atten + body_col * (1.0 - atten)
+        front = Image.fromarray(np.clip(front_arr, 0, 255).astype(np.uint8))
 
     if mask_mode == "chest_only":
         y_c0, y_c1 = int(fh * 0.28), int(fh * 0.56)
@@ -2405,6 +2427,7 @@ def render_kit(design, out_png, masks=None):
         elif base_stem.endswith("_dark"):
             base_stem = base_stem[:-5]
 
+        is_gk = bool(d.get("is_gk") or d.get("slot") in ("g1", "g2", 4, 5))
         # Determine if we should use Light Mode or Dark Mode logo based on background luminance
         if not d.get("sponsor_plate"):
             if bg_lum < 130:
@@ -2419,7 +2442,16 @@ def render_kit(design, out_png, masks=None):
                 d["sponsor_white"] = False
                 cand_c = p_obj.parent / f"{base_stem}.png"
                 cand_d = p_obj.parent / f"{base_stem}_dark.png"
-                if cand_c.is_file() and not d.get("sponsor_dark"):
+                if is_gk:
+                    # On goalkeeper kits (high-vis / neon / pastel), athletic monochrome dark branding looks cleanest
+                    if cand_d.is_file():
+                        d["sponsor"] = str(cand_d)
+                        d.pop("sponsor_dark", None)
+                    elif cand_c.is_file() and not d.get("sponsor_dark"):
+                        d["sponsor"] = str(cand_c)
+                    else:
+                        d["sponsor_dark"] = (18, 22, 28)
+                elif cand_c.is_file() and not d.get("sponsor_dark"):
                     d["sponsor"] = str(cand_c)
                     d.pop("sponsor_dark", None)
                 elif cand_d.is_file():
@@ -2433,13 +2465,14 @@ def render_kit(design, out_png, masks=None):
         # letters will blend into matching stripes without a keyline stroke.
         stroke_col = None
         stroke_px = 0
-        if bg_std >= 32.0 and not d.get("sponsor_plate"):
+        std_threshold = 16.0 if is_gk else 32.0
+        if bg_std >= std_threshold and not d.get("sponsor_plate"):
             if d.get("sponsor_white") or Path(d["sponsor"]).stem.endswith("_white"):
                 stroke_col = (18, 22, 28)  # Razor-sharp deep dark contrast stroke
-                stroke_px = 3
+                stroke_px = 2 if is_gk else 3
             else:
                 stroke_col = (255, 255, 255)  # Crisp white contrast stroke for dark logos
-                stroke_px = 3
+                stroke_px = 2 if is_gk else 3
 
         sp_item = _prepare_stamp_item(d["sponsor"], *kit_regions.CHEST_SPONSOR,
                                       white=d.get("sponsor_white"),
@@ -3080,6 +3113,7 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
         cand_dark = Path(logo_dir) / f"{brand}_dark.png"
         cand_std = Path(logo_dir) / f"{brand}.png"
 
+        is_gk_slot = bool(design.get("is_gk") or str(slot).startswith("g") or slot in (4, 5))
         if white:
             if cand_white.is_file():
                 cand_logo = cand_white
@@ -3090,6 +3124,10 @@ def design_from_club(club, season, logo_dir, slot=1, brand_files=None, style=Non
         else:
             if cand_dark.is_file():
                 cand_logo = cand_dark
+            elif is_gk_slot:
+                # Monochromatic dark branding for light GK jerseys
+                cand_logo = cand_std if cand_std.is_file() else cand_dark
+                design["sponsor_dark"] = (18, 22, 28)
             elif cand_std.is_file():
                 cand_logo = cand_std
             else:
@@ -3265,6 +3303,7 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
 
 def mockup(design, club_name, season, out_png):
     """A flat 'on the shirt' mockup of a design (front), for eyeballing."""
+    import numpy as np
     W, H = kit_gen.W, kit_gen.H
     bmask, smask = kit_gen.shirt_masks()
     body = tuple(design["body"])
@@ -3277,10 +3316,25 @@ def mockup(design, club_name, season, out_png):
                          third=design.get("third"))
     pat = kit_gen.apply_gradient(
         pat, [0.0, 0.15, 0.28, 0.40][design.get("gradient", 0) % 4])
-    canvas.paste(pat, (0, 0), bmask)
-
-    sleeve = tuple(design.get("sleeve") or body)
-    canvas.paste(Image.new("RGBA", (W, H), sleeve + (255,)), (0, 0), smask)
+    if design.get("pattern_mask") == "sleeves_only":
+        canvas.paste(Image.new("RGBA", (W, H), body + (255,)), (0, 0), bmask)
+        canvas.paste(pat, (0, 0), smask)
+    else:
+        is_gk = bool(design.get("is_gk") or design.get("slot") in ("g1", "g2", 4, 5))
+        if is_gk and design.get("sponsor"):
+            # Attenuate pattern around chest sponsor area on mockup
+            pat_arr = np.array(pat, dtype=np.float32)
+            body_col = np.array(body, dtype=np.float32)[:3]
+            cx, cy = 240, 195
+            rx, ry = 110, 45
+            yy, xx = np.ogrid[:H, :W]
+            dist_sq = ((xx - cx) / float(rx)) ** 2 + ((yy - cy) / float(ry)) ** 2
+            atten = np.clip((dist_sq - 0.35) / 0.75, 0.0, 1.0)[:, :, None]
+            pat_arr[:, :, :3] = pat_arr[:, :, :3] * atten + body_col * (1.0 - atten)
+            pat = Image.fromarray(np.clip(pat_arr, 0, 255).astype(np.uint8))
+        canvas.paste(pat, (0, 0), bmask)
+        sleeve = tuple(design.get("sleeve") or body)
+        canvas.paste(Image.new("RGBA", (W, H), sleeve + (255,)), (0, 0), smask)
 
     cuff = design.get("cuff")
     if cuff:
@@ -3621,6 +3675,7 @@ def mockup(design, club_name, season, out_png):
             c_lum = 128.0
             c_std = 0.0
 
+        is_gk = bool(design.get("is_gk") or design.get("slot") in ("g1", "g2", 4, 5))
         is_white_logo = False
         if not design.get("sponsor_plate"):
             if c_lum < 130 or design.get("sponsor_white"):
@@ -3631,26 +3686,39 @@ def mockup(design, club_name, season, out_png):
             else:
                 cand_c = sp_p.parent / f"{base_stem}.png"
                 cand_d = sp_p.parent / f"{base_stem}_dark.png"
-                if cand_c.is_file() and not design.get("sponsor_dark"):
+                if is_gk:
+                    if cand_d.is_file():
+                        sp_p = cand_d
+                        is_white_logo = False
+                    elif cand_c.is_file() and not design.get("sponsor_dark"):
+                        sp_p = cand_c
+                        is_white_logo = False
+                    else:
+                        is_white_logo = False
+                elif cand_c.is_file() and not design.get("sponsor_dark"):
                     sp_p = cand_c
+                    is_white_logo = False
                 elif cand_d.is_file():
                     sp_p = cand_d
-                is_white_logo = False
+                    is_white_logo = False
+                else:
+                    is_white_logo = False
         else:
             is_white_logo = design.get("sponsor_white", False)
 
         logo = Image.open(sp_p).convert("RGBA")
         if design.get("sponsor_white") and not sp_p.stem.endswith("_white"):
             logo = _flatten_white(logo)
-        elif design.get("sponsor_dark") and not sp_p.stem.endswith("_dark"):
-            col = design["sponsor_dark"] if isinstance(design["sponsor_dark"], (tuple, list)) else (18, 22, 28)
+        elif (design.get("sponsor_dark") or (is_gk and not is_white_logo and not sp_p.stem.endswith("_dark"))) and not sp_p.stem.endswith("_dark"):
+            col = design.get("sponsor_dark") if isinstance(design.get("sponsor_dark"), (tuple, list)) else (18, 22, 28)
             logo = _flatten_color(logo, col)
         s = min(190 / logo.width, 60 / logo.height)
         logo = logo.resize((max(1, int(logo.width * s)), max(1, int(logo.height * s))), Image.LANCZOS)
 
+        std_thresh = 16.0 if is_gk else 32.0
         if design.get("sponsor_plate", False):
             d.rounded_rectangle([118, 160, 362, 236], radius=10, fill=body + (255,))
-        elif c_std >= 32.0:
+        elif c_std >= std_thresh:
             from PIL import ImageFilter
             alpha_ch = logo.split()[3]
             stroke_alpha = alpha_ch.filter(ImageFilter.MaxFilter(5))  # ~2px radius in preview card scale
