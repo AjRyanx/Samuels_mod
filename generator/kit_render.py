@@ -129,11 +129,40 @@ def _mask_img(mask):
     if hit is not None and hit[0] is mask:
         _MASK_IMG_CACHE.move_to_end(key)
         return hit[1]
-    img = Image.fromarray((mask * 255).astype("uint8"))
+    if hasattr(mask, "dtype") and mask.dtype == bool:
+        img = Image.fromarray(mask.view(np.uint8) * np.uint8(255))
+    else:
+        img = Image.fromarray((mask * 255).astype("uint8"))
     _MASK_IMG_CACHE[key] = (mask, img)
     if len(_MASK_IMG_CACHE) > 96:
         _MASK_IMG_CACHE.popitem(last=False)
     return img
+
+
+def _paste_solid_mask(atlas, color, mask):
+    """Fast bounded solid-color paste.
+
+    Avoids allocating a full 2048x2048 image and performing a full
+    4-megapixel alpha blend across the entire canvas. Finds the active bounding
+    box, crops the mask, and blends only the active sub-region (e.g. 200x50 pixels
+    instead of 2048x2048).
+    """
+    if mask is None:
+        return
+    if isinstance(mask, Image.Image):
+        mask_img = mask
+    else:
+        if hasattr(mask, "any") and not mask.any():
+            return
+        mask_img = _mask_img(mask)
+
+    bbox = mask_img.getbbox()
+    if not bbox:
+        return
+    x0, y0, x1, y1 = bbox
+    sub_mask = mask_img.crop(bbox)
+    sub_color = Image.new("RGBA", (x1 - x0, y1 - y0), color)
+    atlas.paste(sub_color, (x0, y0), sub_mask)
 
 
 def _col_lum(c):
@@ -513,7 +542,7 @@ def _apply_vent_panels(atlas, d, masks):
     if not np.any(vent_mask):
         return
 
-    atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), v_rgba), (0, 0), _mask_img(vent_mask))
+    _paste_solid_mask(atlas, v_rgba, vent_mask)
 
     if vent_style == "laser_cut":
         dot_rgba = (max(0, int(vent_col[0] * 0.65)),
@@ -559,25 +588,33 @@ def _composite_layer(atlas, layer, mask=None, dest=(0, 0)):
     if layer.mode != "RGBA":
         layer = layer.convert("RGBA")
 
+    alpha = layer.getchannel("A")
     if mask is None:
-        bbox = layer.getchannel("A").getbbox()
+        bbox = alpha.getbbox()
     else:
+        layer_bbox = alpha.getbbox()
+        if not layer_bbox:
+            return
         mask_img = _mask_img(mask)
         if mask_img.size != layer.size:
             raise ValueError("mask and layer must be the same size")
-        bbox = ImageChops.multiply(mask_img, layer.getchannel("A")).getbbox()
+        sub_mask = mask_img.crop(layer_bbox)
+        sub_alpha = alpha.crop(layer_bbox)
+        sub_eff = ImageChops.multiply(sub_mask, sub_alpha)
+        sub_bbox = sub_eff.getbbox()
+        if not sub_bbox:
+            return
+        bbox = (layer_bbox[0] + sub_bbox[0], layer_bbox[1] + sub_bbox[1],
+                layer_bbox[0] + sub_bbox[2], layer_bbox[1] + sub_bbox[3])
+        layer = layer.crop(bbox)
+        layer.putalpha(sub_eff.crop(sub_bbox))
+        atlas.alpha_composite(layer, (dest[0] + bbox[0], dest[1] + bbox[1]))
+        return
 
     if not bbox:
         return
 
-    if mask is not None:
-        effective = ImageChops.multiply(
-            _mask_img(mask).crop(bbox), layer.getchannel("A").crop(bbox))
-        layer = layer.crop(bbox)
-        layer.putalpha(effective)
-    else:
-        layer = layer.crop(bbox)
-
+    layer = layer.crop(bbox)
     atlas.alpha_composite(layer, (dest[0] + bbox[0], dest[1] + bbox[1]))
 
 
@@ -725,13 +762,13 @@ def _apply_brand_signatures(atlas, d, masks):
         puma_m[388:424, 1356:1438] = body_back[388:424, 1356:1438]
         puma_m[388:424, 1601:2009] = sleeve_mask[388:424, 1601:2009]
         if np.any(puma_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(puma_m))
+            _paste_solid_mask(atlas, acc_rgba, puma_m)
         sh_puma = np.zeros_like(shorts_mask)
         sh_puma[:, 28:64] = True
         sh_puma[:, 1984:2020] = True
         sh_puma = sh_puma & shorts_mask
         if np.any(sh_puma):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), acc_rgba), (0, 0), _mask_img(sh_puma))
+            _paste_solid_mask(atlas, acc_rgba, sh_puma)
 
     # 6. NIKE: Aeroswift flank ribbing (torso underarm only, sleeves stay clean)
     elif "nike" in supp:
@@ -870,7 +907,7 @@ def _apply_engineered_shorts(atlas, d, masks):
             split_m[y_slash:y_slash + 20, x] = True
         split_m = split_m & shorts_mask
         if np.any(split_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(split_m))
+            _paste_solid_mask(atlas, sh_col, split_m)
 
     elif shorts_style == "side_stripe":
         side_mask = np.zeros_like(shorts_mask)
@@ -878,7 +915,7 @@ def _apply_engineered_shorts(atlas, d, masks):
         side_mask[:, 1990:2024] = True
         side_mask = side_mask & shorts_mask
         if np.any(side_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(side_mask))
+            _paste_solid_mask(atlas, sh_col, side_mask)
 
     elif shorts_style == "dual_side_stripes":
         dual_m = np.zeros_like(shorts_mask)
@@ -888,14 +925,14 @@ def _apply_engineered_shorts(atlas, d, masks):
         dual_m[:, 2010:2026] = True
         dual_m = dual_m & shorts_mask
         if np.any(dual_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(dual_m))
+            _paste_solid_mask(atlas, sh_col, dual_m)
 
     elif shorts_style == "hem_tape":
         hem_mask = np.zeros_like(shorts_mask)
         hem_mask[1935:1968, :] = True
         hem_mask = hem_mask & shorts_mask
         if np.any(hem_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(hem_mask))
+            _paste_solid_mask(atlas, sh_col, hem_mask)
 
     elif shorts_style == "contrast_flank_panel":
         panel_m = np.zeros_like(shorts_mask)
@@ -910,9 +947,9 @@ def _apply_engineered_shorts(atlas, d, masks):
         panel_m = panel_m & shorts_mask
         piping_m = piping_m & shorts_mask
         if np.any(panel_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(panel_m))
+            _paste_solid_mask(atlas, sh_col, panel_m)
         if np.any(piping_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_rgba), (0, 0), _mask_img(piping_m))
+            _paste_solid_mask(atlas, tip_rgba, piping_m)
 
     elif shorts_style == "hem_turnup_notch":
         hem_m = np.zeros_like(shorts_mask)
@@ -925,7 +962,7 @@ def _apply_engineered_shorts(atlas, d, masks):
         draw_n.line([(1978, 1940), (2003, 1895), (2028, 1940)], fill=tip_rgba, width=2)
         hem_m = hem_m & shorts_mask
         if np.any(hem_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(hem_m))
+            _paste_solid_mask(atlas, sh_col, hem_m)
         atlas.paste(notch_layer, (0, 0), _mask_img(shorts_mask))
 
     elif shorts_style == "two_tone_halves":
@@ -933,12 +970,12 @@ def _apply_engineered_shorts(atlas, d, masks):
         right_m[:, 1300:2048] = True
         right_m = right_m & shorts_mask
         if np.any(right_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(right_m))
+            _paste_solid_mask(atlas, sh_col, right_m)
         hem_left = np.zeros_like(shorts_mask)
         hem_left[1942:1968, 0:1000] = True
         hem_left = hem_left & shorts_mask
         if np.any(hem_left):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(hem_left))
+            _paste_solid_mask(atlas, sh_col, hem_left)
         hem_right = np.zeros_like(shorts_mask)
         hem_right[1942:1968, 1300:2048] = True
         hem_right = hem_right & shorts_mask
@@ -962,7 +999,7 @@ def _apply_engineered_shorts(atlas, d, masks):
         wb_m[1159:1235, :] = True
         wb_m = wb_m & shorts_mask
         if np.any(wb_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sh_col), (0, 0), _mask_img(wb_m))
+            _paste_solid_mask(atlas, sh_col, wb_m)
             groove_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
             draw_w = ImageDraw.Draw(groove_layer)
             groove_dark = (max(0, shorts_accent[0] - 40), max(0, shorts_accent[1] - 40), max(0, shorts_accent[2] - 40), 200)
@@ -1001,12 +1038,12 @@ def _apply_engineered_socks(atlas, d, masks):
         cuff_so[630:692, :] = True
         cuff_so = cuff_so & socks_mask
         if np.any(cuff_so):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(cuff_so))
+            _paste_solid_mask(atlas, so_col, cuff_so)
             tip_m = np.zeros_like(socks_mask)
             tip_m[690:696, :] = True
             tip_m = tip_m & socks_mask
             if np.any(tip_m):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_m))
+                _paste_solid_mask(atlas, tip_col, tip_m)
 
     elif socks_style == "dual_hoop_turnover":
         hoop_m = np.zeros_like(socks_mask)
@@ -1014,12 +1051,12 @@ def _apply_engineered_socks(atlas, d, masks):
         hoop_m[666:688, :] = True
         hoop_m = hoop_m & socks_mask
         if np.any(hoop_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(hoop_m))
+            _paste_solid_mask(atlas, so_col, hoop_m)
             tip_m = np.zeros_like(socks_mask)
             tip_m[688:694, :] = True
             tip_m = tip_m & socks_mask
             if np.any(tip_m):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_m))
+                _paste_solid_mask(atlas, tip_col, tip_m)
 
     elif socks_style == "triple_hoop_turnover":
         hoop_m = np.zeros_like(socks_mask)
@@ -1028,12 +1065,12 @@ def _apply_engineered_socks(atlas, d, masks):
         hoop_m[674:688, :] = True
         hoop_m = hoop_m & socks_mask
         if np.any(hoop_m):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(hoop_m))
+            _paste_solid_mask(atlas, so_col, hoop_m)
             tip_m = np.zeros_like(socks_mask)
             tip_m[688:694, :] = True
             tip_m = tip_m & socks_mask
             if np.any(tip_m):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_m))
+                _paste_solid_mask(atlas, tip_col, tip_m)
 
     elif socks_style == "full_hooped_body":
         hoop_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1049,13 +1086,13 @@ def _apply_engineered_socks(atlas, d, masks):
         band_so[825:885, :] = True
         band_so = band_so & socks_mask
         if np.any(band_so):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), so_col), (0, 0), _mask_img(band_so))
+            _paste_solid_mask(atlas, so_col, band_so)
             border_m = np.zeros_like(socks_mask)
             border_m[822:825, :] = True
             border_m[885:888, :] = True
             border_m = border_m & socks_mask
             if np.any(border_m):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(border_m))
+                _paste_solid_mask(atlas, tip_col, border_m)
 
     elif socks_style == "triple_calf_hoops":
         hoop_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1136,25 +1173,25 @@ def _apply_engineered_collar(atlas, d, masks):
         t1_mask = np.zeros_like(collar_mask)
         t1_mask[1868:1874, :] = collar_mask[1868:1874, :]
         if np.any(t1_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t1_mask))
+            _paste_solid_mask(atlas, t1_rgba, t1_mask)
 
         t2_mask = np.zeros_like(collar_mask)
         t2_mask[1878:1884, :] = collar_mask[1878:1884, :]
         if np.any(t2_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t2_rgba), (0, 0), _mask_img(t2_mask))
+            _paste_solid_mask(atlas, t2_rgba, t2_mask)
 
     elif style == "retro_crew":
         # Broad 32px contrast crew rib band with concentric double-tipping (LOSC Lille style)
         rib_mask = np.zeros_like(collar_mask)
         rib_mask[1868:1900, :] = collar_mask[1868:1900, :]
         if np.any(rib_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(rib_mask))
+            _paste_solid_mask(atlas, c_rgba, rib_mask)
 
         t1_mask = np.zeros_like(collar_mask)
         t1_mask[1868:1873, :] = collar_mask[1868:1873, :]
         t1_mask[1895:1899, :] = collar_mask[1895:1899, :]
         if np.any(t1_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t1_mask))
+            _paste_solid_mask(atlas, t1_rgba, t1_mask)
 
         # Drop-stitch contour line on chest front neckline (X: 970..1078, Y: 998..1024)
         crew_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1167,7 +1204,7 @@ def _apply_engineered_collar(atlas, d, masks):
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1880, :] = collar_mask[1868:1880, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         # Sharp triangular crossover wedge / insert at chest apex of body_front (centered at x=1024, y=1000..1058)
         v_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1182,7 +1219,7 @@ def _apply_engineered_collar(atlas, d, masks):
         t1_mask = np.zeros_like(collar_mask)
         t1_mask[1868:1874, :] = collar_mask[1868:1874, :]
         if np.any(t1_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t1_mask))
+            _paste_solid_mask(atlas, t1_rgba, t1_mask)
 
         # Chest apex: inner electric/contrast triangular wedge + overlapping crossover flaps
         v_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1202,13 +1239,13 @@ def _apply_engineered_collar(atlas, d, masks):
             crease_col = (max(0, int(collar[0] * 0.75)),
                           max(0, int(collar[1] * 0.75)),
                           max(0, int(collar[2] * 0.75)), 220)
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), crease_col), (0, 0), _mask_img(crease_mask))
+            _paste_solid_mask(atlas, crease_col, crease_mask)
 
         # Outer tipping on the folded wings edge
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1878, :] = collar_mask[1868:1878, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         # Engineered button placket down chest center (X: 1008..1040, Y: 1000..1095)
         placket_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1233,19 +1270,19 @@ def _apply_engineered_collar(atlas, d, masks):
             crease_col = (max(0, int(collar[0] * 0.75)),
                           max(0, int(collar[1] * 0.75)),
                           max(0, int(collar[2] * 0.75)), 220)
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), crease_col), (0, 0), _mask_img(crease_mask))
+            _paste_solid_mask(atlas, crease_col, crease_mask)
 
         # Micro-checkered jacquard knit edge tipping on collar wings
         t_base = np.zeros_like(collar_mask)
         t_base[1868:1882, :] = collar_mask[1868:1882, :]
         if np.any(t_base):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_base))
+            _paste_solid_mask(atlas, t1_rgba, t_base)
             y_w, x_w = np.where(t_base)
             checks = ((x_w // 4) + (y_w // 4)) % 2 == 0
             if np.any(checks):
                 c_chk = np.zeros_like(collar_mask)
                 c_chk[y_w[checks], x_w[checks]] = True
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t2_rgba), (0, 0), _mask_img(c_chk))
+                _paste_solid_mask(atlas, t2_rgba, c_chk)
 
         # Chest apex open V-notch placket
         notch_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1266,11 +1303,11 @@ def _apply_engineered_collar(atlas, d, masks):
         band_mask = np.zeros_like(collar_mask)
         band_mask[1868:1886, :] = collar_mask[1868:1886, :]
         if np.any(band_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(band_mask))
+            _paste_solid_mask(atlas, c_rgba, band_mask)
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1872, :] = collar_mask[1868:1872, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         m_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_m = ImageDraw.Draw(m_layer)
@@ -1286,28 +1323,28 @@ def _apply_engineered_collar(atlas, d, masks):
             crease_col = (max(0, int(collar[0] * 0.75)),
                           max(0, int(collar[1] * 0.75)),
                           max(0, int(collar[2] * 0.75)), 220)
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), crease_col), (0, 0), _mask_img(crease_mask))
+            _paste_solid_mask(atlas, crease_col, crease_mask)
 
         base_polo = np.zeros_like(collar_mask)
         base_polo[1868:1945, :] = collar_mask[1868:1945, :]
         if np.any(base_polo):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(base_polo))
+            _paste_solid_mask(atlas, c_rgba, base_polo)
 
         # 3 athletic micro-stripes along the outer folded collar edge
         s1 = np.zeros_like(collar_mask)
         s1[1868:1871, :] = collar_mask[1868:1871, :]
         if np.any(s1):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(s1))
+            _paste_solid_mask(atlas, t1_rgba, s1)
 
         s2 = np.zeros_like(collar_mask)
         s2[1873:1876, :] = collar_mask[1873:1876, :]
         if np.any(s2):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t2_rgba), (0, 0), _mask_img(s2))
+            _paste_solid_mask(atlas, t2_rgba, s2)
 
         s3 = np.zeros_like(collar_mask)
         s3[1878:1881, :] = collar_mask[1878:1881, :]
         if np.any(s3):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(s3))
+            _paste_solid_mask(atlas, t1_rgba, s3)
 
         # Inset triangular ribbed gusset at the chest apex of body_front (X: 1004..1044, Y: 996..1048)
         gusset_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1324,11 +1361,11 @@ def _apply_engineered_collar(atlas, d, masks):
         rib_mask = np.zeros_like(collar_mask)
         rib_mask[1868:1892, :] = collar_mask[1868:1892, :]
         if np.any(rib_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(rib_mask))
+            _paste_solid_mask(atlas, c_rgba, rib_mask)
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1874, :] = collar_mask[1868:1874, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         # Asymmetric overlapping wrap lapels on body_front apex
         wrap_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
@@ -1346,11 +1383,11 @@ def _apply_engineered_collar(atlas, d, masks):
         band_mask = np.zeros_like(collar_mask)
         band_mask[1868:1890, :] = collar_mask[1868:1890, :]
         if np.any(band_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(band_mask))
+            _paste_solid_mask(atlas, c_rgba, band_mask)
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1873, :] = collar_mask[1868:1873, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         henley_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_h = ImageDraw.Draw(henley_layer)
@@ -1368,11 +1405,11 @@ def _apply_engineered_collar(atlas, d, masks):
         rib_mask = np.zeros_like(collar_mask)
         rib_mask[1868:1888, :] = collar_mask[1868:1888, :]
         if np.any(rib_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(rib_mask))
+            _paste_solid_mask(atlas, c_rgba, rib_mask)
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1873, :] = collar_mask[1868:1873, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         sq_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_sq = ImageDraw.Draw(sq_layer)
@@ -1387,12 +1424,12 @@ def _apply_engineered_collar(atlas, d, masks):
         c_left = np.zeros_like(collar_mask)
         c_left[:, :1024] = collar_mask[:, :1024]
         if np.any(c_left):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(c_left))
+            _paste_solid_mask(atlas, c_rgba, c_left)
 
         c_right = np.zeros_like(collar_mask)
         c_right[:, 1024:] = collar_mask[:, 1024:]
         if np.any(c_right):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(c_right))
+            _paste_solid_mask(atlas, t1_rgba, c_right)
 
         split_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_sp = ImageDraw.Draw(split_layer)
@@ -1407,12 +1444,12 @@ def _apply_engineered_collar(atlas, d, masks):
             crease_col = (max(0, int(collar[0] * 0.75)),
                           max(0, int(collar[1] * 0.75)),
                           max(0, int(collar[2] * 0.75)), 220)
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), crease_col), (0, 0), _mask_img(crease_mask))
+            _paste_solid_mask(atlas, crease_col, crease_mask)
 
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1878, :] = collar_mask[1868:1878, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         lace_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_l = ImageDraw.Draw(lace_layer)
@@ -1437,12 +1474,12 @@ def _apply_engineered_collar(atlas, d, masks):
         rib_mask = np.zeros_like(collar_mask)
         rib_mask[1868:1915, :] = collar_mask[1868:1915, :]
         if np.any(rib_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), c_rgba), (0, 0), _mask_img(rib_mask))
+            _paste_solid_mask(atlas, c_rgba, rib_mask)
 
         t_mask = np.zeros_like(collar_mask)
         t_mask[1868:1874, :] = collar_mask[1868:1874, :]
         if np.any(t_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+            _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         y_c, x_c = np.where(rib_mask)
         ribs = (x_c % 4 < 2)
@@ -1466,7 +1503,7 @@ def _apply_engineered_collar(atlas, d, masks):
             t_mask = np.zeros_like(collar_mask)
             t_mask[1868:1882, :] = collar_mask[1868:1882, :]
             if np.any(t_mask):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), t1_rgba), (0, 0), _mask_img(t_mask))
+                _paste_solid_mask(atlas, t1_rgba, t_mask)
 
         y_c, x_c = np.where(collar_mask)
         ribs = (x_c % 6 < 2)
@@ -1508,7 +1545,7 @@ def _apply_engineered_cuffs(atlas, d, masks):
         cuff_mask[710:732, :] = sleeve_mask[710:732, :]
         cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
         if np.any(cuff_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+            _paste_solid_mask(atlas, cuff_col, cuff_mask)
 
         if style in ("dual_stripe", "dual_tipped"):
             stripe_mask = np.zeros_like(sleeve_mask)
@@ -1519,14 +1556,14 @@ def _apply_engineered_cuffs(atlas, d, masks):
             stripe_mask[1135:1138, :] = sleeve_mask[1135:1138, :]
             stripe_mask[1144:1147, :] = sleeve_mask[1144:1147, :]
             if np.any(stripe_mask):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(stripe_mask))
+                _paste_solid_mask(atlas, tip_col, stripe_mask)
         elif cuff_tip and cuff_tip != cuff:
             tip_mask = np.zeros_like(sleeve_mask)
             tip_mask[676:680, :] = sleeve_mask[676:680, :]
             tip_mask[710:714, :] = sleeve_mask[710:714, :]
             tip_mask[1151:1155, :] = sleeve_mask[1151:1155, :]
             if np.any(tip_mask):
-                atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_mask))
+                _paste_solid_mask(atlas, tip_col, tip_mask)
 
     elif style == "micro_tipped":
         tip_mask = np.zeros_like(sleeve_mask)
@@ -1534,7 +1571,7 @@ def _apply_engineered_cuffs(atlas, d, masks):
         tip_mask[710:716, :] = sleeve_mask[710:716, :]
         tip_mask[1149:1155, :] = sleeve_mask[1149:1155, :]
         if np.any(tip_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(tip_mask))
+            _paste_solid_mask(atlas, tip_col, tip_mask)
 
     elif style == "jacquard_knit":
         base_mask = np.zeros_like(sleeve_mask)
@@ -1542,14 +1579,14 @@ def _apply_engineered_cuffs(atlas, d, masks):
         base_mask[710:728, :] = sleeve_mask[710:728, :]
         base_mask[1135:1155, :] = sleeve_mask[1135:1155, :]
         if np.any(base_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(base_mask))
+            _paste_solid_mask(atlas, cuff_col, base_mask)
 
         y_s, x_s = np.where(base_mask)
         checks = ((x_s // 4) + (y_s // 4)) % 2 == 0
         if np.any(checks):
             check_mask = np.zeros_like(sleeve_mask)
             check_mask[y_s[checks], x_s[checks]] = True
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(check_mask))
+            _paste_solid_mask(atlas, tip_col, check_mask)
 
     elif style == "striped_rib":
         # Multi-stripe ribbed athletic cuff (3 micro-stripes matching striped_rib_polo)
@@ -1558,7 +1595,7 @@ def _apply_engineered_cuffs(atlas, d, masks):
         cuff_mask[710:732, :] = sleeve_mask[710:732, :]
         cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
         if np.any(cuff_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+            _paste_solid_mask(atlas, cuff_col, cuff_mask)
 
         stripe_m1 = np.zeros_like(sleeve_mask)
         stripe_m2 = np.zeros_like(sleeve_mask)
@@ -1580,11 +1617,11 @@ def _apply_engineered_cuffs(atlas, d, masks):
         stripe_m3[1145:1148, :] = sleeve_mask[1145:1148, :]
 
         if np.any(stripe_m1):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(stripe_m1))
+            _paste_solid_mask(atlas, tip_col, stripe_m1)
         if np.any(stripe_m2):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip2_col), (0, 0), _mask_img(stripe_m2))
+            _paste_solid_mask(atlas, tip2_col, stripe_m2)
         if np.any(stripe_m3):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(stripe_m3))
+            _paste_solid_mask(atlas, tip_col, stripe_m3)
 
     elif style in ("accent_ring_inner", "ring_inner"):
         # Fluo/vibrant accent cuff band with a thin dark inner contrast stripe (BVB purple kit style)
@@ -1593,14 +1630,14 @@ def _apply_engineered_cuffs(atlas, d, masks):
         cuff_mask[710:732, :] = sleeve_mask[710:732, :]
         cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
         if np.any(cuff_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+            _paste_solid_mask(atlas, cuff_col, cuff_mask)
 
         inner_mask = np.zeros_like(sleeve_mask)
         inner_mask[667:671, :] = sleeve_mask[667:671, :]
         inner_mask[719:723, :] = sleeve_mask[719:723, :]
         inner_mask[1140:1144, :] = sleeve_mask[1140:1144, :]
         if np.any(inner_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(inner_mask))
+            _paste_solid_mask(atlas, tip_col, inner_mask)
 
     elif style == "tri_color_knit":
         # 3-color heritage athletic cuff band
@@ -1609,7 +1646,7 @@ def _apply_engineered_cuffs(atlas, d, masks):
         cuff_mask[710:732, :] = sleeve_mask[710:732, :]
         cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
         if np.any(cuff_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+            _paste_solid_mask(atlas, cuff_col, cuff_mask)
 
         s1 = np.zeros_like(sleeve_mask)
         s2 = np.zeros_like(sleeve_mask)
@@ -1631,11 +1668,11 @@ def _apply_engineered_cuffs(atlas, d, masks):
         s3[1146:1155, :] = sleeve_mask[1146:1155, :]
 
         if np.any(s1):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(s1))
+            _paste_solid_mask(atlas, cuff_col, s1)
         if np.any(s2):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(s2))
+            _paste_solid_mask(atlas, tip_col, s2)
         if np.any(s3):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip2_col), (0, 0), _mask_img(s3))
+            _paste_solid_mask(atlas, tip2_col, s3)
 
     elif style == "contrast_split":
         # Two-tone split sleeve cuff
@@ -1650,9 +1687,9 @@ def _apply_engineered_cuffs(atlas, d, masks):
         right_half[:, 1024:] = cuff_mask[:, 1024:]
 
         if np.any(left_half):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(left_half))
+            _paste_solid_mask(atlas, cuff_col, left_half)
         if np.any(right_half):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(right_half))
+            _paste_solid_mask(atlas, tip_col, right_half)
 
     elif style == "french_turnback":
         # Luxury folded turnback cuff with contrast ridge piping
@@ -1661,14 +1698,14 @@ def _apply_engineered_cuffs(atlas, d, masks):
         cuff_mask[710:732, :] = sleeve_mask[710:732, :]
         cuff_mask[1130:1155, :] = sleeve_mask[1130:1155, :]
         if np.any(cuff_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), cuff_col), (0, 0), _mask_img(cuff_mask))
+            _paste_solid_mask(atlas, cuff_col, cuff_mask)
 
         ridge_mask = np.zeros_like(sleeve_mask)
         ridge_mask[658:662, :] = sleeve_mask[658:662, :]
         ridge_mask[710:714, :] = sleeve_mask[710:714, :]
         ridge_mask[1130:1134, :] = sleeve_mask[1130:1134, :]
         if np.any(ridge_mask):
-            atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), tip_col), (0, 0), _mask_img(ridge_mask))
+            _paste_solid_mask(atlas, tip_col, ridge_mask)
 
 
 def _apply_sleeve_architecture(atlas, d, masks):
@@ -1700,7 +1737,7 @@ def _apply_sleeve_architecture(atlas, d, masks):
 
     if style in ("contrast_raglan", "raglan_contrast", "raglan"):
         raglan_col = tuple(d.get("sleeve") or d.get("second") or d["body"]) + (255,)
-        atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), raglan_col), (0, 0), _mask_img(sleeve_mask))
+        _paste_solid_mask(atlas, raglan_col, sleeve_mask)
         pipe_layer = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
         draw_p = ImageDraw.Draw(pipe_layer)
         draw_p.line([(730, 960), (830, 1010), (915, 1110)], fill=acc_rgba, width=4)
@@ -1822,7 +1859,7 @@ def _apply_sleeve_architecture(atlas, d, masks):
         draw_y = ImageDraw.Draw(yoke_layer)
 
         sleeve_acc = tuple(accent) + (255,)
-        atlas.paste(Image.new("RGBA", (ATLAS, ATLAS), sleeve_acc), (0, 0), _mask_img(sleeve_mask))
+        _paste_solid_mask(atlas, sleeve_acc, sleeve_mask)
 
         # 1. Front chest & clavicle splatter: vertical striated brush strokes tapering down
         for _ in range(160):
@@ -2136,7 +2173,7 @@ def _apply_fabric_microtexture(atlas, d, masks):
 
     np.clip(patch, 0, 255, out=patch)
     rgb_flat[fabric_idx] = patch.astype(np.uint8)
-    atlas.paste(Image.fromarray(arr), (0, 0))
+    atlas.frombytes(arr.tobytes())
 
 
 def _draw_flatlock_seam(draw, pts, dark_stitch, light_stitch, stitch_len=4, gap_len=1):
@@ -3291,8 +3328,10 @@ def render_kit_set(club, season, outdir, logo_dir, masks=None, brand_files=None,
         return (slot, atlas_ref, preview_ref, design)
 
     if len(slots) > 1:
+        import os
         from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=min(len(slots), 4)) as executor:
+        workers = min(len(slots), max(os.cpu_count() or 4, 5))
+        with ThreadPoolExecutor(max_workers=workers) as executor:
             out = list(executor.map(_render_slot, slots))
     elif len(slots) == 1:
         out = [_render_slot(slots[0])]
