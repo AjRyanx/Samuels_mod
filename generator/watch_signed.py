@@ -151,10 +151,13 @@ def safe_append_line(path, text, lock=True, retries=5, delay=0.04):
 # --------------------------------------------------------------------------- #
 def _log(msg, logfile=None):
     line = "%s  %s" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg)
-    try:
-        print(line, flush=True)
-    except UnicodeEncodeError:                    # a console without the glyphs
-        print(line.encode("ascii", "replace").decode("ascii"), flush=True)
+    try:                                          # pythonw may have no usable stdout
+        try:
+            print(line, flush=True)
+        except UnicodeEncodeError:                # a console without the glyphs
+            print(line.encode("ascii", "replace").decode("ascii"), flush=True)
+    except Exception:
+        pass
     if logfile:
         try:
             with open(logfile, "a", encoding="utf-8") as f:
@@ -658,7 +661,7 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
                 rebuild(req["club_id"], req["season"], req["brand"], sider, game_root,
                         logfile, career_id=req.get("career_id"),
                         force_signature=is_force_clean)
-        except Exception as exc:                      # noqa: BLE001 - keep watching
+        except (Exception, SystemExit) as exc:         # noqa: BLE001 - keep watching
             _log("  ERROR building %s: %s: %s"
                  % (req["offer"], type(exc).__name__, exc), logfile)
             continue
@@ -710,7 +713,7 @@ def main(argv=None):
         while True:
             try:
                 process_pending(req_file, state_file, sider, game_root, logfile)
-            except Exception as exc:                  # noqa: BLE001 - never die
+            except (Exception, SystemExit) as exc:     # noqa: BLE001 - never die
                 _log("poll error: %s: %s" % (type(exc).__name__, exc), logfile)
             if args.once:
                 break

@@ -46,7 +46,8 @@ local CFG = {
   ENABLE_KITS        = true,     -- rebuild the club's kits (needs the Python watcher)
   ENABLE_SPONSORSHIP = true,     -- Sponsor Office: offers, signing and budget money
   START_PROCESS      = true,     -- launch the kit watcher at game load (run setup_watcher.py once)
-  OFFICE_KEY         = 0x76,     -- F7: classic text office (fallback)
+  OFFICE_KEY         = 0x78,     -- F9: classic text office (F7 is used by camera_dinamica)
+  WINDOW_KEY         = 0x7A,     -- F11: manual transfer window toggle (F10 is used by camera_dinamica)
   SIGNING_MONTHS     = {6, 7, 8},-- PRE-SEASON only (Jun-Aug); Jan is deliberately excluded
   CREDIT_BUDGET      = true,     -- credit signed deals into the in-game budgets
   TERMINATION_PCT    = 0.50,     -- early-exit clause: pay this share of the value still to run
@@ -1605,11 +1606,11 @@ function m.overlay_on(ctx)
     local mn_list = {}
     for _, mm in ipairs(CFG.SIGNING_MONTHS) do mn_list[#mn_list + 1] = MONTH_NAMES[mm] end
     lines[#lines + 1] = '  Signing allowed only in the pre-season: ' .. table.concat(mn_list, ', ')
-    lines[#lines + 1] = '  Press F10 to manually confirm transfer window'
+    lines[#lines + 1] = '  Press F11 to manually confirm transfer window'
   else
     lines[#lines + 1] = '  Press Enter to sign the highlighted offer'
   end
-  lines[#lines + 1] = '  [Up/Down] select  [Enter] sign  [F10] window toggle  [Esc] close'
+  lines[#lines + 1] = '  [Up/Down] select  [Enter] sign  [F11] window toggle  [Esc] close'
   lines[#lines + 1] = bar
   return table.concat(lines, '\n')
 end

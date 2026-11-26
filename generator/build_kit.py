@@ -197,7 +197,7 @@ def build_set(club, season, outdir, base_ftex=DEFAULT_BASE, slots=(1, 2, 3, "g1"
 
     base_ftex = Path(base_ftex)
     if not base_ftex.is_file():
-        raise SystemExit(f"base .ftex not found: {base_ftex}")
+        raise FileNotFoundError(f"base .ftex not found: {base_ftex}")
     template = ftex_io.read_ftex(base_ftex)
 
     if logo_dir is None:
@@ -315,7 +315,7 @@ def _parse_slots(text):
         elif x.lower() in ("p1", "p2", "p3"):
             slots.append(int(x.lower().replace("p", "")))
         else:
-            raise SystemExit(f"slot must be 1, 2, 3, g1, or g2 (got {x})")
+            raise ValueError(f"slot must be 1, 2, 3, g1, or g2 (got {x})")
     return tuple(slots)
 
 

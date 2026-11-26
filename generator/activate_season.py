@@ -73,7 +73,7 @@ def activate_season(staging, livecpk_root, season, keep_seasons=2):
     active = Path(livecpk_root) / ACTIVE_NAME
     src = Path(staging) / f'season_{season}'
     if active.name != ACTIVE_NAME or not src.is_dir():
-        raise SystemExit('refusing: unexpected folder')
+        raise ValueError('refusing: unexpected folder')
     if active.exists():
         shutil.rmtree(active)
     shutil.copytree(src, active)
