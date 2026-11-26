@@ -146,6 +146,25 @@ def safe_append_line(path, text, lock=True, retries=5, delay=0.04):
     return False
 
 
+def safe_write_lines(path, lines):
+    """Atomically replace a line-oriented file subject to concurrent writes."""
+    path = Path(path)
+    ctx = file_lock(path, timeout=2.0)
+    with ctx:
+        tmp = path.with_name(path.name + ".tmp")
+        try:
+            tmp.write_text("\n".join(lines) + ("\n" if lines else ""),
+                           encoding="utf-8")
+            os.replace(tmp, path)
+            return True
+        except OSError:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+            return False
+
+
 # --------------------------------------------------------------------------- #
 #  small helpers
 # --------------------------------------------------------------------------- #
@@ -206,6 +225,49 @@ def _read_state_cached(state_file):
         _STATE_CACHE.clear()
         _STATE_CACHE[key] = cached
     return cached
+
+
+def _reconcile_state(lines, state_file):
+    """Deduplicate state and invalidate markers from a rolled-back season."""
+    raw = safe_read_lines(state_file, lock=False)
+    seen = set(raw)
+    offer_map = {}
+    latest = {}
+    for line in lines:
+        req = _parse_request(line)
+        if not req:
+            continue
+        offer_map[req["offer"]] = req
+        if req["club_id"] != 0:
+            continue
+        career = req.get("career_id") or ""
+        stamp = req.get("timestamp") or ""
+        prior = latest.get(career)
+        if prior is None or stamp > (prior.get("timestamp") or ""):
+            latest[career] = req
+    removed = set()
+    rollback = {}
+    for career, active_req in latest.items():
+        active_season = active_req["season"]
+        for offer, req in offer_map.items():
+            if offer not in seen or (req.get("career_id") or "") != career:
+                continue
+            if req["season"] > active_season:
+                rollback[career] = active_season
+                for off2, req2 in offer_map.items():
+                    if ((req2.get("career_id") or "") == career
+                            and req2["season"] >= active_season
+                            and (off2.startswith("season-") or off2.startswith("jit-"))):
+                        removed.add(off2)
+                break
+    deduped = []
+    for line in raw:
+        if line in removed or line in deduped:
+            continue
+        deduped.append(line)
+    if len(deduped) != len(raw):
+        safe_write_lines(state_file, deduped)
+    return set(deduped), rollback
 
 
 def _read_pid(pid_file):
@@ -325,20 +387,26 @@ def _urgent_requests_pending(req_file, state_file, exclude=None):
 
 
 def _season_high_water(lines, seen):
-    """Highest completed rollover season, scoped to each career.
+    """Active season per career, taken from the newest rollover request.
 
-    The request file keeps history from every career.  A global maximum would
-    make a fresh season-2 save look stale next to an old save's season-7 marker
-    and silently retire its rebuild/JIT requests.
+    A previous session may have rolled further and left a higher completed
+    marker behind.  Using the newest *request* instead of the highest marker
+    keeps a reloaded save's current-season JIT work from being retired as
+    stale.  `seen` is accepted for compatibility with older callers.
     """
     high = {}
+    latest = {}
     for line in lines:
         prior = _parse_request(line)
-        if not prior or prior["club_id"] != 0 or prior["offer"] not in seen:
+        if not prior or prior["club_id"] != 0:
             continue
         career = prior.get("career_id") or ""
-        if prior["season"] > high.get(career, 0):
-            high[career] = prior["season"]
+        stamp = prior.get("timestamp") or ""
+        current = latest.get(career)
+        if current is None or stamp > (current.get("timestamp") or ""):
+            latest[career] = prior
+    for career, req in latest.items():
+        high[career] = req["season"]
     return high
 
 
@@ -457,10 +525,10 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     """Build every request in req_file that we have not built yet. Returns count."""
     if not req_file.is_file():
         return 0
-    seen = _read_state(state_file)
     lines = safe_read_lines(req_file, lock=True)
     if not lines:
         return 0
+    seen, rollback = _reconcile_state(lines, state_file)
 
     # Priority: signed deals / forced cleans > season baseline > seasonal club
     # rebuilds > scheduled-opponent JIT.  League pre-generation is retired.
@@ -495,16 +563,18 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
         if req["club_id"] > 0:
             import club_resolver
             if club_resolver.is_national_team(req["club_id"], sider):
-                _log("retiring kit request for national/classic team #%d (%s)"
-                     % (req["club_id"], req["offer"]), logfile)
-                _mark_done(state_file, req["offer"])
-                seen.add(req["offer"])
+                if req["offer"] not in seen:
+                    _log("retiring kit request for national/classic team #%d (%s)"
+                         % (req["club_id"], req["offer"]), logfile)
+                    _mark_done(state_file, req["offer"])
+                    seen.add(req["offer"])
                 continue
 
         current_season = high_water.get(req.get("career_id") or "", 0)
         if current_season and req["season"] < current_season and not is_rollover:
-            _mark_done(state_file, req["offer"])   # retire stale-season work permanently
-            seen.add(req["offer"])
+            if req["offer"] not in seen:
+                _mark_done(state_file, req["offer"])   # retire stale-season work permanently
+                seen.add(req["offer"])
             continue
 
         # A "force" clean comes from deal expiry/termination.  The branded file
@@ -517,8 +587,9 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
             career_id = req.get("career_id")
             career_ftex = (Path(sider) / "content" / "KitGenerator" / "careers" / career_id / f"u{req['club_id']:04d}p1.ftex") if (career_id and career_id != "unknown") else None
             if target_ftex.is_file() and (career_ftex is None or career_ftex.is_file()):
-                _mark_done(state_file, req["offer"])
-                seen.add(req["offer"])
+                if req["offer"] not in seen:
+                    _mark_done(state_file, req["offer"])
+                    seen.add(req["offer"])
                 continue
 
         if req["offer"] in seen:
@@ -554,6 +625,15 @@ def process_pending(req_file, state_file, sider, game_root, logfile):
     if urgent_user_requests and rollover_requests:
         _log("season rollover deferred: %d urgent user request(s) processed first"
              % len(urgent_user_requests), logfile)
+        rollover_requests = []
+
+    # A reloaded save can be back in an older season than a marker left by a
+    # previous session.  Build the opponent kits for the match at hand first;
+    # the full baseline follows on the next poll.
+    if rollback and rollover_requests:
+        seasons = ", ".join(str(s) for s in sorted(set(rollback.values())))
+        _log("season rollback to %s: building scheduled-opponent JIT kits before baseline"
+             % seasons, logfile)
         rollover_requests = []
 
     # The baseline is the foundation for every later dynamic kit, so it runs
